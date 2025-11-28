@@ -2,7 +2,8 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue.svg)](https://php.net)
-[![Tests](https://img.shields.io/badge/Tests-65%20passing-green.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-91%20passing-green.svg)](#testing)
+[![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/nalanda-backend-challenge)
 
 > Sistema modular y escalable para gestionar candidaturas y evaluadores, implementado con **Arquitectura Hexagonal**, **patrones de diseño avanzados** y **mejores prácticas de software**.
 
@@ -12,8 +13,8 @@
 
 ```bash
 # 1. Clone and install dependencies
-git clone <repo-url>
-cd desafio-backend
+git clone https://github.com/CristianLopez29/nalanda-backend-challenge.git
+cd nalanda-backend-challenge
 
 # 2. Install with Docker (first time)
 docker run --rm \
@@ -91,7 +92,7 @@ Se optó por **Arquitectura Hexagonal** (también conocida como Puertos y Adapta
 - **Beneficio:** Puedo reemplazar Laravel por Symfony sin tocar la lógica de negocio
 
 #### ✅ **Testabilidad Superior**
-- 65 tests (29 unitarios + 36 de integración)
+- 91 tests passing with 353 assertions (comprehensive coverage)
 - Los tests unitarios no requieren el framework
 - Fakes y mocks son triviales de implementar
 - **Beneficio:** Tests rápidos y confiables
@@ -488,8 +489,8 @@ ORDER BY avg_experience DESC
 
 ```bash
 # 1. Clonar repositorio
-git clone <repo-url>
-cd desafio-backend
+git clone https://github.com/CristianLopez29/nalanda-backend-challenge.git
+cd nalanda-backend-challenge
 
 # 2. Instalar dependencias (primera vez)
 docker run --rm \
@@ -742,15 +743,16 @@ El reporte se genera en background y se envía por email cuando está listo.
 
 ### Cobertura
 
-- **Total:** 65 tests
+- **Total:** 91 tests passing (353 assertions)
 - **Unitarios:** 29 tests
-  - Validators (Chain of Responsibility)
-  - Domain Entities
-  - Value Objects
-- **Feature:** 36 tests
-  - Endpoints completos
-  - Integración con DB real
-  - Casos de borde
+  - Validators (Chain of Responsibility): 8 tests
+  - Domain Entities: 8 tests
+  - Value Objects: 13 tests
+- **Feature:** 62 tests de integración
+  - Candidates endpoints: 11 tests
+  - Evaluators endpoints: 50 tests
+  - Audit logging: 1 test
+  - Cobertura completa de casos de borde y validaciones
 
 ### Tests Destacados
 
