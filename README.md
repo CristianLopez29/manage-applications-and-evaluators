@@ -1,9 +1,9 @@
-# API Gestión de Candidaturas - Desafío Backend Senior
+# API Gestión de Candidaturas
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue.svg)](https://php.net)
 [![Tests](https://img.shields.io/badge/Tests-91%20passing-green.svg)](#testing)
-[![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/nalanda-backend-challenge)
+[![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/manage-applications-and-evaluators)
 
 > Sistema modular y escalable para gestionar candidaturas y evaluadores, implementado con **Arquitectura Hexagonal**, **patrones de diseño avanzados** y **mejores prácticas de software**.
 
@@ -13,8 +13,8 @@
 
 ```bash
 # 1. Clone and install dependencies
-git clone https://github.com/CristianLopez29/nalanda-backend-challenge.git
-cd nalanda-backend-challenge
+git clone https://github.com/CristianLopez29/manage-applications-and-evaluators.git
+cd manage-applications-and-evaluators
 
 # 2. Install with Docker (first time)
 docker run --rm \
