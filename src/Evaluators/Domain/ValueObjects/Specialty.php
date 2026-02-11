@@ -56,6 +56,9 @@ final readonly class Specialty
         return $this->value === $other->value;
     }
 
+    /**
+     * @return array<int, string>
+     */
     public static function validSpecialties(): array
     {
         return self::VALID_SPECIALTIES;

@@ -3,8 +3,8 @@
 namespace Src\Evaluators\Infrastructure\Persistence;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Src\Candidates\Infrastructure\Persistence\CandidateModel;
 
 /**
  * @property int $id
@@ -17,8 +17,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class CandidateAssignmentModel extends Model
 {
-    use HasFactory;
-
     protected $table = 'candidate_assignments';
 
     protected $fillable = [
@@ -34,14 +32,16 @@ class CandidateAssignmentModel extends Model
 
     /**
      * Relation with the candidate
+     * @return BelongsTo<CandidateModel, $this>
      */
     public function candidate(): BelongsTo
     {
-        return $this->belongsTo(\Src\Candidates\Infrastructure\Persistence\CandidateModel::class, 'candidate_id');
+        return $this->belongsTo(CandidateModel::class, 'candidate_id');
     }
 
     /**
      * Relation with the evaluator
+     * @return BelongsTo<EvaluatorModel, $this>
      */
     public function evaluator(): BelongsTo
     {

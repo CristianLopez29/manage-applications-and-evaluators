@@ -63,7 +63,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
     }
 
     /**
-     * @return LengthAwarePaginator<EvaluatorWithCandidatesDTO>
+     * @return LengthAwarePaginator<int, EvaluatorWithCandidatesDTO>
      */
     public function findAllWithCandidates(ConsolidatedListCriteria $criteria): LengthAwarePaginator
     {
@@ -179,6 +179,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
             return new EvaluatorWithCandidatesDTO($evaluator, $candidates, $avgExperience, $concatenatedEmails, $assignmentsByCandidateId);
         });
 
+        /** @var LengthAwarePaginator<int, EvaluatorWithCandidatesDTO> $paginator */
         return $paginator;
     }
 }

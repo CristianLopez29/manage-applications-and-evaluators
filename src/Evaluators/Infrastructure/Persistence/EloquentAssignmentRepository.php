@@ -32,7 +32,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
             $model->candidate_id,
             $model->evaluator_id,
             $model->status,
-            new \DateTimeImmutable($model->assigned_at)
+            new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s'))
         );
     }
 
@@ -51,7 +51,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
                 $model->status,
                 new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s'))
             );
-        })->toArray();
+        })->all();
     }
 
     public function existsAssignment(int $candidateId, int $evaluatorId): bool

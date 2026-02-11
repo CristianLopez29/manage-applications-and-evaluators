@@ -16,6 +16,9 @@ class ReportReadyNotification extends Notification
     ) {
     }
 
+    /**
+     * @return array<int, string>
+     */
     public function via(object $notifiable): array
     {
         return ['mail'];

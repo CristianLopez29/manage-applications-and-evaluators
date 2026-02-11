@@ -4,6 +4,10 @@ namespace Src\Candidates\Application\DTO;
 
 readonly class CandidateSummaryDTO
 {
+    /**
+     * @param array<string, mixed>|null $assignment
+     * @param array<string, string> $validationResults
+     */
     public function __construct(
         public int $id,
         public string $name,

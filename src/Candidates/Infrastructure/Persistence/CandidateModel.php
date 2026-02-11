@@ -3,7 +3,6 @@
 namespace Src\Candidates\Infrastructure\Persistence;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
  * @property int $id
@@ -16,8 +15,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
  */
 class CandidateModel extends Model
 {
-    use HasFactory;
-
     protected $table = 'candidates';
 
     protected $fillable = [

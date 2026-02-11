@@ -10,6 +10,8 @@ use Src\Candidates\Domain\Validators\MinimumExperienceValidator;
 use Src\Candidates\Domain\Validators\ValidEmailValidator;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
+use Src\Candidates\Domain\Candidate;
+use Src\Candidates\Domain\Validators\CandidateValidator;
 
 class GetCandidateSummaryUseCase
 {
@@ -45,14 +47,15 @@ class GetCandidateSummaryUseCase
         }
 
         // 3. Execute Validations (Report) using Collections
+        /** @var array<string, string> $validationResults */
         $validationResults = collect([
             'CV Required' => new RequiredCVValidator(),
             'Valid Email' => new ValidEmailValidator(),
             'Minimum Experience' => new MinimumExperienceValidator(),
-        ])->map(fn($validator) => $this->checkRule($validator, $candidate))->toArray();
+        ])->map(fn(CandidateValidator $validator) => $this->checkRule($validator, $candidate))->toArray();
 
         return new CandidateSummaryDTO(
-            $candidate->id(),
+            $candidate->id() ?? 0,
             $candidate->name(),
             $candidate->email()->value(),
             $candidate->yearsOfExperience()->value(),
@@ -62,7 +65,7 @@ class GetCandidateSummaryUseCase
         );
     }
 
-    private function checkRule($validator, $candidate): string
+    private function checkRule(CandidateValidator $validator, Candidate $candidate): string
     {
         try {
             $validator->validate($candidate);
