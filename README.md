@@ -1,11 +1,108 @@
-# API Gestión de Candidaturas
+# Candidacy Management API
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue.svg)](https://php.net)
 [![Tests](https://img.shields.io/badge/Tests-91%20passing-green.svg)](#testing)
 [![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/manage-applications-and-evaluators)
 
-> Sistema modular y escalable para gestionar candidaturas y evaluadores, implementado con **Arquitectura Hexagonal**, **patrones de diseño avanzados** y **mejores prácticas de software**.
+> Modular and scalable system for managing candidacies and evaluators, implemented with **Hexagonal Architecture**, **advanced design patterns**, and **software best practices**.
+
+---
+
+## 🎯 Architectural Decisions
+
+### Hexagonal Architecture (Clean Architecture)
+
+**Hexagonal Architecture** (also known as Ports and Adapters) was chosen for the following reasons:
+
+#### ✅ **Total Framework Decoupling**
+- Business logic (`Domain`) has no Laravel dependencies
+- Use cases (`Application`) are framework-agnostic
+- Infrastructure (`Infrastructure`) is completely interchangeable
+- **Benefit:** I can replace Laravel with Symfony without touching business logic
+
+#### ✅ **Superior Testability**
+- 91 tests passing with 353 assertions (comprehensive coverage)
+- Unit tests do not require the framework
+- Fakes and mocks are trivial to implement
+- **Benefit:** Fast and reliable tests
+
+#### ✅ **Long-Term Maintainability**
+- Clear separation of responsibilities
+- Each layer has a specific purpose
+- Changes in UI/DB do not affect business logic
+- **Benefit:** Code that ages well
+
+#### ✅ **Team Scalability**
+- Teams can work on independent layers
+- Clear interfaces between layers
+- Easier onboarding with predictable structure
+- **Benefit:** Frictionless team growth
+
+### Decision: Domain-Driven Design (DDD)
+
+**DDD** principles were applied to model the domain:
+
+- **Entities:** `Candidate`, `Evaluator`, `CandidateAssignment`
+- **Value Objects:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
+- **Domain Events:** `CandidateRegistered` for audit logging
+- **Repositories:** Interfaces in Domain, implementations in Infrastructure
+- **DTOs:** Data transfer between layers without exposing entities
+
+**Why?** The HR domain is complex and business rules change frequently. DDD allows us to model the business expressively and maintainably.
+
+---
+
+## 📁 Project Structure
+
+```
+src/
+├── Candidates/              # Candidacy Module
+│   ├── Domain/              # Pure business logic (no Laravel)
+│   │   ├── Candidate.php    # Domain Entity
+│   │   ├── ValueObjects/    # Email, CV, YearsOfExperience
+│   │   ├── Validators/      # Chain of Responsibility
+│   │   ├── Repositories/    # Interfaces (contracts)
+│   │   ├── Events/          # Domain Events
+│   │   └── Exceptions/      # Domain Exceptions
+│   ├── Application/         # Use Cases
+│   │   ├── RegisterCandidacyUseCase.php
+│   │   ├── GetCandidateSummaryUseCase.php
+│   │   └── DTO/             # Data Transfer Objects
+│   └── Infrastructure/      # Technical implementations
+│       ├── Persistence/     # Eloquent Models & Repositories
+│       ├── Http/            # Controllers
+│       ├── Listeners/       # Event Listeners
+│       └── Providers/       # Service Providers
+│
+├── Evaluators/              # Evaluators Module
+│   ├── Domain/              # Pure business logic
+│   │   ├── Evaluator.php
+│   │   ├── CandidateAssignment.php
+│   │   ├── ValueObjects/    # Specialty, AssignmentStatus
+│   │   ├── Repositories/    # Interfaces
+│   │   └── Criteria/        # Query criteria objects
+│   ├── Application/         # Use Cases
+│   │   ├── AssignCandidateUseCase.php
+│   │   ├── GetConsolidatedEvaluatorsUseCase.php
+│   │   └── DTO/
+│   └── Infrastructure/
+│       ├── Persistence/
+│       ├── Http/
+│       ├── Jobs/            # GenerateEvaluatorsReportJob
+│       ├── Export/          # Excel exporters
+│       └── Notifications/   # Email notifications
+│
+└── Shared/                  # Code shared between modules
+    ├── Domain/
+    └── Infrastructure/
+```
+
+### Conventions
+
+- **Domain:** No external dependencies. Pure PHP.
+- **Application:** Orchestrates the domain. Must not contain business logic.
+- **Infrastructure:** Everything related to Laravel, databases, external APIs.
 
 ---
 
@@ -48,12 +145,12 @@ cp .env.example .env
 - **Mailpit** (emails): http://localhost:8025
 
 **🐳 Database Connections (from host machine):**
-- **MySQL**: `127.0.0.1:3306` (solo si necesitas conectar con herramientas externas como TablePlus/DBeaver)
+- **MySQL**: `127.0.0.1:3306` (only if you need to connect with external tools like TablePlus/DBeaver)
   - User: `sail`
   - Password: `password`
   - Database: `desafio_backend`
-  - **Nota**: Desde la aplicación Laravel usa `DB_HOST=mysql` (dentro de Docker)
-- **Redis**: `127.0.0.1:6379` (dentro de Docker usa `REDIS_HOST=redis`)
+  - **Note**: From the Laravel application use `DB_HOST=mysql` (inside Docker)
+- **Redis**: `127.0.0.1:6379` (inside Docker use `REDIS_HOST=redis`)
 
 **⚡ Start Queue Worker** (for Excel reports):
 ```bash
@@ -64,82 +161,39 @@ cp .env.example .env
 
 ---
 
-## 📋 Tabla de Contenidos
+## 📋 Table of Contents
 
-- [🎯 Decisiones Arquitectónicas](#-decisiones-arquitectónicas)
-- [📐 Diagrama de Capas](#-diagrama-de-capas)
-- [📁 Estructura del Proyecto](#-estructura-del-proyecto)
-- [🔧 Justificación Técnica](#-justificación-técnica)
-- [🎨 Patrones Implementados](#-patrones-implementados)
-- [🚀 Escalabilidad](#-escalabilidad)
-- [💻 Cómo Ejecutar](#-cómo-ejecutar)
-- [📡 Endpoints API](#-endpoints-api)
+- [🎯 Architectural Decisions](#-architectural-decisions)
+- [📁 Project Structure](#-project-structure)
+- [⚡ Quick Start](#-quick-start)
+- [📐 Layer Diagram](#-layer-diagram)
+- [🔧 Technical Justification](#-technical-justification)
+- [🎨 Implemented Patterns](#-implemented-patterns)
+- [🚀 Scalability](#-scalability)
+- [💻 How to Run](#-how-to-run)
+- [📡 API Endpoints](#-api-endpoints)
 - [🧪 Testing](#-testing)
-- [📦 Tecnologías](#-tecnologías)
+- [📦 Technologies](#-technologies)
 
 ---
 
-## 🎯 Decisiones Arquitectónicas
-
-### Arquitectura Hexagonal (Clean Architecture)
-
-Se optó por **Arquitectura Hexagonal** (también conocida como Puertos y Adaptadores) por las siguientes razones:
-
-#### ✅ **Desacoplamiento Total del Framework**
-- La lógica de negocio (`Domain`) no tiene dependencias de Laravel
-- Los casos de uso (`Application`) son framework-agnostic
-- La infraestructura (`Infrastructure`) es completamente intercambiable
-- **Beneficio:** Puedo reemplazar Laravel por Symfony sin tocar la lógica de negocio
-
-#### ✅ **Testabilidad Superior**
-- 91 tests passing with 353 assertions (comprehensive coverage)
-- Los tests unitarios no requieren el framework
-- Fakes y mocks son triviales de implementar
-- **Beneficio:** Tests rápidos y confiables
-
-#### ✅ **Mantenibilidad a Largo Plazo**
-- Separación clara de responsabilidades
-- Cada capa tiene un propósito específico
-- Cambios en UI/DB no afectan la lógica de negocio
-- **Beneficio:** Código que envejece bien
-
-#### ✅ **Escalabilidad del Equipo**
-- Equipos pueden trabajar en capas independientes
-- Interfaces claras entre capas
-- Onboarding más sencillo con estructura predecible
-- **Beneficio:** Crecimiento del equipo sin fricción
-
-### Decisión: Domain-Driven Design (DDD)
-
-Se aplicaron principios de **DDD** para modelar el dominio:
-
-- **Entidades:** `Candidate`, `Evaluator`, `CandidateAssignment`
-- **Value Objects:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
-- **Domain Events:** `CandidateRegistered` para audit logging
-- **Repositories:** Interfaces en Domain, implementaciones en Infrastructure
-- **DTOs:** Transferencia de datos entre capas sin exponer entidades
-
-**¿Por qué?** El dominio de RRHH es complejo y las reglas de negocio cambian frecuentemente. DDD nos permite modelar el negocio de forma expresiva y mantenible.
-
----
-
-## 📐 Diagrama de Capas
+## 📐 Layer Diagram
 
 ```mermaid
 graph TD
-    subgraph "Capa de Presentación"
+    subgraph "Presentation Layer"
         A[Controllers HTTP]
         B[API Routes]
         C[Request Validation]
     end
     
-    subgraph "Capa de Aplicación"
+    subgraph "Application Layer"
         D[Use Cases]
         E[DTOs]
         F[Application Services]
     end
     
-    subgraph "Capa de Dominio - NÚCLEO"
+    subgraph "Domain Layer - CORE"
         G[Entities]
         H[Value Objects]
         I[Repository Interfaces]
@@ -147,7 +201,7 @@ graph TD
         K[Validators Chain]
     end
     
-    subgraph "Capa de Infraestructura"
+    subgraph "Infrastructure Layer"
         L[Eloquent Repositories]
         M[Event Listeners]
         N[Jobs/Queues]
@@ -174,7 +228,7 @@ graph TD
     style K fill:#e1f5e1
 ```
 
-### Flujo de Datos
+### Data Flow
 
 ```
 HTTP Request → Controller → Use Case → Domain Logic → Repository Interface
@@ -182,66 +236,13 @@ HTTP Request → Controller → Use Case → Domain Logic → Repository Interfa
                                                     Repository Implementation → Database
 ```
 
-**Regla de Oro:** Las dependencias siempre apuntan hacia adentro. El dominio nunca depende de infraestructura.
+**Golden Rule:** Dependencies always point inwards. The domain never depends on infrastructure.
 
 ---
 
-## 📁 Estructura del Proyecto
+## 🔧 Technical Justification
 
-```
-src/
-├── Candidates/              # Módulo de Candidaturas
-│   ├── Domain/              # Lógica de negocio pura (sin Laravel)
-│   │   ├── Candidate.php    # Entidad del dominio
-│   │   ├── ValueObjects/    # Email, CV, YearsOfExperience
-│   │   ├── Validators/      # Chain of Responsibility
-│   │   ├── Repositories/    # Interfaces (contratos)
-│   │   ├── Events/          # Domain Events
-│   │   └── Exceptions/      # Excepciones del dominio
-│   ├── Application/         # Casos de uso
-│   │   ├── RegisterCandidacyUseCase.php
-│   │   ├── GetCandidateSummaryUseCase.php
-│   │   └── DTO/             # Data Transfer Objects
-│   └── Infrastructure/      # Implementaciones técnicas
-│       ├── Persistence/     # Eloquent Models & Repositories
-│       ├── Http/            # Controllers
-│       ├── Listeners/       # Event Listeners
-│       └── Providers/       # Service Providers
-│
-├── Evaluators/              # Módulo de Evaluadores
-│   ├── Domain/              # Lógica de negocio pura
-│   │   ├── Evaluator.php
-│   │   ├── CandidateAssignment.php
-│   │   ├── ValueObjects/    # Specialty, AssignmentStatus
-│   │   ├── Repositories/    # Interfaces
-│   │   └── Criteria/        # Query criteria objects
-│   ├── Application/         # Casos de uso
-│   │   ├── AssignCandidateUseCase.php
-│   │   ├── GetConsolidatedEvaluatorsUseCase.php
-│   │   └── DTO/
-│   └── Infrastructure/
-│       ├── Persistence/
-│       ├── Http/
-│       ├── Jobs/            # GenerateEvaluatorsReportJob
-│       ├── Export/          # Excel exporters
-│       └── Notifications/   # Email notifications
-│
-└── Shared/                  # Código compartido entre módulos
-    ├── Domain/
-    └── Infrastructure/
-```
-
-### Convenciones
-
-- **Domain:** Sin dependencias externas. PHP puro.
-- **Application:** Orquesta el dominio. No debe contener lógica de negocio.
-- **Infrastructure:** Todo lo relacionado con Laravel, bases de datos, APIs externas.
-
----
-
-## 🔧 Justificación Técnica
-
-### ¿Por qué Chain of Responsibility para Validaciones?
+### Why Chain of Responsibility for Validations?
 
 ```php
 $validator = new RequiredCVValidator();
@@ -252,35 +253,35 @@ $validator
 $validator->validate($candidate);
 ```
 
-**Razones:**
+**Reasons:**
 
-1. **Extensibilidad:** Agregar nueva validación = crear nueva clase. No modificar código existente (Open/Closed Principle)
-2. **Testabilidad:** Cada validador se prueba de forma aislada
-3. **Reusabilidad:** Los validadores se pueden componer de diferentes formas
-4. **Mantenibilidad:** Lógica de validación clara y localizada
+1. **Extensibility:** Add new validation = create new class. Do not modify existing code (Open/Closed Principle)
+2. **Testability:** Each validator is tested in isolation
+3. **Reusability:** Validators can be composed in different ways
+4. **Maintainability:** Clear and localized validation logic
 
-### ¿Por qué Repository Pattern?
+### Why Repository Pattern?
 
 ```php
-// En Domain - interface
+// In Domain - interface
 interface CandidateRepository {
     public function save(Candidate $candidate): void;
     public function findById(int $id): ?Candidate;
 }
 
-// En Infrastructure - implementación con Eloquent
+// In Infrastructure - implementation with Eloquent
 class EloquentCandidateRepository implements CandidateRepository {
-    // Implementación con Eloquent/MySQL
+    // Implementation with Eloquent/MySQL
 }
 ```
 
-**Beneficios:**
+**Benefits:**
 
-- Puedo cambiar de Eloquent a Doctrine sin tocar casos de uso
-- Fácil mockear en tests
-- SQL complejo encapsulado en el repositorio
+- I can switch from Eloquent to Doctrine without touching use cases
+- Easy to mock in tests
+- Complex SQL encapsulated in the repository
 
-### ¿Por qué Value Objects?
+### Why Value Objects?
 
 ```php
 readonly class Email {
@@ -292,55 +293,55 @@ readonly class Email {
 }
 ```
 
-**Ventajas:**
+**Advantages:**
 
-- **Type Safety:** El compilador garantiza que siempre es un email válido
-- **Inmutabilidad:** `readonly` previene mutaciones accidentales
-- **Expresividad:** `$candidate->email()->value()` es más claro que `$candidate->email`
-- **Validación centralizada:** La validación está en un solo lugar
+- **Type Safety:** The compiler guarantees it is always a valid email
+- **Immutability:** `readonly` prevents accidental mutations
+- **Expressiveness:** `$candidate->email()->value()` is clearer than `$candidate->email`
+- **Centralized Validation:** Validation is in one place
 
 ---
 
-## 🎨 Patrones Implementados
+## 🎨 Implemented Patterns
 
 ### 1. Chain of Responsibility
-- **Ubicación:** `src/Candidates/Domain/Validators/`
-- **Uso:** Validación extensible de candidaturas
+- **Location:** `src/Candidates/Domain/Validators/`
+- **Usage:** Extensible candidacy validation
 - **Test:** `tests/Unit/Candidates/Domain/Validators/`
 
 ### 2. Repository Pattern
-- **Ubicación:** Interfaces en `Domain/Repositories/`, implementaciones en `Infrastructure/Persistence/`
-- **Uso:** Abstracción de persistencia
-- **Test:** `tests/Feature/` con base de datos real
+- **Location:** Interfaces in `Domain/Repositories/`, implementations in `Infrastructure/Persistence/`
+- **Usage:** Persistence abstraction
+- **Test:** `tests/Feature/` with real database
 
 ### 3. Data Transfer Object (DTO)
-- **Ubicación:** `Application/DTO/`
-- **Ejemplo:** `EvaluatorWithCandidatesDTO`, `CandidateSummaryDTO`
-- **Uso:** Transferir datos entre capas sin exponer entidades
+- **Location:** `Application/DTO/`
+- **Example:** `EvaluatorWithCandidatesDTO`, `CandidateSummaryDTO`
+- **Usage:** Transfer data between layers without exposing entities
 
 ### 4. Value Object
-- **Ubicación:** `Domain/ValueObjects/`
-- **Ejemplos:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
-- **Uso:** Encapsular validación y tipo safety
+- **Location:** `Domain/ValueObjects/`
+- **Examples:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
+- **Usage:** Encapsulate validation and type safety
 
 ### 5. Domain Events
-- **Ubicación:** `src/Candidates/Domain/Events/`
-- **Evento:** `CandidateRegistered`
+- **Location:** `src/Candidates/Domain/Events/`
+- **Event:** `CandidateRegistered`
 - **Listener:** `LogCandidateAction`
-- **Uso:** Audit logging desacoplado
+- **Usage:** Decoupled audit logging
 
-### 6. Strategy Pattern (implícito)
-- En los validadores: cada validador es una estrategia de validación
+### 6. Strategy Pattern (implicit)
+- In validators: each validator is a validation strategy
 
 ---
 
-## 🚀 Escalabilidad
+## 🚀 Scalability
 
-### ✅ Implementado
+### ✅ Implemented
 
-#### 1. Colas (Queues)
+#### 1. Queues
 
-**Estado:** ✅ **Implementado y funcionando**
+**Status:** ✅ **Implemented and working**
 
 ```php
 // src/Evaluators/Infrastructure/Jobs/GenerateEvaluatorsReportJob.php
@@ -348,25 +349,25 @@ class GenerateEvaluatorsReportJob implements ShouldQueue
 {
     public function handle(GetConsolidatedEvaluatorsUseCase $useCase): void
     {
-        // Genera Excel y notifica por email cuando termina
+        // Generates Excel and notifies by email when finished
     }
 }
 ```
 
-**Beneficios:**
-- ✅ API responde inmediatamente (202 Accepted)
-- ✅ Reporte generado en background
-- ✅ Notificación por email cuando finaliza
-- ✅ Configurado con Redis y Laravel Horizon ready
+**Benefits:**
+- ✅ API responds immediately (202 Accepted)
+- ✅ Report generated in background
+- ✅ Email notification when finished
+- ✅ Configured with Redis and Laravel Horizon ready
 
-**Cómo ejecutar:**
+**How to run:**
 ```bash
 ./vendor/bin/sail artisan queue:work
 ```
 
-#### 2. Idempotencia
+#### 2. Idempotency
 
-**Estado:** ✅ **Implementado con `ShouldBeUnique`**
+**Status:** ✅ **Implemented with `ShouldBeUnique`**
 
 ```php
 class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
@@ -380,35 +381,35 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 }
 ```
 
-**Beneficios:**
-- ✅ Previene duplicación de reportes
-- ✅ Solo un job por email en cola/procesando
-- ✅ TTL de 1 hora configurable
+**Benefits:**
+- ✅ Prevents report duplication
+- ✅ Only one job per email in queue/processing
+- ✅ Configurable 1 hour TTL
 
-### 📦 Infraestructura Preparada
+### 📦 Prepared Infrastructure
 
 #### 3. Cache
 
-**Estado:** 📦 Redis configurado, implementación lista para activar
+**Status:** 📦 Redis configured, implementation ready to activate
 
 ```php
-// Ejemplo de implementación (comentado en código)
+// Implementation example (commented in code)
 Cache::remember("evaluators.consolidated.{$criteria->cacheKey()}", 300, function() {
     return $this->repository->findAllWithCandidates($criteria);
 });
 
-// Invalidación automática
+// Automatic invalidation
 Cache::tags(['evaluators'])->flush();
 ```
 
-**Beneficios esperados:** Reducción de ~80% en queries para listados repetidos.
+**Expected benefits:** ~80% reduction in queries for repeated listings.
 
-#### 4. Concurrencia (Pessimistic Locking)
+#### 4. Concurrency (Pessimistic Locking)
 
-**Estado:** 📦 Preparado para alta concurrencia
+**Status:** 📦 Prepared for high concurrency
 
 ```php
-// Implementación sugerida para assignments masivos
+// Suggested implementation for massive assignments
 DB::transaction(function() use ($evaluatorId, $candidateId) {
     $assignment = CandidateAssignmentModel::lockForUpdate()
         ->where('candidate_id', $candidateId)
@@ -420,14 +421,14 @@ DB::transaction(function() use ($evaluatorId, $candidateId) {
 });
 ```
 
-### SQL Optimizado para Alto Rendimiento
+### SQL Optimized for High Performance
 
-**Diagrama de Relaciones:**
+**Relationship Diagram:**
 
 ```mermaid
 erDiagram
-    EVALUATORS ||--o{ CANDIDATE_ASSIGNMENTS : "tiene"
-    CANDIDATES ||--o{ CANDIDATE_ASSIGNMENTS : "asignado_a"
+    EVALUATORS ||--o{ CANDIDATE_ASSIGNMENTS : "has"
+    CANDIDATES ||--o{ CANDIDATE_ASSIGNMENTS : "assigned_to"
     
     EVALUATORS {
         int id PK
@@ -455,7 +456,7 @@ erDiagram
     }
 ```
 
-**Query Consolidado con GROUP_CONCAT:**
+**Consolidated Query with GROUP_CONCAT:**
 
 ```sql
 SELECT 
@@ -470,29 +471,29 @@ GROUP BY evaluators.id
 ORDER BY avg_experience DESC
 ```
 
-**Beneficios:**
-- ✅ Una sola query (evita N+1)
-- ✅ Agregaciones en SQL (no en PHP)
-- ✅ Escalable a millones de registros con índices
-- ✅ Paginación eficiente
+**Benefits:**
+- ✅ Single query (avoids N+1)
+- ✅ Aggregations in SQL (not in PHP)
+- ✅ Scalable to millions of records with indexes
+- ✅ Efficient pagination
 
 ---
 
-## 💻 Cómo Ejecutar
+## 💻 How to Run
 
-### Requisitos Previos
+### Prerequisites
 
-- Docker Desktop instalado
+- Docker Desktop installed
 - Git
 
-### Instalación con Docker (Laravel Sail)
+### Installation with Docker (Laravel Sail)
 
 ```bash
-# 1. Clonar repositorio
+# 1. Clone repository
 git clone https://github.com/CristianLopez29/nalanda-backend-challenge.git
 cd nalanda-backend-challenge
 
-# 2. Instalar dependencias (primera vez)
+# 2. Install dependencies (first time)
 docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "$(pwd):/var/www/html" \
@@ -500,85 +501,85 @@ docker run --rm \
     laravelsail/php83-composer:latest \
     composer install --ignore-platform-reqs
 
-# 3. Copiar archivo de entorno
+# 3. Copy environment file
 cp .env.example .env
 
-# 4. Levantar servicios (MySQL, Redis, Mailpit)
+# 4. Start services (MySQL, Redis, Mailpit)
 ./vendor/bin/sail up -d
 
-# 5. Generar key de aplicación
+# 5. Generate application key
 ./vendor/bin/sail artisan key:generate
 
-# 6. Ejecutar migraciones y seeders
+# 6. Run migrations and seeders
 ./vendor/bin/sail artisan migrate:fresh --seed
 
-# 7. Generar documentación Swagger
+# 7. Generate Swagger documentation
 ./vendor/bin/sail artisan l5-swagger:generate
 ```
 
-### Servicios Disponibles
+### Services Available
 
-| Servicio | URL | Descripción |
+| Service | URL | Description |
 |----------|-----|-------------|
-| **API** | http://localhost | API REST principal |
-| **Swagger** | http://localhost/api/documentation | Documentación interactiva |
-| **Mailpit** | http://localhost:8025 | Visor de emails (para notificaciones) |
-| **MySQL** | localhost:3306 | Base de datos (user: `sail`, pass: `password`) |
-| **Redis** | localhost:6379 | Cache y colas |
+| **API** | http://localhost | Main REST API |
+| **Swagger** | http://localhost/api/documentation | Interactive documentation |
+| **Mailpit** | http://localhost:8025 | Email viewer (for notifications) |
+| **MySQL** | localhost:3306 | Database (user: `sail`, pass: `password`) |
+| **Redis** | localhost:6379 | Cache and queues |
 
-### Ejecutar Queue Worker (Importante)
+### Run Queue Worker (Important)
 
-Para procesar los jobs de generación de reportes:
+To process report generation jobs:
 
 ```bash
 ./vendor/bin/sail artisan queue:work
 ```
 
-> **Nota:** En producción usar Supervisor para mantener el worker ejecutándose.
+> **Note:** In production use Supervisor to keep the worker running.
 
-### Ejecutar Tests
+### Run Tests
 
 ```bash
-# Todos los tests
+# All tests
 ./vendor/bin/sail artisan test
 
-# Con coverage
+# With coverage
 ./vendor/bin/sail artisan test --coverage
 
-# Solo unitarios
+# Only unit
 ./vendor/bin/sail artisan test --testsuite Unit
 
-# Solo feature
+# Only feature
 ./vendor/bin/sail artisan test --testsuite Feature
 
-# Test específico
+# Specific test
 ./vendor/bin/sail artisan test --filter GetConsolidatedEvaluatorsTest
 ```
 
-### Datos de Prueba (Seeders)
+### Test Data (Seeders)
 
-El comando `migrate:fresh --seed` crea:
+The command `migrate:fresh --seed` creates:
 
-- 20 candidatos con diferentes niveles de experiencia
-- 5 evaluadores (backend, frontend, fullstack, devops, mobile)
-- ~15-20 asignaciones con estados variados
+- 20 candidates with different experience levels
+- 5 evaluators (backend, frontend, fullstack, devops, mobile)
+- ~15-20 assignments with varied statuses
 
 ---
 
-## 📡 Endpoints API
+## 📡 API Endpoints
 
-### Candidatos
+### Candidates
 
 #### `POST /api/candidates`
-Registrar nueva candidatura.
+Register new candidacy.
 
 **Body:**
 ```json
 {
-  "name": "Juan Pérez",
-  "email": "juan@example.com",
+  "name": "John Doe",
+  "email": "john@example.com",
   "years_of_experience": 5,
-  "cv_content": "Desarrollador Full Stack con 5 años..."
+  "cv_content": "Full Stack Developer with 5 years..."
 }
 ```
 
@@ -587,67 +588,67 @@ Registrar nueva candidatura.
 ---
 
 #### `GET /api/candidates/{id}/summary`
-Obtener resumen completo de candidatura con validaciones.
+Get complete candidacy summary with validations.
 
 **Response:**
 ```json
 {
   "id": 1,
-  "name": "Juan Pérez",
-  "email": "juan@example.com",
+  "name": "John Doe",
+  "email": "john@example.com",
   "years_of_experience": 5,
   "cv_content": "...",
   "assignment": {
-    "evaluator_name": "Dr. Alberto Martínez",
-    "evaluator_email": "alberto@nalanda.com",
+    "evaluator_name": "Dr. Albert Martinez",
+    "evaluator_email": "albert@nalanda.com",
     "assigned_at": "2024-11-20 10:30:00",
     "status": "in_progress"
   },
   "validation_results": {
-    "CV Requerido": "Passed",
-    "Email Válido": "Passed",
-    "Experiencia Mínima": "Passed"
+    "Required CV": "Passed",
+    "Valid Email": "Passed",
+    "Minimum Experience": "Passed"
   }
 }
 ```
 
 ---
 
-### Evaluadores
+### Evaluators
 
 #### `POST /api/evaluators`
-Registrar nuevo evaluador.
+Register new evaluator.
 
 **Body:**
 ```json
 {
-  "name": "María González",
-  "email": "maria@example.com",
+  "name": "Mary Gonzalez",
+  "email": "mary@example.com",
   "specialty": "backend"
 }
 ```
 
-**Specialties válidos:** `backend`, `frontend`, `fullstack`, `devops`, `mobile`
+**Valid Specialties:** `backend`, `frontend`, `fullstack`, `devops`, `mobile`
 
 ---
 
 #### `GET /api/evaluators/consolidated`
-Listado consolidado con SQL complejo (GROUP_CONCAT, JOIN, AVG, COUNT).
+Consolidated list with complex SQL (GROUP_CONCAT, JOIN, AVG, COUNT).
 
 **Query Parameters:**
-- `page`: Número de página (default: 1)
-- `per_page`: Items por página (default: 15)
-- `search`: Filtrar por nombre o email
-- `sort_by`: Ordenar por (`name`, `email`, `created_at`, `average_experience`, `specialty`, `total_assigned_candidates`, `concatenated_candidate_emails`)
-- `sort_direction`: `asc` o `desc` (default: `desc`)
+- `page`: Page number (default: 1)
+- `per_page`: Items per page (default: 15)
+- `search`: Filter by name or email
+- `sort_by`: Sort by (`name`, `email`, `created_at`, `average_experience`, `specialty`, `total_assigned_candidates`, `concatenated_candidate_emails`)
+- `sort_direction`: `asc` or `desc` (default: `desc`)
 
-**Orden por defecto:** El listado se ordena por `average_experience` (promedio de años de experiencia de candidatos por evaluador) en orden descendente. Esto satisface el requisito de "orden por años de experiencia" de forma agregada y optimizada a nivel SQL. Si necesitas otro criterio de orden, puedes especificarlo vía `sort_by`.
+**Default Order:** The list is ordered by `average_experience` (average years of experience of candidates per evaluator) in descending order. This satisfies the "order by years of experience" requirement in an aggregated and optimized way at the SQL level. If you need another sort criterion, you can specify it via `sort_by`.
 
-**Filtros opcionales (cualquier columna del listado):**
-- `specialty`: Filtra por especialidad del evaluador (like).
-- `min_average_experience` / `max_average_experience`: Rango de promedio de experiencia.
-- `min_total_assigned` / `max_total_assigned`: Rango de candidatos asignados (COUNT en SQL).
-- `candidate_email_contains`: Filtra por emails concatenados de candidatos (GROUP_CONCAT en SQL).
+**Optional Filters (any column in the list):**
+- `specialty`: Filter by evaluator specialty (like).
+- `min_average_experience` / `max_average_experience`: Range of average experience.
+- `min_total_assigned` / `max_total_assigned`: Range of assigned candidates (COUNT in SQL).
+- `candidate_email_contains`: Filter by concatenated candidate emails (GROUP_CONCAT in SQL).
 
 **Response:**
 ```json
@@ -655,17 +656,17 @@ Listado consolidado con SQL complejo (GROUP_CONCAT, JOIN, AVG, COUNT).
   "data": [
     {
       "id": 1,
-      "name": "Dr. Alberto Martínez",
-      "email": "alberto@nalanda.com",
+      "name": "Dr. Albert Martinez",
+      "email": "albert@nalanda.com",
       "specialty": "backend",
       "average_candidate_experience": 5.3,
       "total_assigned_candidates": 4,
-      "concatenated_candidate_emails": "ana@example.com, carlos@example.com, juan@example.com, maria@example.com",
+      "concatenated_candidate_emails": "ana@example.com, carlos@example.com, john@example.com, mary@example.com",
       "candidates": [
         {
           "id": 1,
-          "name": "Juan Pérez",
-          "email": "juan@example.com",
+          "name": "John Doe",
+          "email": "john@example.com",
           "years_of_experience": 5
         }
       ]
@@ -683,7 +684,7 @@ Listado consolidado con SQL complejo (GROUP_CONCAT, JOIN, AVG, COUNT).
 ---
 
 #### `POST /api/evaluators/{evaluatorId}/assign-candidate`
-Asignar candidato a evaluador.
+Assign candidate to evaluator.
 
 **Body:**
 ```json
@@ -697,22 +698,22 @@ Asignar candidato a evaluador.
 ---
 
 #### `GET /api/evaluators/{evaluatorId}/candidates`
-Obtener candidatos asignados a un evaluador.
+Get candidates assigned to an evaluator.
 
 **Response:**
 ```json
 {
   "evaluator": {
     "id": 1,
-    "name": "Dr. Alberto Martínez",
-    "email": "alberto@nalanda.com",
+    "name": "Dr. Albert Martinez",
+    "email": "albert@nalanda.com",
     "specialty": "backend"
   },
   "candidates": [
     {
       "id": 1,
-      "name": "Juan Pérez",
-      "email": "juan@example.com",
+      "name": "John Doe",
+      "email": "john@example.com",
       "years_of_experience": 5,
       "assignment_status": "in_progress",
       "assigned_at": "2024-11-20 10:30:00"
@@ -724,7 +725,7 @@ Obtener candidatos asignados a un evaluador.
 ---
 
 #### `POST /api/evaluators/report`
-Generar reporte Excel (asíncrono con cola).
+Generate Excel report (asynchronous with queue).
 
 **Body:**
 ```json
@@ -735,26 +736,26 @@ Generar reporte Excel (asíncrono con cola).
 
 **Response:** `202 Accepted`
 
-El reporte se genera en background y se envía por email cuando está listo.
+The report is generated in the background and sent by email when ready.
 
 ---
 
 ## 🧪 Testing
 
-### Cobertura
+### Coverage
 
 - **Total:** 91 tests passing (353 assertions)
-- **Unitarios:** 29 tests
+- **Unit:** 29 tests
   - Validators (Chain of Responsibility): 8 tests
   - Domain Entities: 8 tests
   - Value Objects: 13 tests
-- **Feature:** 62 tests de integración
+- **Feature:** 62 integration tests
   - Candidates endpoints: 11 tests
   - Evaluators endpoints: 50 tests
   - Audit logging: 1 test
-  - Cobertura completa de casos de borde y validaciones
+  - Complete coverage of edge cases and validations
 
-### Tests Destacados
+### Featured Tests
 
 **Chain of Responsibility:**
 ```php
@@ -764,176 +765,176 @@ tests/Unit/Candidates/Domain/Validators/
 └── ValidEmailValidatorTest.php (2 tests)
 ```
 
-**Endpoints Complejos:**
+**Complex Endpoints:**
 ```php
 tests/Feature/Evaluators/GetConsolidatedEvaluatorsTest.php
 └── should_return_consolidated_list_of_evaluators_and_candidates
-    // Verifica SQL con GROUP_CONCAT, filtros, paginación
+    // Verifies SQL with GROUP_CONCAT, filters, pagination
 ```
 
-**Integración Real:**
+**Real Integration:**
 ```php
 tests/Feature/Candidates/RegisterCandidacyTest.php
 └── should_register_a_valid_candidacy
-    // Inserta en DB, verifica domain events, audit log
+    // Inserts in DB, verifies domain events, audit log
 ```
 
-### Ejecutar Tests
+### Run Tests
 
 ```bash
-# Todos
+# All
 sail artisan test
 
-# Específicos
+# Specific
 sail artisan test --filter=Validator
 sail artisan test --testsuite=Unit
 ```
 
 ---
 
-## 📦 Tecnologías
+## 📦 Technologies
 
 ### Core
-- **Laravel 12** - Framework base
-- **PHP 8.2** - Lenguaje (typed properties, readonly, enums)
-- **MySQL 8.0** - Base de datos relacional
+- **Laravel 12** - Base Framework
+- **PHP 8.2** - Language (typed properties, readonly, enums)
+- **MySQL 8.0** - Relational Database
 
-### Arquitectura
-- **Hexagonal Architecture** - Desacoplamiento de capas
-- **Domain-Driven Design** - Modelado del dominio
-- **SOLID Principles** - Código mantenible
+### Architecture
+- **Hexagonal Architecture** - Layer Decoupling
+- **Domain-Driven Design** - Domain Modeling
+- **SOLID Principles** - Maintainable Code
 
-### Librerías
-- `maatwebsite/excel` - Exportación de reportes Excel
-- `darkaonline/l5-swagger` - Documentación OpenAPI
-- `phpunit/phpunit` - Testing framework
+### Libraries
+- `maatwebsite/excel` - Excel Report Export
+- `darkaonline/l5-swagger` - OpenAPI Documentation
+- `phpunit/phpunit` - Testing Framework
 
 ### DevOps
-- **Docker** (Laravel Sail) - Desarrollo local
-- **Redis** - Cache y colas
-- **Mailpit** - Testing de emails
+- **Docker** (Laravel Sail) - Local Development
+- **Redis** - Cache and Queues
+- **Mailpit** - Email Testing
 
 ---
 
 ## � Troubleshooting
 
-### Los tests fallan con error de conexión a la base de datos
+### Tests fail with database connection error
 
 ```bash
-# Limpiar configuración y reiniciar
+# Clear config and restart
 ./vendor/bin/sail artisan config:clear
 ./vendor/bin/sail artisan migrate:fresh --seed
 ./vendor/bin/sail artisan test
 ```
 
-### El queue worker no procesa jobs
+### Queue worker does not process jobs
 
 ```bash
-# Reiniciar el worker
+# Restart the worker
 ./vendor/bin/sail artisan queue:restart
 
-# En otra terminal, iniciar el worker
+# In another terminal, start the worker
 ./vendor/bin/sail artisan queue:work
 
-# Verificar que el job fue despachado
+# Verify that the job was dispatched
 ./vendor/bin/sail artisan queue:failed
 ```
 
-### Error "Class not found" después de crear nuevas clases
+### "Class not found" error after creating new classes
 
 ```bash
-# Regenerar autoload
+# Regenerate autoload
 ./vendor/bin/sail composer dump-autoload
 ```
 
-### Los emails no se envían (reportes)
+### Emails are not sent (reports)
 
 ```bash
-# Verificar que Mailpit está corriendo
+# Verify Mailpit is running
 docker compose ps
 
-# Acceder a Mailpit UI
+# Access Mailpit UI
 open http://localhost:8025
 
-# Verificar logs del job
+# Check job logs
 ./vendor/bin/sail artisan queue:work --verbose
 ```
 
-### Swagger no se genera correctamente
+### Swagger is not generated correctly
 
 ```bash
-# Limpiar cache y regenerar
+# Clear cache and regenerate
 ./vendor/bin/sail artisan config:clear
 ./vendor/bin/sail artisan route:clear
 ./vendor/bin/sail artisan l5-swagger:generate
 ```
 
-### Error de permisos en storage/
+### Permission error in storage/
 
 ```bash
-# Dar permisos (Linux/Mac)
+# Give permissions (Linux/Mac)
 ./vendor/bin/sail artisan storage:link
 sudo chmod -R 777 storage bootstrap/cache
 
-# Windows: Ejecutar como Administrador o ajustar permisos en propiedades
+# Windows: Run as Administrator or adjust permissions in properties
 ```
 
 ---
 
-## �📝 Notas Finales
+## �📝 Final Notes
 
-### 🌟 Puntos Fuertes
+### 🌟 Strong Points
 
-✅ **Arquitectura Senior:** Hexagonal + DDD correctamente implementados  
-✅ **SQL Complejo:** GROUP_CONCAT, JOINs, agregaciones múltiples  
-✅ **Patrones:** Chain of Responsibility extensible  
-✅ **Testing:** 91 tests (29 unit + 62 feature) con 353 assertions que cubren casos críticos  
-✅ **Escalabilidad Implementada:** Queues + Idempotencia con `ShouldBeUnique`  
-✅ **Documentación:** Swagger + README completo con diagramas  
+✅ **Senior Architecture:** Hexagonal + DDD correctly implemented
+✅ **Complex SQL:** GROUP_CONCAT, JOINs, multiple aggregations
+✅ **Patterns:** Extensible Chain of Responsibility
+✅ **Testing:** 91 tests (29 unit + 62 feature) with 353 assertions covering critical cases
+✅ **Implemented Scalability:** Queues + Idempotency with `ShouldBeUnique`
+✅ **Documentation:** Swagger + Complete README with diagrams
 
 ---
 
-## 🗺️ Roadmap (Mejoras Opcionales)
+## 🗺️ Roadmap (Optional Improvements)
 
-> ⚠️ **IMPORTANTE**: Las siguientes mejoras **NO están implementadas**. Esta es una lista de posibles mejoras futuras que están **fuera del scope** de la prueba técnica, pero que podrían agregarse en un entorno de producción real.
+> ⚠️ **IMPORTANT**: The following improvements are **NOT implemented**. This is a list of possible future improvements that are **out of scope** for the technical test, but could be added in a real production environment.
 
 ### Performance
-- [ ] **Cache Layer**: Implementar caching activo con invalidación inteligente (Redis ya configurado pero cache no activo)
-- [ ] **Database Indexing**: Añadir índices compuestos para queries complejas
-- [ ] **Query Optimization**: Lazy loading selectivo para reducir memoria
+- [ ] **Cache Layer**: Implement active caching with intelligent invalidation (Redis already configured but cache not active)
+- [ ] **Database Indexing**: Add composite indexes for complex queries
+- [ ] **Query Optimization**: Selective lazy loading to reduce memory
 
-### Concurrencia
-- [ ] **Pessimistic Locking**: Para asignaciones masivas simultáneas
-- [ ] **Optimistic Locking**: Version control en entidades críticas
-- [ ] **Rate Limiting**: Throttling por IP/usuario en endpoints públicos
+### Concurrency
+- [ ] **Pessimistic Locking**: For massive simultaneous assignments
+- [ ] **Optimistic Locking**: Version control in critical entities
+- [ ] **Rate Limiting**: Throttling by IP/user on public endpoints
 
 ### Features
-- [ ] **Excel Multi-Sheet Pagination**: Paginación automática (50 evaluadores/hoja) - *Actualmente genera una sola hoja con todos los registros*
-- [ ] **Event Sourcing**: Historial completo de cambios en assignments
-- [ ] **Webhooks**: Notificaciones en tiempo real de cambios
-- [ ] **API Versioning**: v1, v2 con deprecation strategy
+- [ ] **Excel Multi-Sheet Pagination**: Automatic pagination (50 evaluators/sheet) - *Currently generates a single sheet with all records*
+- [ ] **Event Sourcing**: Complete history of changes in assignments
+- [ ] **Webhooks**: Real-time notifications of changes
+- [ ] **API Versioning**: v1, v2 with deprecation strategy
 
 ### DevOps
-- [ ] **CI/CD Pipeline**: GitHub Actions para tests + deploy automático
-- [ ] **Monitoring**: Laravel Telescope + Sentry para errores
-- [ ] **Logs Estructurados**: JSON logging para Elasticsearch/Datadog
-- [ ] **Health Checks**: Endpoints `/health` y `/readiness`
+- [ ] **CI/CD Pipeline**: GitHub Actions for tests + automatic deploy
+- [ ] **Monitoring**: Laravel Telescope + Sentry for errors
+- [ ] **Structured Logs**: JSON logging for Elasticsearch/Datadog
+- [ ] **Health Checks**: Endpoints `/health` and `/readiness`
 
 ---
 
-## ❓ Preguntas y Soporte
+## ❓ Questions and Support
 
-Para preguntas sobre implementación, decisiones arquitectónicas o detalles técnicos:
+For questions about implementation, architectural decisions, or technical details:
 
-1. **Revisar el código fuente**: La estructura está auto-documentada
-2. **Consultar los tests**: 91 tests documentan el comportamiento esperado
-3. **Swagger**: Documentación interactiva de la API
+1. **Review source code**: The structure is self-documented
+2. **Consult tests**: 91 tests document expected behavior
+3. **Swagger**: Interactive API documentation
 
-> La arquitectura del proyecto está diseñada para ser **auto-explicativa** mediante código limpio, tests comprensivos y documentación integrada.
+> The project architecture is designed to be **self-explanatory** through clean code, comprehensive tests, and integrated documentation.
 
 ---
 
 <p align="center">
-  <strong>Desarrollado con Arquitectura Hexagonal y Patrones de Diseño</strong><br>
+  <strong>Developed with Hexagonal Architecture and Design Patterns</strong><br>
   Laravel 12 | PHP 8.2 | MySQL | Redis | Docker
 </p>
