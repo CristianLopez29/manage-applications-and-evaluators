@@ -50,6 +50,7 @@ class RegisterCandidacyController
     public function __invoke(Request $request): JsonResponse
     {
         // 1. Input validation
+        /** @var array{name: string, email: string, years_of_experience: int, cv: string} $validated */
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',

@@ -4,6 +4,7 @@ namespace Src\Evaluators\Infrastructure\Http;
 
 use Illuminate\Http\JsonResponse;
 use Src\Evaluators\Application\GetConsolidatedEvaluatorsUseCase;
+use Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO;
 
 use Illuminate\Http\Request;
 use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
@@ -157,39 +158,60 @@ class GetConsolidatedEvaluatorsController
         $createdTo = null;
         if ($request->filled('created_from')) {
             try {
-                $createdFrom = new \DateTimeImmutable($request->input('created_from'));
+                $val = $request->input('created_from');
+                if (is_string($val)) {
+                    $createdFrom = new \DateTimeImmutable($val);
+                }
             } catch (\Exception $e) {
                 $createdFrom = null;
             }
         }
         if ($request->filled('created_to')) {
             try {
-                $createdTo = new \DateTimeImmutable($request->input('created_to'));
+                $val = $request->input('created_to');
+                if (is_string($val)) {
+                    $createdTo = new \DateTimeImmutable($val);
+                }
             } catch (\Exception $e) {
                 $createdTo = null;
             }
         }
 
+        $search = $request->input('search');
+        $specialty = $request->input('specialty');
+        $candidateEmailContains = $request->input('candidate_email_contains');
+        $sortBy = $request->input('sort_by', 'average_experience');
+        $sortDirection = $request->input('sort_direction', 'desc');
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 15);
+        $minAverageExperience = $request->input('min_average_experience');
+        $maxAverageExperience = $request->input('max_average_experience');
+        $minTotalAssigned = $request->input('min_total_assigned');
+        $maxTotalAssigned = $request->input('max_total_assigned');
+
         $criteria = new ConsolidatedListCriteria(
-            search: $request->input('search'),
-            sortBy: $request->input('sort_by', 'average_experience'),
-            sortDirection: $request->input('sort_direction', 'desc'),
-            page: (int) $request->input('page', 1),
-            perPage: (int) $request->input('per_page', 15),
-            specialtyFilter: $request->input('specialty'),
-            minAverageExperience: ($request->input('min_average_experience') !== null) ? (float) $request->input('min_average_experience') : null,
-            maxAverageExperience: ($request->input('max_average_experience') !== null) ? (float) $request->input('max_average_experience') : null,
-            minTotalAssigned: ($request->input('min_total_assigned') !== null) ? (int) $request->input('min_total_assigned') : null,
-            maxTotalAssigned: ($request->input('max_total_assigned') !== null) ? (int) $request->input('max_total_assigned') : null,
-            candidateEmailContains: $request->input('candidate_email_contains'),
+            search: is_string($search) ? $search : null,
+            sortBy: is_string($sortBy) ? $sortBy : 'average_experience',
+            sortDirection: is_string($sortDirection) ? $sortDirection : 'desc',
+            page: is_numeric($page) ? (int) $page : 1,
+            perPage: is_numeric($perPage) ? (int) $perPage : 15,
+            specialtyFilter: is_string($specialty) ? $specialty : null,
+            minAverageExperience: is_numeric($minAverageExperience) ? (float) $minAverageExperience : null,
+            maxAverageExperience: is_numeric($maxAverageExperience) ? (float) $maxAverageExperience : null,
+            minTotalAssigned: is_numeric($minTotalAssigned) ? (int) $minTotalAssigned : null,
+            maxTotalAssigned: is_numeric($maxTotalAssigned) ? (int) $maxTotalAssigned : null,
+            candidateEmailContains: is_string($candidateEmailContains) ? $candidateEmailContains : null,
             createdFrom: $createdFrom,
             createdTo: $createdTo
         );
 
         $paginator = $this->useCase->execute($criteria);
 
+        /** @var array<int, EvaluatorWithCandidatesDTO> $items */
+        $items = $paginator->items();
+
         // Transform the paginator items (which are already DTOs) to array
-        $data = collect($paginator->items())->map(function ($dto) {
+        $data = collect($items)->map(function (EvaluatorWithCandidatesDTO $dto) {
             return [
                 'id' => $dto->evaluator->id(),
                 'name' => $dto->evaluator->name()->value(),

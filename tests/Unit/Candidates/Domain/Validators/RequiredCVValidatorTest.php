@@ -29,7 +29,7 @@ class RequiredCVValidatorTest extends TestCase
         );
 
         $this->validator->validate($candidate);
-        $this->assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     #[Test]

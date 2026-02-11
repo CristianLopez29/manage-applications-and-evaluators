@@ -3,13 +3,23 @@
 namespace Src\Evaluators\Infrastructure\Persistence;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Src\Candidates\Infrastructure\Persistence\CandidateModel;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string $specialty
+ * @property string $created_at
+ * @property string $updated_at
+ * @property float|null $avg_experience
+ * @property int|null $total_candidates
+ * @property string|null $candidate_emails
+ */
 class EvaluatorModel extends Model
 {
-    use HasFactory;
-
     protected $table = 'evaluators';
 
     protected $fillable = [
@@ -21,6 +31,7 @@ class EvaluatorModel extends Model
 
     /**
      * Relation with assignments
+     * @return HasMany<CandidateAssignmentModel, $this>
      */
     public function assignments(): HasMany
     {
@@ -29,11 +40,12 @@ class EvaluatorModel extends Model
 
     /**
      * Relation with candidates through assignments
+     * @return HasManyThrough<CandidateModel, CandidateAssignmentModel, $this>
      */
-    public function candidates()
+    public function candidates(): HasManyThrough
     {
         return $this->hasManyThrough(
-            \Src\Candidates\Infrastructure\Persistence\CandidateModel::class,
+            CandidateModel::class,
             CandidateAssignmentModel::class,
             'evaluator_id', // FK in candidate_assignments
             'id', // FK in candidates

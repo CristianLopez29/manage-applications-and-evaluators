@@ -496,8 +496,8 @@ cd nalanda-backend-challenge
 # 2. Install dependencies (first time)
 docker run --rm \
     -u "$(id -u):$(id -g)" \
-    -v "$(pwd):/var/www/html" \
-    -w /var/www/html \
+    -v "$(pwd -W):/var/www/html" \
+    -w //var/www/html \
     laravelsail/php83-composer:latest \
     composer install --ignore-platform-reqs
 
@@ -554,6 +554,15 @@ To process report generation jobs:
 
 # Specific test
 ./vendor/bin/sail artisan test --filter GetConsolidatedEvaluatorsTest
+```
+
+### Code Quality & Static Analysis
+
+This project adheres to strict type safety standards (**PHPStan Level 9**).
+
+```bash
+# Run PHPStan Analysis via Sail
+./vendor/bin/sail php ./vendor/bin/phpstan analyse
 ```
 
 ### Test Data (Seeders)

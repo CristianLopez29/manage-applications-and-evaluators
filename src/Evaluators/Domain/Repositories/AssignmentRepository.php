@@ -10,6 +10,9 @@ interface AssignmentRepository
 
     public function findByCandidateId(int $candidateId): ?CandidateAssignment;
 
+    /**
+     * @return array<int, CandidateAssignment>
+     */
     public function findByEvaluatorId(int $evaluatorId): array;
 
     public function existsAssignment(int $candidateId, int $evaluatorId): bool;
