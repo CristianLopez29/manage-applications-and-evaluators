@@ -39,8 +39,13 @@ class RequestEvaluatorsReportController
             'email' => 'required|email'
         ]);
 
+        $email = $request->input('email');
+        if (!is_string($email)) {
+            throw new \InvalidArgumentException('Email must be a string');
+        }
+
         // Dispatch the Job to the queue
-        GenerateEvaluatorsReportJob::dispatch($request->input('email'));
+        GenerateEvaluatorsReportJob::dispatch($email);
 
         return response()->json([
             'message' => 'Report generation started. You will receive an email shortly.',

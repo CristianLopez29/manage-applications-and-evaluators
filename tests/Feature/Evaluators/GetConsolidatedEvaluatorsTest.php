@@ -42,10 +42,21 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         ]);
 
         // 3. Get IDs
-        $evaluator1Id = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'maria@example.com')->first()->id;
-        $evaluator2Id = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'pedro@example.com')->first()->id;
-        $candidate1Id = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'juan@example.com')->first()->id;
-        $candidate2Id = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'ana@example.com')->first()->id;
+        $evaluator1 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'maria@example.com')->first();
+        $this->assertNotNull($evaluator1);
+        $evaluator1Id = $evaluator1->id;
+        
+        $evaluator2 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'pedro@example.com')->first();
+        $this->assertNotNull($evaluator2);
+        $evaluator2Id = $evaluator2->id;
+        
+        $candidate1 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'juan@example.com')->first();
+        $this->assertNotNull($candidate1);
+        $candidate1Id = $candidate1->id;
+        
+        $candidate2 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'ana@example.com')->first();
+        $this->assertNotNull($candidate2);
+        $candidate2Id = $candidate2->id;
 
         // 4. Assign candidates (Juan -> María, Ana -> Pedro)
         $this->postJson("/api/evaluators/{$evaluator1Id}/assign-candidate", ['candidate_id' => $candidate1Id]);
@@ -77,6 +88,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
             ]);
 
         // Verify specific data
+        /** @var array<int, array{id: int, name: string, email: string, specialty: string, average_candidate_experience: float, candidates: array<int, array{email: string, assigned_at: string}>}> $data */
         $data = $response->json('data');
         $this->assertCount(2, $data);
 
@@ -109,11 +121,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $response = $this->getJson('/api/evaluators/consolidated');
 
         $response->assertStatus(200);
+        /** @var array<int, array{email: string, candidates: array<mixed>}> $data */
         $data = $response->json('data');
 
         $evaluator = collect($data)->firstWhere('email', 'solo@example.com');
         $this->assertNotNull($evaluator);
-        $this->assertIsArray($evaluator['candidates']);
         $this->assertEmpty($evaluator['candidates']);
     }
 
@@ -142,6 +154,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response = $this->getJson('/api/evaluators/consolidated');
 
+        /** @var array<string, mixed> $data */
         $data = $response->json('data.0');
 
         // Verify that timestamp or internal fields we don't want to expose do not exist
@@ -170,8 +183,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $response = $this->getJson('/api/evaluators/consolidated?search=Alice');
 
         $response->assertStatus(200);
-        $this->assertCount(1, $response->json('data'), 'Filtered data count mismatch. Response: ' . json_encode($response->json()));
-        $this->assertEquals('Alice', $response->json('data.0.name'));
+        /** @var array<int, array{name: string}> $data */
+        $data = $response->json('data');
+        $this->assertCount(1, $data, 'Filtered data count mismatch. Response: ' . json_encode($data));
+        $this->assertEquals('Alice', $data[0]['name']);
     }
 
     #[Test]
@@ -186,7 +201,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $evaluatorResponse->assertStatus(201);
 
-        $evaluatorId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'sql@example.com')->first()->id;
+        $evaluatorModel = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'sql@example.com')->first();
+        $this->assertNotNull($evaluatorModel);
+        $evaluatorId = $evaluatorModel->id;
 
         // Create 3 candidates with emails that will be sorted alphabetically
         $this->postJson('/api/candidates', [
@@ -212,8 +229,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         // Assign the 3 candidates to the same evaluator
         $candidateA = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'alpha@example.com')->first();
+        $this->assertNotNull($candidateA);
         $candidateB = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'bravo@example.com')->first();
+        $this->assertNotNull($candidateB);
         $candidateC = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'charlie@example.com')->first();
+        $this->assertNotNull($candidateC);
 
         $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateA->id]);
         $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateB->id]);
@@ -224,7 +244,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response->assertStatus(200);
 
-        $evaluator = collect($response->json('data'))->firstWhere('email', 'sql@example.com');
+        /** @var array<int, array{email: string, concatenated_candidate_emails: string, total_assigned_candidates: int, average_candidate_experience: float, candidates: array<mixed>}> $data */
+        $data = $response->json('data');
+
+        $evaluator = collect($data)->firstWhere('email', 'sql@example.com');
+        $this->assertNotNull($evaluator);
 
         // Verify that GROUP_CONCAT returns emails sorted alphabetically and separated by comma
         $this->assertEquals(
@@ -255,10 +279,21 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'Ana', 'email' => 'ana@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
 
         // Assign: one each
-        $backendId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'beva@example.com')->first()->id;
-        $frontendId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'feve@example.com')->first()->id;
-        $juanId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'juan@ex.com')->first()->id;
-        $anaId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'ana@ex.com')->first()->id;
+        $backend = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'beva@example.com')->first();
+        $this->assertNotNull($backend);
+        $backendId = $backend->id;
+        
+        $frontend = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'feve@example.com')->first();
+        $this->assertNotNull($frontend);
+        $frontendId = $frontend->id;
+        
+        $juan = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'juan@ex.com')->first();
+        $this->assertNotNull($juan);
+        $juanId = $juan->id;
+        
+        $ana = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'ana@ex.com')->first();
+        $this->assertNotNull($ana);
+        $anaId = $ana->id;
 
         $this->postJson("/api/evaluators/{$backendId}/assign-candidate", ['candidate_id' => $juanId]);
         $this->postJson("/api/evaluators/{$frontendId}/assign-candidate", ['candidate_id' => $anaId]);
@@ -266,6 +301,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         // Filter by specialty
         $response = $this->getJson('/api/evaluators/consolidated?specialty=Backend');
         $response->assertStatus(200);
+        /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
         $this->assertCount(1, $data);
         $this->assertEquals('beva@example.com', $data[0]['email']);
@@ -285,12 +321,29 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'C4', 'email' => 'c4@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
         // Assign
-        $lowId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'low@example.com')->first()->id;
-        $highId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'high@example.com')->first()->id;
-        $c1 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c1@ex.com')->first()->id;
-        $c2 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c2@ex.com')->first()->id;
-        $c3 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c3@ex.com')->first()->id;
-        $c4 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c4@ex.com')->first()->id;
+        $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'low@example.com')->first();
+        $this->assertNotNull($low);
+        $lowId = $low->id;
+        
+        $high = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'high@example.com')->first();
+        $this->assertNotNull($high);
+        $highId = $high->id;
+        
+        $c1Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c1@ex.com')->first();
+        $this->assertNotNull($c1Model);
+        $c1 = $c1Model->id;
+        
+        $c2Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c2@ex.com')->first();
+        $this->assertNotNull($c2Model);
+        $c2 = $c2Model->id;
+        
+        $c3Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c3@ex.com')->first();
+        $this->assertNotNull($c3Model);
+        $c3 = $c3Model->id;
+        
+        $c4Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c4@ex.com')->first();
+        $this->assertNotNull($c4Model);
+        $c4 = $c4Model->id;
 
         $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $c1]);
         $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $c2]);
@@ -300,7 +353,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         // min_average_experience = 5 should include only High Avg (avg 5.5)
         $response = $this->getJson('/api/evaluators/consolidated?min_average_experience=5');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('high@example.com', $emails);
         $this->assertNotContains('low@example.com', $emails);
     }
@@ -317,11 +372,25 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'B', 'email' => 'b@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'C', 'email' => 'c@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
-        $oneId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'one@example.com')->first()->id;
-        $twoId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'two@example.com')->first()->id;
-        $aId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'a@ex.com')->first()->id;
-        $bId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'b@ex.com')->first()->id;
-        $cId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c@ex.com')->first()->id;
+        $one = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'one@example.com')->first();
+        $this->assertNotNull($one);
+        $oneId = $one->id;
+        
+        $two = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'two@example.com')->first();
+        $this->assertNotNull($two);
+        $twoId = $two->id;
+        
+        $a = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'a@ex.com')->first();
+        $this->assertNotNull($a);
+        $aId = $a->id;
+        
+        $b = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'b@ex.com')->first();
+        $this->assertNotNull($b);
+        $bId = $b->id;
+        
+        $c = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c@ex.com')->first();
+        $this->assertNotNull($c);
+        $cId = $c->id;
 
         // Assign: One -> A; Two -> B, C (Two has 2 assigned)
         $this->postJson("/api/evaluators/{$oneId}/assign-candidate", ['candidate_id' => $aId]);
@@ -330,7 +399,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response = $this->getJson('/api/evaluators/consolidated?min_total_assigned=2');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('two@example.com', $emails);
         $this->assertNotContains('one@example.com', $emails);
     }
@@ -346,10 +417,21 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'Alpha Cand', 'email' => 'alpha.cand@domain.com', 'years_of_experience' => 3, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'Beta Cand', 'email' => 'beta.cand@domain.com', 'years_of_experience' => 4, 'cv' => 'CV']);
 
-        $alphaId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'alpha@example.com')->first()->id;
-        $betaId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'beta@example.com')->first()->id;
-        $alphaCandId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'alpha.cand@domain.com')->first()->id;
-        $betaCandId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'beta.cand@domain.com')->first()->id;
+        $alpha = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'alpha@example.com')->first();
+        $this->assertNotNull($alpha);
+        $alphaId = $alpha->id;
+        
+        $beta = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'beta@example.com')->first();
+        $this->assertNotNull($beta);
+        $betaId = $beta->id;
+        
+        $alphaCand = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'alpha.cand@domain.com')->first();
+        $this->assertNotNull($alphaCand);
+        $alphaCandId = $alphaCand->id;
+        
+        $betaCand = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'beta.cand@domain.com')->first();
+        $this->assertNotNull($betaCand);
+        $betaCandId = $betaCand->id;
 
         $this->postJson("/api/evaluators/{$alphaId}/assign-candidate", ['candidate_id' => $alphaCandId]);
         $this->postJson("/api/evaluators/{$betaId}/assign-candidate", ['candidate_id' => $betaCandId]);
@@ -357,6 +439,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         // Filter for beta.cand substring
         $response = $this->getJson('/api/evaluators/consolidated?candidate_email_contains=beta.cand');
         $response->assertStatus(200);
+        /** @var array<int, array{email: string, concatenated_candidate_emails: string}> $data */
         $data = $response->json('data');
         $this->assertCount(1, $data);
         $this->assertEquals('beta@example.com', $data[0]['email']);
@@ -372,17 +455,30 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'L1', 'email' => 'l1@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'H1', 'email' => 'h1@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
-        $lowId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowavg@example.com')->first()->id;
-        $highId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'highavg@example.com')->first()->id;
-        $l1 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'l1@ex.com')->first()->id;
-        $h1 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'h1@ex.com')->first()->id;
+        $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowavg@example.com')->first();
+        $this->assertNotNull($low);
+        $lowId = $low->id;
+
+        $high = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'highavg@example.com')->first();
+        $this->assertNotNull($high);
+        $highId = $high->id;
+
+        $l1Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'l1@ex.com')->first();
+        $this->assertNotNull($l1Model);
+        $l1 = $l1Model->id;
+
+        $h1Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'h1@ex.com')->first();
+        $this->assertNotNull($h1Model);
+        $h1 = $h1Model->id;
 
         $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $l1]);
         $this->postJson("/api/evaluators/{$highId}/assign-candidate", ['candidate_id' => $h1]);
 
         $response = $this->getJson('/api/evaluators/consolidated?max_average_experience=3');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('lowavg@example.com', $emails);
         $this->assertNotContains('highavg@example.com', $emails);
     }
@@ -398,12 +494,29 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'M', 'email' => 'mr@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'H', 'email' => 'hr@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
-        $lowId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowr@example.com')->first()->id;
-        $midId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'midr@example.com')->first()->id;
-        $highId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'highr@example.com')->first()->id;
-        $l = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'lr@ex.com')->first()->id;
-        $m = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'mr@ex.com')->first()->id;
-        $h = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'hr@ex.com')->first()->id;
+        $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowr@example.com')->first();
+        $this->assertNotNull($low);
+        $lowId = $low->id;
+
+        $mid = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'midr@example.com')->first();
+        $this->assertNotNull($mid);
+        $midId = $mid->id;
+
+        $high = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'highr@example.com')->first();
+        $this->assertNotNull($high);
+        $highId = $high->id;
+
+        $lModel = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'lr@ex.com')->first();
+        $this->assertNotNull($lModel);
+        $l = $lModel->id;
+
+        $mModel = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'mr@ex.com')->first();
+        $this->assertNotNull($mModel);
+        $m = $mModel->id;
+
+        $hModel = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'hr@ex.com')->first();
+        $this->assertNotNull($hModel);
+        $h = $hModel->id;
 
         $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $l]);
         $this->postJson("/api/evaluators/{$midId}/assign-candidate", ['candidate_id' => $m]);
@@ -411,7 +524,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response = $this->getJson('/api/evaluators/consolidated?min_average_experience=3&max_average_experience=5');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('midr@example.com', $emails);
         $this->assertNotContains('lowr@example.com', $emails);
         $this->assertNotContains('highr@example.com', $emails);
@@ -427,11 +542,25 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'B', 'email' => 'b2@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'C', 'email' => 'c2@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
-        $oneId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'one2@example.com')->first()->id;
-        $twoId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'two2@example.com')->first()->id;
-        $aId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'a2@ex.com')->first()->id;
-        $bId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'b2@ex.com')->first()->id;
-        $cId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c2@ex.com')->first()->id;
+        $one = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'one2@example.com')->first();
+        $this->assertNotNull($one);
+        $oneId = $one->id;
+
+        $two = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'two2@example.com')->first();
+        $this->assertNotNull($two);
+        $twoId = $two->id;
+
+        $a = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'a2@ex.com')->first();
+        $this->assertNotNull($a);
+        $aId = $a->id;
+
+        $b = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'b2@ex.com')->first();
+        $this->assertNotNull($b);
+        $bId = $b->id;
+
+        $c = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c2@ex.com')->first();
+        $this->assertNotNull($c);
+        $cId = $c->id;
 
         $this->postJson("/api/evaluators/{$oneId}/assign-candidate", ['candidate_id' => $aId]);
         $this->postJson("/api/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $bId]);
@@ -439,7 +568,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response = $this->getJson('/api/evaluators/consolidated?max_total_assigned=1');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('one2@example.com', $emails);
         $this->assertNotContains('two2@example.com', $emails);
     }
@@ -454,11 +585,21 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'Y', 'email' => 'y@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'Z', 'email' => 'z@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
-        $lessId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'less@example.com')->first()->id;
-        $moreId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'more@example.com')->first()->id;
-        $xId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'x@ex.com')->first()->id;
-        $yId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'y@ex.com')->first()->id;
-        $zId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'z@ex.com')->first()->id;
+        $less = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'less@example.com')->first();
+        $this->assertNotNull($less);
+        $lessId = $less->id;
+        $more = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'more@example.com')->first();
+        $this->assertNotNull($more);
+        $moreId = $more->id;
+        $x = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'x@ex.com')->first();
+        $this->assertNotNull($x);
+        $xId = $x->id;
+        $y = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'y@ex.com')->first();
+        $this->assertNotNull($y);
+        $yId = $y->id;
+        $z = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'z@ex.com')->first();
+        $this->assertNotNull($z);
+        $zId = $z->id;
 
         $this->postJson("/api/evaluators/{$lessId}/assign-candidate", ['candidate_id' => $xId]);
         $this->postJson("/api/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $yId]);
@@ -479,10 +620,18 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'Alpha', 'email' => 'aaa@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'Beta', 'email' => 'bbb@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
 
-        $aId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'a@example.com')->first()->id;
-        $bId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'b@example.com')->first()->id;
-        $alphaId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'aaa@ex.com')->first()->id;
-        $betaId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'bbb@ex.com')->first()->id;
+        $a = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'a@example.com')->first();
+        $this->assertNotNull($a);
+        $aId = $a->id;
+        $b = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'b@example.com')->first();
+        $this->assertNotNull($b);
+        $bId = $b->id;
+        $alpha = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'aaa@ex.com')->first();
+        $this->assertNotNull($alpha);
+        $alphaId = $alpha->id;
+        $beta = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'bbb@ex.com')->first();
+        $this->assertNotNull($beta);
+        $betaId = $beta->id;
 
         $this->postJson("/api/evaluators/{$aId}/assign-candidate", ['candidate_id' => $betaId]);
         $this->postJson("/api/evaluators/{$bId}/assign-candidate", ['candidate_id' => $alphaId]);
@@ -499,7 +648,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/evaluators', ['name' => 'NoAssign', 'email' => 'noassign@example.com', 'specialty' => 'Backend']);
         $response = $this->getJson('/api/evaluators/consolidated?min_average_experience=1');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertNotContains('noassign@example.com', $emails);
     }
 
@@ -514,12 +665,24 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'C2', 'email' => 'c2p@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'C3', 'email' => 'c3p@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
-        $e1 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'e1@example.com')->first()->id;
-        $e2 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'e2@example.com')->first()->id;
-        $e3 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'e3@example.com')->first()->id;
-        $c1 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c1p@ex.com')->first()->id;
-        $c2 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c2p@ex.com')->first()->id;
-        $c3 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c3p@ex.com')->first()->id;
+        $e1Model = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'e1@example.com')->first();
+        $this->assertNotNull($e1Model);
+        $e1 = $e1Model->id;
+        $e2Model = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'e2@example.com')->first();
+        $this->assertNotNull($e2Model);
+        $e2 = $e2Model->id;
+        $e3Model = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'e3@example.com')->first();
+        $this->assertNotNull($e3Model);
+        $e3 = $e3Model->id;
+        $c1Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c1p@ex.com')->first();
+        $this->assertNotNull($c1Model);
+        $c1 = $c1Model->id;
+        $c2Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c2p@ex.com')->first();
+        $this->assertNotNull($c2Model);
+        $c2 = $c2Model->id;
+        $c3Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c3p@ex.com')->first();
+        $this->assertNotNull($c3Model);
+        $c3 = $c3Model->id;
 
         $this->postJson("/api/evaluators/{$e1}/assign-candidate", ['candidate_id' => $c1]);
         $this->postJson("/api/evaluators/{$e2}/assign-candidate", ['candidate_id' => $c2]);
@@ -527,7 +690,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response = $this->getJson('/api/evaluators/consolidated?specialty=Backend&per_page=1&page=2');
         $response->assertStatus(200);
-        $this->assertCount(1, $response->json('data'));
+        /** @var array<int, mixed> $data */
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
         $this->assertEquals(2, $response->json('meta.current_page'));
         $this->assertEquals(3, $response->json('meta.total'));
     }
@@ -541,16 +706,25 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'CA', 'email' => 'match@domain.com', 'years_of_experience' => 6, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'CB', 'email' => 'other@domain.com', 'years_of_experience' => 2, 'cv' => 'CV']);
 
-        $e1 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'comb1@example.com')->first()->id;
-        $e2 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'comb2@example.com')->first()->id;
-        $ca = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'match@domain.com')->first()->id;
-        $cb = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'other@domain.com')->first()->id;
+        $e1Model = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'comb1@example.com')->first();
+        $this->assertNotNull($e1Model);
+        $e1 = $e1Model->id;
+        $e2Model = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'comb2@example.com')->first();
+        $this->assertNotNull($e2Model);
+        $e2 = $e2Model->id;
+        $caModel = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'match@domain.com')->first();
+        $this->assertNotNull($caModel);
+        $ca = $caModel->id;
+        $cbModel = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'other@domain.com')->first();
+        $this->assertNotNull($cbModel);
+        $cb = $cbModel->id;
 
         $this->postJson("/api/evaluators/{$e1}/assign-candidate", ['candidate_id' => $ca]);
         $this->postJson("/api/evaluators/{$e2}/assign-candidate", ['candidate_id' => $cb]);
 
         $response = $this->getJson('/api/evaluators/consolidated?specialty=Backend&min_average_experience=5&candidate_email_contains=match@domain.com');
         $response->assertStatus(200);
+        /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
         $this->assertCount(1, $data);
         $this->assertEquals('comb1@example.com', $data[0]['email']);
@@ -562,7 +736,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/evaluators', ['name' => 'Case', 'email' => 'case@example.com', 'specialty' => 'Backend']);
         $response = $this->getJson('/api/evaluators/consolidated?specialty=backend');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('case@example.com', $emails);
     }
 
@@ -607,7 +783,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $from = now()->subDays(6)->toDateTimeString();
         $response = $this->getJson('/api/evaluators/consolidated?created_from=' . urlencode($from));
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('old5@example.com', $emails);
         $this->assertContains('new1@example.com', $emails);
         $this->assertNotContains('old10@example.com', $emails);
@@ -625,7 +803,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $to = now()->subDays(6)->toDateTimeString();
         $response = $this->getJson('/api/evaluators/consolidated?created_to=' . urlencode($to));
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('old12@example.com', $emails);
         $this->assertNotContains('old3@example.com', $emails);
         $this->assertNotContains('new0@example.com', $emails);
@@ -644,7 +824,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $to = now()->subDays(2)->toDateTimeString();
         $response = $this->getJson('/api/evaluators/consolidated?created_from=' . urlencode($from) . '&created_to=' . urlencode($to));
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('mid4@example.com', $emails);
         $this->assertNotContains('old8@example.com', $emails);
         $this->assertNotContains('new1r@example.com', $emails);
@@ -660,10 +842,18 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'L', 'email' => 'l2@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'H', 'email' => 'h2@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
-        $lowId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowavg2@example.com')->first()->id;
-        $highId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'highavg2@example.com')->first()->id;
-        $lId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'l2@ex.com')->first()->id;
-        $hId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'h2@ex.com')->first()->id;
+        $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowavg2@example.com')->first();
+        $this->assertNotNull($low);
+        $lowId = $low->id;
+        $high = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'highavg2@example.com')->first();
+        $this->assertNotNull($high);
+        $highId = $high->id;
+        $l = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'l2@ex.com')->first();
+        $this->assertNotNull($l);
+        $lId = $l->id;
+        $h = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'h2@ex.com')->first();
+        $this->assertNotNull($h);
+        $hId = $h->id;
 
         $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $lId]);
         $this->postJson("/api/evaluators/{$highId}/assign-candidate", ['candidate_id' => $hId]);
@@ -681,13 +871,19 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/evaluators', ['name' => 'Assigned', 'email' => 'assigned@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
         $this->postJson('/api/candidates', ['name' => 'C', 'email' => 'c.zero@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $assignedId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'assigned@example.com')->first()->id;
-        $cId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c.zero@ex.com')->first()->id;
+        $assigned = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'assigned@example.com')->first();
+        $this->assertNotNull($assigned);
+        $assignedId = $assigned->id;
+        $c = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c.zero@ex.com')->first();
+        $this->assertNotNull($c);
+        $cId = $c->id;
         $this->postJson("/api/evaluators/{$assignedId}/assign-candidate", ['candidate_id' => $cId]);
 
         $response = $this->getJson('/api/evaluators/consolidated?max_total_assigned=0');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertContains('unassigned@example.com', $emails);
         $this->assertNotContains('assigned@example.com', $emails);
     }
@@ -700,7 +896,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response = $this->getJson('/api/evaluators/consolidated?sort_by=email&sort_direction=asc');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertEquals('alpha.sort@example.com', $emails[0] ?? null);
         $this->assertEquals('beta.sort@example.com', $emails[1] ?? null);
     }
@@ -713,7 +911,9 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $response = $this->getJson('/api/evaluators/consolidated?sort_by=email&sort_direction=desc');
         $response->assertStatus(200);
-        $emails = array_column($response->json('data'), 'email');
+        /** @var array<int, array{email: string}> $data */
+        $data = $response->json('data');
+        $emails = array_column($data, 'email');
         $this->assertEquals('beta.sort@example.com', $emails[0] ?? null);
         $this->assertEquals('alpha.sort@example.com', $emails[1] ?? null);
     }
@@ -728,11 +928,21 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->postJson('/api/candidates', ['name' => 'T2', 'email' => 't2@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
         $this->postJson('/api/candidates', ['name' => 'T3', 'email' => 't3@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
-        $lessId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'less.ta@example.com')->first()->id;
-        $moreId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'more.ta@example.com')->first()->id;
-        $t1 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 't1@ex.com')->first()->id;
-        $t2 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 't2@ex.com')->first()->id;
-        $t3 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 't3@ex.com')->first()->id;
+        $less = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'less.ta@example.com')->first();
+        $this->assertNotNull($less);
+        $lessId = $less->id;
+        $more = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'more.ta@example.com')->first();
+        $this->assertNotNull($more);
+        $moreId = $more->id;
+        $t1Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 't1@ex.com')->first();
+        $this->assertNotNull($t1Model);
+        $t1 = $t1Model->id;
+        $t2Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 't2@ex.com')->first();
+        $this->assertNotNull($t2Model);
+        $t2 = $t2Model->id;
+        $t3Model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 't3@ex.com')->first();
+        $this->assertNotNull($t3Model);
+        $t3 = $t3Model->id;
 
         $this->postJson("/api/evaluators/{$lessId}/assign-candidate", ['candidate_id' => $t1]);
         $this->postJson("/api/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $t2]);

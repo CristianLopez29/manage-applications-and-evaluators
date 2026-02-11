@@ -25,7 +25,7 @@ class AuditLogTest extends TestCase
             'cv' => 'CV Content',
         ]);
 
-        Event::assertDispatched(CandidateRegistered::class, function ($event) {
+        Event::assertDispatched(CandidateRegistered::class, function (CandidateRegistered $event) {
             return $event->email === 'audit@example.com';
         });
     }
@@ -42,10 +42,12 @@ class AuditLogTest extends TestCase
             'cv' => 'CV Content',
         ]);
 
+        /** @phpstan-ignore-next-line */
         Log::shouldHaveReceived('info')
             ->once()
-            ->withArgs(function ($message, $context) {
+            ->withArgs(function (string $message, array $context) {
                 return $message === 'New Candidate Registered' &&
+                    isset($context['payload']['email']) &&
                     $context['payload']['email'] === 'log@example.com';
             });
 

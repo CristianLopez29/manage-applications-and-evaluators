@@ -18,6 +18,9 @@ class EvaluatorsExport implements WithMultipleSheets
     ) {
     }
 
+    /**
+     * @return array<int, EvaluatorsSheet>
+     */
     public function sheets(): array
     {
         $sheets = [];
@@ -32,9 +35,12 @@ class EvaluatorsExport implements WithMultipleSheets
 
             $result = $this->useCase->execute($criteria);
 
-            if (count($result->items()) > 0) {
+            /** @var array<int, \Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO> $items */
+            $items = $result->items();
+
+            if (count($items) > 0) {
                 $sheets[] = new EvaluatorsSheet(
-                    collect($result->items()),
+                    collect($items),
                     "Page {$page}"
                 );
                 $page++;

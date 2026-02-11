@@ -5,6 +5,7 @@ namespace Src\Evaluators\Domain\Repositories;
 use Src\Evaluators\Domain\Evaluator;
 use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO;
 
 interface EvaluatorRepository
 {
@@ -17,7 +18,7 @@ interface EvaluatorRepository
     public function emailExists(string $email): bool;
 
     /**
-     * @return LengthAwarePaginator<EvaluatorWithCandidatesDTO>
+     * @return LengthAwarePaginator<int, EvaluatorWithCandidatesDTO>
      */
     public function findAllWithCandidates(ConsolidatedListCriteria $criteria): LengthAwarePaginator;
 }

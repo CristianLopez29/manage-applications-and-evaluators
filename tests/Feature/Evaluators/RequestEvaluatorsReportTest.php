@@ -27,7 +27,7 @@ class RequestEvaluatorsReportTest extends TestCase
                 'status' => 'processing'
             ]);
 
-        Queue::assertPushed(GenerateEvaluatorsReportJob::class, function ($job) {
+        Queue::assertPushed(GenerateEvaluatorsReportJob::class, function (GenerateEvaluatorsReportJob $job) {
             return true;
         });
     }

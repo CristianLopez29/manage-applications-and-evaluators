@@ -7,20 +7,33 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
+use Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO;
 
+/**
+ * @implements WithMapping<EvaluatorWithCandidatesDTO>
+ */
 class EvaluatorsSheet implements FromCollection, WithHeadings, WithMapping, WithTitle
 {
+    /**
+     * @param Collection<int, EvaluatorWithCandidatesDTO> $evaluators
+     */
     public function __construct(
         private readonly Collection $evaluators,
         private readonly string $title
     ) {
     }
 
+    /**
+     * @return Collection<int, EvaluatorWithCandidatesDTO>
+     */
     public function collection()
     {
         return $this->evaluators;
     }
 
+    /**
+     * @return array<string>
+     */
     public function headings(): array
     {
         return [
@@ -33,6 +46,10 @@ class EvaluatorsSheet implements FromCollection, WithHeadings, WithMapping, With
         ];
     }
 
+    /**
+     * @param EvaluatorWithCandidatesDTO $row
+     * @return array<int, string|int>
+     */
     public function map($row): array
     {
         return [

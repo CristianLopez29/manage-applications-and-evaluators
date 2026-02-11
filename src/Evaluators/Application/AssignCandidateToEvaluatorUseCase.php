@@ -45,6 +45,7 @@ class AssignCandidateToEvaluatorUseCase
                 ->first();
 
             if ($existingAssignment) {
+                /** @var object{evaluator_id: int} $existingAssignment */
                 throw AssignmentException::candidateAlreadyAssigned(
                     $request->candidateId,
                     $existingAssignment->evaluator_id

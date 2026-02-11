@@ -62,6 +62,9 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
         return EvaluatorModel::where('email', $email)->exists();
     }
 
+    /**
+     * @return LengthAwarePaginator<int, EvaluatorWithCandidatesDTO>
+     */
     public function findAllWithCandidates(ConsolidatedListCriteria $criteria): LengthAwarePaginator
     {
         // Complex SQL query using GROUP_CONCAT, JOINs and aggregations
@@ -138,7 +141,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
         $paginator = $query->paginate($criteria->perPage, ['*'], 'page', $criteria->page);
 
         // Transform internal paginator collection to DTOs
-        $paginator->getCollection()->transform(function ($model) {
+        $paginator->getCollection()->transform(function (EvaluatorModel $model) {
             $evaluator = Evaluator::reconstruct(
                 $model->id,
                 $model->name,
@@ -148,6 +151,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
             );
 
             // Load candidates and their assignment timestamps
+            /** @var \Illuminate\Database\Eloquent\Collection<int, \Src\Candidates\Infrastructure\Persistence\CandidateModel> $candidateRows */
             $candidateRows = \Src\Candidates\Infrastructure\Persistence\CandidateModel::query()
                 ->join('candidate_assignments', 'candidates.id', '=', 'candidate_assignments.candidate_id')
                 ->where('candidate_assignments.evaluator_id', $model->id)
@@ -156,7 +160,9 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
 
             $assignmentsByCandidateId = [];
             $candidates = $candidateRows->map(function ($candidateModel) use (&$assignmentsByCandidateId) {
-                $assignmentsByCandidateId[$candidateModel->id] = (new \DateTimeImmutable($candidateModel->assignment_assigned_at))->format('Y-m-d H:i:s');
+                /** @var string $assignedAt */
+                $assignedAt = $candidateModel->getAttribute('assignment_assigned_at');
+                $assignmentsByCandidateId[$candidateModel->id] = (new \DateTimeImmutable($assignedAt))->format('Y-m-d H:i:s');
                 return Candidate::reconstruct(
                     $candidateModel->id,
                     $candidateModel->name,
@@ -173,6 +179,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
             return new EvaluatorWithCandidatesDTO($evaluator, $candidates, $avgExperience, $concatenatedEmails, $assignmentsByCandidateId);
         });
 
+        /** @var LengthAwarePaginator<int, EvaluatorWithCandidatesDTO> $paginator */
         return $paginator;
     }
 }

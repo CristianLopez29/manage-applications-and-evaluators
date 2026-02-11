@@ -29,7 +29,7 @@ class MinimumExperienceValidatorTest extends TestCase
         );
 
         $this->validator->validate($candidate);
-        $this->assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     #[Test]
@@ -43,7 +43,7 @@ class MinimumExperienceValidatorTest extends TestCase
         );
 
         $this->validator->validate($candidate);
-        $this->assertTrue(true);
+        $this->expectNotToPerformAssertions();
     }
 
     #[Test]

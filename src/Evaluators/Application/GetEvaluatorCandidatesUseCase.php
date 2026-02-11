@@ -16,6 +16,9 @@ class GetEvaluatorCandidatesUseCase
     ) {
     }
 
+    /**
+     * @return array<int, array{candidate: \Src\Candidates\Domain\Candidate, assignment: \Src\Evaluators\Domain\CandidateAssignment}>
+     */
     public function execute(int $evaluatorId): array
     {
         // 1. Verify that the evaluator exists

@@ -32,23 +32,26 @@ class EloquentAssignmentRepository implements AssignmentRepository
             $model->candidate_id,
             $model->evaluator_id,
             $model->status,
-            new \DateTimeImmutable($model->assigned_at)
+            new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s'))
         );
     }
 
+    /**
+     * @return array<int, CandidateAssignment>
+     */
     public function findByEvaluatorId(int $evaluatorId): array
     {
         $models = CandidateAssignmentModel::where('evaluator_id', $evaluatorId)->get();
 
-        return $models->map(function ($model) {
+        return $models->map(function (CandidateAssignmentModel $model) {
             return CandidateAssignment::reconstruct(
                 $model->id,
                 $model->candidate_id,
                 $model->evaluator_id,
                 $model->status,
-                new \DateTimeImmutable($model->assigned_at)
+                new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s'))
             );
-        })->toArray();
+        })->all();
     }
 
     public function existsAssignment(int $candidateId, int $evaluatorId): bool

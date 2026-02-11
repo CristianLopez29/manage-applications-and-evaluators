@@ -28,8 +28,13 @@ class AssignCandidateTest extends TestCase
             'specialty' => 'Backend',
         ]);
 
-        $candidateId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first()->id;
-        $evaluatorId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first()->id;
+        $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first();
+        $this->assertNotNull($candidate);
+        $candidateId = $candidate->id;
+        
+        $evaluator = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first();
+        $this->assertNotNull($evaluator);
+        $evaluatorId = $evaluator->id;
 
         // Assign candidate to evaluator
         $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
@@ -62,7 +67,9 @@ class AssignCandidateTest extends TestCase
             'specialty' => 'Backend',
         ]);
 
-        $evaluatorId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first()->id;
+        $evaluator = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first();
+        $this->assertNotNull($evaluator);
+        $evaluatorId = $evaluator->id;
 
         $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => 999, // Does not exist
@@ -83,7 +90,9 @@ class AssignCandidateTest extends TestCase
             'cv' => 'Mi CV',
         ]);
 
-        $candidateId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first()->id;
+        $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first();
+        $this->assertNotNull($candidate);
+        $candidateId = $candidate->id;
 
         $response = $this->postJson("/api/evaluators/999/assign-candidate", [
             'candidate_id' => $candidateId,
@@ -116,9 +125,15 @@ class AssignCandidateTest extends TestCase
             'specialty' => 'Frontend',
         ]);
 
-        $candidateId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first()->id;
-        $evaluator1Id = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first()->id;
-        $evaluator2Id = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::skip(1)->first()->id;
+        $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first();
+        $this->assertNotNull($candidate);
+        $candidateId = $candidate->id;
+        $evaluator1 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first();
+        $this->assertNotNull($evaluator1);
+        $evaluator1Id = $evaluator1->id;
+        $evaluator2 = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::skip(1)->first();
+        $this->assertNotNull($evaluator2);
+        $evaluator2Id = $evaluator2->id;
 
         // First assignment
         $response1 = $this->postJson("/api/evaluators/{$evaluator1Id}/assign-candidate", [
@@ -143,7 +158,9 @@ class AssignCandidateTest extends TestCase
             'specialty' => 'Backend',
         ]);
 
-        $evaluatorId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first()->id;
+        $evaluator = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first();
+        $this->assertNotNull($evaluator);
+        $evaluatorId = $evaluator->id;
 
         $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", []);
 

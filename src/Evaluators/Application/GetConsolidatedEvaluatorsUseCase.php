@@ -7,6 +7,8 @@ use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 
+use Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO;
+
 class GetConsolidatedEvaluatorsUseCase
 {
     private const CACHE_TTL = 300; // 5 minutos
@@ -16,6 +18,9 @@ class GetConsolidatedEvaluatorsUseCase
     ) {
     }
 
+    /**
+     * @return LengthAwarePaginator<int, EvaluatorWithCandidatesDTO>
+     */
     public function execute(ConsolidatedListCriteria $criteria): LengthAwarePaginator
     {
         // Implement cache with tags to allow invalidation after assignments
