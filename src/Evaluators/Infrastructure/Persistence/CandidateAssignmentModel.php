@@ -6,6 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $candidate_id
+ * @property int $evaluator_id
+ * @property string $status
+ * @property \DateTimeInterface $assigned_at
+ * @property string|null $created_at
+ * @property string|null $updated_at
+ */
 class CandidateAssignmentModel extends Model
 {
     use HasFactory;
