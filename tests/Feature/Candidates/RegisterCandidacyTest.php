@@ -75,7 +75,13 @@ class RegisterCandidacyTest extends TestCase
         $response = $this->postJson('/api/candidates', $payload);
 
         // Should fail in domain validation (MinimumExperienceValidator)
-        $response->assertStatus(500);
+        // Domain exceptions are mapped to 422
+        $response->assertStatus(422)
+            ->assertJson([
+                'errors' => [
+                    'domain' => []
+                ]
+            ]);
     }
 
     #[Test]
