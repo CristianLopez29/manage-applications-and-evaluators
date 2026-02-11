@@ -49,7 +49,6 @@ class SpecialtyTest extends TestCase
     {
         $validSpecialties = Specialty::validSpecialties();
 
-        $this->assertIsArray($validSpecialties);
         $this->assertContains('Backend', $validSpecialties);
         $this->assertContains('Frontend', $validSpecialties);
     }

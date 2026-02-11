@@ -18,7 +18,7 @@ class AssignmentAuditLogTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_logs_candidate_assignment_to_database()
+    public function it_logs_candidate_assignment_to_database(): void
     {
         // Arrange
         // 1. Create Candidate directly in DB (to avoid triggering registration log)
@@ -53,13 +53,16 @@ class AssignmentAuditLogTest extends TestCase
         ]);
 
         // Verify payload content
+        /** @var AuditLogModel|null $log */
         $log = AuditLogModel::where('action', 'Candidate Assigned to Evaluator')->first();
 
         $this->assertNotNull($log);
         $this->assertEquals('CandidateAssignment', $log->entity_type);
 
         // Verify JSON payload
-        $this->assertEquals($candidateId, $log->payload['candidate_id']);
-        $this->assertEquals($evaluatorId, $log->payload['evaluator_id']);
+        /** @var array<string, mixed> $payload */
+        $payload = $log->payload;
+        $this->assertEquals($candidateId, $payload['candidate_id']);
+        $this->assertEquals($evaluatorId, $payload['evaluator_id']);
     }
 }

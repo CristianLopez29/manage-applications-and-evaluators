@@ -13,7 +13,7 @@ class AuditLogTest extends TestCase
     use RefreshDatabase;
 
     #[Test]
-    public function it_logs_candidate_registration_to_database()
+    public function it_logs_candidate_registration_to_database(): void
     {
         // Arrange
         $payload = [
@@ -35,6 +35,7 @@ class AuditLogTest extends TestCase
         ]);
 
         // 2. Verify payload content
+        /** @var AuditLogModel|null $log */
         $log = AuditLogModel::latest()->first();
 
         $this->assertNotNull($log);
@@ -42,7 +43,10 @@ class AuditLogTest extends TestCase
         $this->assertEquals('New Candidate Registered', $log->action);
 
         // Verify JSON payload
-        $this->assertEquals('audit@test.com', $log->payload['email']);
-        $this->assertArrayHasKey('occurred_at', $log->payload);
+        /** @var array<string, mixed> $logPayload */
+        $logPayload = $log->payload;
+        
+        $this->assertEquals('audit@test.com', $logPayload['email'] ?? null);
+        $this->assertArrayHasKey('occurred_at', $logPayload);
     }
 }

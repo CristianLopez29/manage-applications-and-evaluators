@@ -20,7 +20,9 @@ class GetCandidateSummaryTest extends TestCase
             'years_of_experience' => 5,
             'cv' => 'CV Content',
         ]);
-        $candidateId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first()->id;
+        $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first();
+        $this->assertNotNull($candidate);
+        $candidateId = $candidate->id;
 
         // 2. Create Evaluator
         $this->postJson('/api/evaluators', [
@@ -28,7 +30,9 @@ class GetCandidateSummaryTest extends TestCase
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
         ]);
-        $evaluatorId = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first()->id;
+        $evaluator = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first();
+        $this->assertNotNull($evaluator);
+        $evaluatorId = $evaluator->id;
 
         // 3. Assign
         $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateId]);
@@ -45,6 +49,7 @@ class GetCandidateSummaryTest extends TestCase
                 ]
             ]);
 
+        /** @var array{candidate_info: array{name: string}, assignment_info: array{evaluator_name: string, status: string}, compliance_report: array<string, string>} $data */
         $data = $response->json('data');
 
         // Verify Candidate Info
@@ -70,7 +75,9 @@ class GetCandidateSummaryTest extends TestCase
             'years_of_experience' => 3,
             'cv' => 'CV Content',
         ]);
-        $candidateId = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first()->id;
+        $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first();
+        $this->assertNotNull($candidate);
+        $candidateId = $candidate->id;
 
         $response = $this->getJson("/api/candidates/{$candidateId}/summary");
 
