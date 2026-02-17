@@ -104,7 +104,9 @@ class EloquentAssignmentRepository implements AssignmentRepository
 
     public function candidateHasActiveAssignment(int $candidateId): bool
     {
-        return CandidateAssignmentModel::where('candidate_id', $candidateId)->exists();
+        return CandidateAssignmentModel::where('candidate_id', $candidateId)
+            ->whereIn('status', ['pending', 'in_progress'])
+            ->exists();
     }
 
     public function deleteByEvaluatorAndCandidate(int $evaluatorId, int $candidateId): void

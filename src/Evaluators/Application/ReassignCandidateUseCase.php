@@ -33,14 +33,40 @@ class ReassignCandidateUseCase
                 throw EvaluatorNotFoundException::withId($newEvaluatorId);
             }
 
-            $existingAssignment = $this->assignmentRepository->findByCandidateId($candidateId);
-            if (!$existingAssignment) {
+            $assignedToNewEvaluator = $this->assignmentRepository->findByEvaluatorId($newEvaluatorId);
+            if (!$newEvaluator->canAcceptMoreCandidates(count($assignedToNewEvaluator))) {
+                throw AssignmentException::evaluatorOverloaded(
+                    $newEvaluatorId,
+                    \Src\Evaluators\Domain\Evaluator::MAX_CONCURRENT_CANDIDATES
+                );
+            }
+
+            $candidateSpecialty = $candidate->primarySpecialty();
+            $evaluatorSpecialty = $newEvaluator->specialty()->value();
+            if ($candidateSpecialty !== null && $candidateSpecialty !== $evaluatorSpecialty) {
+                throw AssignmentException::invalidSpecialtyMatch(
+                    $candidateId,
+                    $candidateSpecialty,
+                    $evaluatorSpecialty
+                );
+            }
+
+            /** @var object{id:int,evaluator_id:int,candidate_id:int}|null $lockedCurrent */
+            $lockedCurrent = DB::table('candidate_assignments')
+                ->where('candidate_id', $candidateId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($lockedCurrent === null) {
                 throw new AssignmentException("Candidate {$candidateId} does not have an existing assignment to reassign");
+            }
+            if ((int)$lockedCurrent->evaluator_id === $newEvaluatorId) {
+                throw AssignmentException::candidateAlreadyAssigned($candidateId, $newEvaluatorId);
             }
 
             $this->assignmentRepository->deleteByEvaluatorAndCandidate(
-                $existingAssignment->evaluatorId(),
-                $existingAssignment->candidateId()
+                (int)$lockedCurrent->evaluator_id,
+                (int)$lockedCurrent->candidate_id
             );
 
             $newAssignment = CandidateAssignment::create(
@@ -61,4 +87,3 @@ class ReassignCandidateUseCase
         $this->consolidatedUseCase->invalidateCache();
     }
 }
-

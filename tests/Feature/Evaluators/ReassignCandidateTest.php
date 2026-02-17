@@ -41,7 +41,6 @@ class ReassignCandidateTest extends TestCase
         $this->assertNotNull($candidate);
         $candidateId = $candidate->id;
 
-        $evaluatorA = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'evaClause? nope')->first();*** Parsons error likely. Let's not introduce.*** 
         $evaluatorA = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'eva@example.com')->first();
         $this->assertNotNull($evaluatorA);
         $evaluatorAId = $evaluatorA->id;
