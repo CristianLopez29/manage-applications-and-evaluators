@@ -37,6 +37,15 @@ class ListCandidatesUseCase
 
                 return !$this->assignmentRepository->candidateHasActiveAssignment($id);
             });
+        } elseif (in_array($status, ['pending', 'in_progress', 'completed', 'rejected'], true)) {
+            $candidates = array_filter($candidates, function ($candidate) use ($status) {
+                $id = $candidate->id();
+                if ($id === null) {
+                    return false;
+                }
+                $assignment = $this->assignmentRepository->findByCandidateId($id);
+                return $assignment !== null && $assignment->status()->value() === $status;
+            });
         }
 
         return array_map(function ($candidate) {
@@ -58,4 +67,3 @@ class ListCandidatesUseCase
         }, $candidates);
     }
 }
-
