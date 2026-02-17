@@ -13,6 +13,33 @@ class StartAssignmentProgressController
     ) {
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress",
+     *     summary="Move assignment to in_progress",
+     *     tags={"Evaluators"},
+     *     @OA\Parameter(
+     *         name="evaluatorId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="candidateId",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Assignment moved to in_progress"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Assignment not found"
+     *     )
+     * )
+     */
     public function __invoke(int $evaluatorId, int $candidateId): JsonResponse
     {
         try {
@@ -26,4 +53,3 @@ class StartAssignmentProgressController
         }
     }
 }
-
