@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue.svg)](https://php.net)
-[![Tests](https://img.shields.io/badge/Tests-109%20passing-green.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-118%20passing-green.svg)](#testing)
 [![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/manage-applications-and-evaluators)
 
 > Modular and scalable system for managing candidacies and evaluators, implemented with **Hexagonal Architecture**, **advanced design patterns**, and **software best practices**.
@@ -22,7 +22,7 @@
 - **Benefit:** I can replace Laravel with Symfony without touching business logic
 
 #### ✅ **Superior Testability**
-- 109 tests passing (comprehensive coverage)
+- 118 tests passing (comprehensive coverage)
 - Unit tests do not require the framework
 - Fakes and mocks are trivial to implement
 - **Benefit:** Fast and reliable tests
@@ -386,7 +386,57 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 - ✅ Only one job per email in queue/processing
 - ✅ Configurable 1 hour TTL
 
+#### 3. Overdue Reminders & Escalation
+
+**Status:** ✅ Implemented
+
+- Automatic reminders sent when an assignment passes its deadline
+- Escalation to admins when overdue exceeds a threshold (configurable via `OVERDUE_ESCALATION_DAYS`, default: 3)
+- Separate email notifications for evaluator and candidate
+
+```php
+// Job
+// src/Evaluators/Infrastructure/Jobs/ProcessOverdueAssignmentsJob.php
+// Notifications
+// - Src\Evaluators\Infrastructure\Notifications\OverdueAssignmentNotification
+// - Src\Evaluators\Infrastructure\Notifications\OverdueAssignmentEscalationNotification
+```
+
+#### 4. Rate Limiting
+
+**Status:** ✅ Implemented
+
+- Login (`POST /api/login`): `throttle:login`
+  - 5 requests per minute per (email+IP)
+  - 30 requests per minute per IP
+  - Defined in AppServiceProvider → `RateLimiter::for('login', ...)`
+- Authenticated group: `throttle:60,1`
+  - 60 requests per minute per IP for protected routes
+  - Configured in API routes
+- When limits are exceeded:
+  - HTTP 429 (Too Many Requests) with `Retry-After` header
+  - Enforced by Laravel's throttle middleware
+
+#### 5. Health Checks
+
+**Status:** ✅ Implemented
+
+- Liveness: `/up` provided by the framework health route
+  - Defined during bootstrap
+- Readiness: `/api/readiness`
+  - In production, requires `X-Health-Check-Token` header matching `HEALTHCHECK_TOKEN`
+  - Performs database and cache checks and returns a JSON with `status`, `checks`, and `time`
 ### 📦 Prepared Infrastructure
+#### 6. Monitoring (Sentry)
+
+**Status:** ✅ Implemented
+
+- Package: `sentry/sentry-laravel`
+- Configuration: set `SENTRY_LARAVEL_DSN` in environment to enable error reporting
+- Behavior: unhandled exceptions are captured and sent to Sentry via the stack channel
+- Optional: performance monitoring can be enabled via Sentry environment variables if needed
+
+
 
 #### 3. Cache
 
@@ -788,11 +838,8 @@ The report is generated in the background and sent by email when ready.
 
 ### Coverage
 
-- **Total:** 109 tests passing
-- **Unit:** 29 tests
-  - Validators (Chain of Responsibility): 8 tests
-  - Domain Entities: 8 tests
-  - Value Objects: 13 tests
+- **Total:** 118 tests passing
+- **Assertions:** 570
 - **Feature:** Expanded integration coverage
   - Candidates endpoints
   - Evaluators endpoints (including status transitions, reassign, unassign)
@@ -827,12 +874,15 @@ tests/Feature/Candidates/RegisterCandidacyTest.php
 ### Run Tests
 
 ```bash
-# All
-sail artisan test
+# All (Docker Compose)
+docker compose exec laravel php artisan test
+
+# Alternative with Sail
+./vendor/bin/sail artisan test
 
 # Specific
-sail artisan test --filter=Validator
-sail artisan test --testsuite=Unit
+docker compose exec laravel php artisan test --filter=Validator
+docker compose exec laravel php artisan test --testsuite=Unit
 ```
 
 ---
@@ -852,6 +902,7 @@ sail artisan test --testsuite=Unit
 ### Libraries
 - `maatwebsite/excel` - Excel Report Export
 - `darkaonline/l5-swagger` - OpenAPI Documentation
+- `sentry/sentry-laravel` - Error monitoring and alerting
 - `phpunit/phpunit` - Testing Framework
 
 ### DevOps
@@ -933,7 +984,7 @@ sudo chmod -R 777 storage bootstrap/cache
 ✅ **Senior Architecture:** Hexagonal + DDD correctly implemented
 ✅ **Complex SQL:** GROUP_CONCAT, JOINs, multiple aggregations
 ✅ **Patterns:** Extensible Chain of Responsibility
-✅ **Testing:** 91 tests (29 unit + 62 feature) with 353 assertions covering critical cases
+✅ **Testing:** 118 tests with 570 assertions covering critical cases
 ✅ **Implemented Scalability:** Queues + Idempotency with `ShouldBeUnique`
 ✅ **Documentation:** Swagger + Complete README with diagrams
 
@@ -951,7 +1002,6 @@ sudo chmod -R 777 storage bootstrap/cache
 ### Concurrency
 - [ ] **Pessimistic Locking**: For massive simultaneous assignments
 - [ ] **Optimistic Locking**: Version control in critical entities
-- [ ] **Rate Limiting**: Throttling by IP/user on public endpoints
 
 ### Features
 - [ ] **Excel Multi-Sheet Pagination**: Automatic pagination (50 evaluators/sheet) - *Currently generates a single sheet with all records*
@@ -961,9 +1011,7 @@ sudo chmod -R 777 storage bootstrap/cache
 
 ### DevOps
 - [ ] **CI/CD Pipeline**: GitHub Actions for tests + automatic deploy
-- [ ] **Monitoring**: Laravel Telescope + Sentry for errors
 - [ ] **Structured Logs**: JSON logging for Elasticsearch/Datadog
-- [ ] **Health Checks**: Endpoints `/health` and `/readiness`
 
 ---
 
@@ -972,7 +1020,7 @@ sudo chmod -R 777 storage bootstrap/cache
 For questions about implementation, architectural decisions, or technical details:
 
 1. **Review source code**: The structure is self-documented
-2. **Consult tests**: 91 tests document expected behavior
+2. **Consult tests**: 118 tests document expected behavior
 3. **Swagger**: Interactive API documentation
 
 > The project architecture is designed to be **self-explanatory** through clean code, comprehensive tests, and integrated documentation.
