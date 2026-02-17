@@ -8,8 +8,10 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Notification;
+use App\Models\User;
 use Src\Candidates\Infrastructure\Persistence\CandidateModel;
 use Src\Evaluators\Infrastructure\Notifications\OverdueAssignmentNotification;
+use Src\Evaluators\Infrastructure\Notifications\OverdueAssignmentEscalationNotification;
 use Src\Evaluators\Infrastructure\Persistence\CandidateAssignmentModel;
 use Src\Evaluators\Infrastructure\Persistence\EvaluatorModel;
 
@@ -52,9 +54,25 @@ class ProcessOverdueAssignmentsJob implements ShouldQueue
                     $assignment->deadline
                 ));
 
+            // Escalation: if overdue beyond threshold, notify admins
+            $thresholdDays = (int) (env('OVERDUE_ESCALATION_DAYS', 3));
+            $overdueDays = $assignment->deadline->diffInDays($now);
+            if ($overdueDays >= $thresholdDays) {
+                $admins = User::query()->where('role', 'admin')->get();
+                if ($admins->isNotEmpty()) {
+                    Notification::send($admins, new OverdueAssignmentEscalationNotification(
+                        $candidate->name,
+                        $candidate->email,
+                        $evaluator->name,
+                        $evaluator->email,
+                        $assignment->deadline,
+                        $overdueDays
+                    ));
+                }
+            }
+
             $assignment->last_reminder = $now;
             $assignment->save();
         }
     }
 }
-
