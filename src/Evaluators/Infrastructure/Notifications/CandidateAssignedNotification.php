@@ -31,16 +31,16 @@ class CandidateAssignedNotification extends Notification
         if ($this->recipientType === 'evaluator') {
             return (new MailMessage)
                 ->subject('New candidate assigned to you')
-                ->line('A new candidate has been assigned to you for evaluation.')
-                ->line("Candidate: {$this->candidateName} ({$this->candidateEmail})")
-                ->line('Please log in to the platform to review the application.');
+                ->markdown('emails.candidate_assigned_evaluator', [
+                    'candidateName' => $this->candidateName,
+                    'candidateEmail' => $this->candidateEmail,
+                ]);
         }
 
         return (new MailMessage)
             ->subject('Your candidacy has been assigned to an evaluator')
-            ->line('Your candidacy has been assigned to an evaluator for review.')
-            ->line("Evaluator: {$this->evaluatorName}")
-            ->line('You will be notified once a decision has been made.');
+            ->markdown('emails.candidate_assigned_candidate', [
+                'evaluatorName' => $this->evaluatorName,
+            ]);
     }
 }
-

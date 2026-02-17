@@ -30,16 +30,15 @@ class OverdueAssignmentEscalationNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $deadlineFormatted = $this->deadline->format('Y-m-d H:i:s');
-
         return (new MailMessage)
             ->subject('Escalation: Candidate assignment overdue')
-            ->line('A candidate assignment has exceeded the overdue threshold.')
-            ->line("Candidate: {$this->candidateName} ({$this->candidateEmail})")
-            ->line("Evaluator: {$this->evaluatorName} ({$this->evaluatorEmail})")
-            ->line("Original deadline: {$deadlineFormatted}")
-            ->line("Days overdue: {$this->daysOverdue}")
-            ->line('Please intervene to resolve this overdue assignment.');
+            ->markdown('emails.overdue_escalation_admin', [
+                'candidateName' => $this->candidateName,
+                'candidateEmail' => $this->candidateEmail,
+                'evaluatorName' => $this->evaluatorName,
+                'evaluatorEmail' => $this->evaluatorEmail,
+                'deadline' => $this->deadline,
+                'daysOverdue' => $this->daysOverdue,
+            ]);
     }
 }
-
