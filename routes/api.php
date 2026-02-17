@@ -1,7 +1,8 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\AuthController;
 use Src\Candidates\Infrastructure\Http\RegisterCandidacyController;
 use Src\Candidates\Infrastructure\Http\GetCandidateSummaryController;
@@ -16,6 +17,40 @@ use Src\Evaluators\Infrastructure\Http\ReassignCandidateController;
 use Src\Evaluators\Infrastructure\Http\GetEvaluatorCandidatesController;
 use Src\Evaluators\Infrastructure\Http\GetConsolidatedEvaluatorsController;
 use Src\Evaluators\Infrastructure\Http\RequestEvaluatorsReportController;
+
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'time' => now()->toISOString(),
+    ]);
+});
+
+Route::get('/readiness', function () {
+    $status = 'ok';
+    $checks = [];
+
+    try {
+        DB::connection()->getPdo();
+        $checks['database'] = 'up';
+    } catch (\Throwable $e) {
+        $checks['database'] = 'down';
+        $status = 'degraded';
+    }
+
+    try {
+        Cache::store()->get('health_check');
+        $checks['cache'] = 'up';
+    } catch (\Throwable $e) {
+        $checks['cache'] = 'down';
+        $status = 'degraded';
+    }
+
+    return response()->json([
+        'status' => $status,
+        'checks' => $checks,
+        'time' => now()->toISOString(),
+    ]);
+});
 
 Route::post('/login', [AuthController::class, 'login']);
 
