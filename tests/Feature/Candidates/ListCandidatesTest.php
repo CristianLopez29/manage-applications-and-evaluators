@@ -113,6 +113,32 @@ class ListCandidatesTest extends TestCase
     }
 
     #[Test]
+    public function should_search_candidates_by_cv_content_using_email_query_param(): void
+    {
+        $this->postJson('/api/candidates', [
+            'name' => 'CV Match',
+            'email' => 'cv.match@example.com',
+            'years_of_experience' => 5,
+            'cv' => 'Expert in Laravel and microservices',
+        ]);
+
+        $this->postJson('/api/candidates', [
+            'name' => 'No Match',
+            'email' => 'no.match@example.com',
+            'years_of_experience' => 5,
+            'cv' => 'React developer',
+        ]);
+
+        $response = $this->getJson('/api/candidates/search?email=microservices');
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonFragment([
+                'email' => 'cv.match@example.com',
+            ]);
+    }
+
+    #[Test]
     public function should_filter_candidates_by_primary_specialty(): void
     {
         $this->postJson('/api/candidates', [

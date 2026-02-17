@@ -67,7 +67,10 @@ class EloquentCandidateRepository implements CandidateRepository
         }
 
         if ($emailContains !== null && $emailContains !== '') {
-            $query->where('email', 'like', '%' . $emailContains . '%');
+            $query->where(function ($q) use ($emailContains) {
+                $q->where('email', 'like', '%' . $emailContains . '%')
+                    ->orWhere('cv_content', 'like', '%' . $emailContains . '%');
+            });
         }
 
         if ($primarySpecialty !== null && $primarySpecialty !== '') {
