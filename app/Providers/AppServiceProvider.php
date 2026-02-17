@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Http\Request;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,5 +45,13 @@ class AppServiceProvider extends ServiceProvider
             \Src\Evaluators\Domain\Events\AssignmentStatusChanged::class,
             \Src\Evaluators\Infrastructure\Listeners\SendAssignmentStatusChangeNotifications::class
         );
+
+        RateLimiter::for('login', function (Request $request) {
+            $email = (string) $request->input('email');
+            return [
+                Limit::perMinute(5)->by($email.$request->ip()),
+                Limit::perMinute(30)->by($request->ip()),
+            ];
+        });
     }
 }

@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ReportsController;
 use Src\Candidates\Infrastructure\Http\RegisterCandidacyController;
 use Src\Candidates\Infrastructure\Http\GetCandidateSummaryController;
 use Src\Candidates\Infrastructure\Http\ListCandidatesController;
@@ -19,6 +20,12 @@ use Src\Evaluators\Infrastructure\Http\GetConsolidatedEvaluatorsController;
 use Src\Evaluators\Infrastructure\Http\RequestEvaluatorsReportController;
 
 Route::get('/health', function () {
+    if (app()->environment('production')) {
+        $token = request()->header('X-Health-Check-Token');
+        if (!is_string($token) || $token !== env('HEALTHCHECK_TOKEN')) {
+            abort(403);
+        }
+    }
     return response()->json([
         'status' => 'ok',
         'time' => now()->toISOString(),
@@ -26,6 +33,12 @@ Route::get('/health', function () {
 });
 
 Route::get('/readiness', function () {
+    if (app()->environment('production')) {
+        $token = request()->header('X-Health-Check-Token');
+        if (!is_string($token) || $token !== env('HEALTHCHECK_TOKEN')) {
+            abort(403);
+        }
+    }
     $status = 'ok';
     $checks = [];
 
@@ -52,10 +65,13 @@ Route::get('/readiness', function () {
     ]);
 });
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/refresh-token', [AuthController::class, 'refresh']);
+    Route::post('/users/{id}/tokens/revoke-all', [AuthController::class, 'revokeAllTokens'])->middleware('role:admin');
+    Route::get('/reports/download', [ReportsController::class, 'download'])->middleware('role:admin');
 
     Route::post('/candidates', RegisterCandidacyController::class)->middleware('role:admin');
     Route::get('/candidates', ListCandidatesController::class)->middleware('role:admin');
