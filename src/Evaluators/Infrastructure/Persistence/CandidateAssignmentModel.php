@@ -12,6 +12,8 @@ use Src\Candidates\Infrastructure\Persistence\CandidateModel;
  * @property int $evaluator_id
  * @property string $status
  * @property \DateTimeInterface $assigned_at
+ * @property \DateTimeInterface $deadline
+ * @property \DateTimeInterface|null $last_reminder
  * @property string|null $created_at
  * @property string|null $updated_at
  */
@@ -23,11 +25,15 @@ class CandidateAssignmentModel extends Model
         'candidate_id',
         'evaluator_id',
         'status',
-        'assigned_at'
+        'assigned_at',
+        'deadline',
+        'last_reminder'
     ];
 
     protected $casts = [
         'assigned_at' => 'datetime',
+        'deadline' => 'datetime',
+        'last_reminder' => 'datetime',
     ];
 
     /**

@@ -19,6 +19,7 @@ class AssignCandidateTest extends TestCase
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
             'cv' => 'Experiencia en desarrollo backend...',
+            'primary_specialty' => 'Backend',
         ]);
 
         // Create an evaluator
@@ -110,6 +111,7 @@ class AssignCandidateTest extends TestCase
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
             'cv' => 'Mi CV',
+            'primary_specialty' => 'Backend',
         ]);
 
         // Create two evaluators
@@ -166,5 +168,89 @@ class AssignCandidateTest extends TestCase
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['candidate_id']);
+    }
+
+    #[Test]
+    public function should_reject_assignment_when_candidate_specialty_does_not_match_evaluator(): void
+    {
+        $this->postJson('/api/candidates', [
+            'name' => 'Frontend Candidate',
+            'email' => 'frontend.candidate@example.com',
+            'years_of_experience' => 3,
+            'cv' => 'Frontend CV',
+            'primary_specialty' => 'Frontend',
+        ]);
+
+        $this->postJson('/api/evaluators', [
+            'name' => 'Backend Evaluator',
+            'email' => 'backend.evaluator@example.com',
+            'specialty' => 'Backend',
+        ]);
+
+        $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::first();
+        $this->assertNotNull($candidate);
+        $candidateId = $candidate->id;
+
+        $evaluator = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first();
+        $this->assertNotNull($evaluator);
+        $evaluatorId = $evaluator->id;
+
+        $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+            'candidate_id' => $candidateId,
+        ]);
+
+        $response->assertStatus(409);
+    }
+
+    #[Test]
+    public function should_reject_assignment_when_evaluator_reaches_max_concurrent_candidates(): void
+    {
+        $specialty = 'Backend';
+
+        $this->postJson('/api/evaluators', [
+            'name' => 'Busy Evaluator',
+            'email' => 'busy@example.com',
+            'specialty' => $specialty,
+        ]);
+
+        $evaluator = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::first();
+        $this->assertNotNull($evaluator);
+        $evaluatorId = $evaluator->id;
+
+        for ($i = 1; $i <= 10; $i++) {
+            $this->postJson('/api/candidates', [
+                'name' => "Candidate {$i}",
+                'email' => "candidate{$i}@example.com",
+                'years_of_experience' => 3,
+                'cv' => "CV {$i}",
+                'primary_specialty' => $specialty,
+            ]);
+
+            $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', "candidate{$i}@example.com")->first();
+            $this->assertNotNull($candidate);
+
+            $assignResponse = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+                'candidate_id' => $candidate->id,
+            ]);
+
+            $assignResponse->assertStatus(200);
+        }
+
+        $this->postJson('/api/candidates', [
+            'name' => 'Candidate 11',
+            'email' => 'candidate11@example.com',
+            'years_of_experience' => 3,
+            'cv' => 'CV 11',
+            'primary_specialty' => $specialty,
+        ]);
+
+        $candidate11 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'candidate11@example.com')->first();
+        $this->assertNotNull($candidate11);
+
+        $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+            'candidate_id' => $candidate11->id,
+        ]);
+
+        $response->assertStatus(409);
     }
 }

@@ -4,8 +4,10 @@ namespace Src\Candidates\Infrastructure\Http;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Src\Candidates\Application\DTO\RegisterCandidacyRequest;
 use Src\Candidates\Application\RegisterCandidacyUseCase;
+use Src\Evaluators\Domain\ValueObjects\Specialty;
 
 class RegisterCandidacyController
 {
@@ -50,12 +52,12 @@ class RegisterCandidacyController
     public function __invoke(Request $request): JsonResponse
     {
         // 1. Input validation
-        /** @var array{name: string, email: string, years_of_experience: int, cv: string} $validated */
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'years_of_experience' => 'required|integer|min:0',
             'cv' => 'required|string',
+            'primary_specialty' => ['nullable', 'string', Rule::in(Specialty::validSpecialties())],
         ]);
 
         // 2. Map to DTO
@@ -63,7 +65,10 @@ class RegisterCandidacyController
             name: $validated['name'],
             email: $validated['email'],
             yearsOfExperience: $validated['years_of_experience'],
-            cvContent: $validated['cv']
+            cvContent: $validated['cv'],
+            primarySpecialty: isset($validated['primary_specialty']) && is_string($validated['primary_specialty'])
+                ? $validated['primary_specialty']
+                : null
         );
 
         // 3. Execute Use Case

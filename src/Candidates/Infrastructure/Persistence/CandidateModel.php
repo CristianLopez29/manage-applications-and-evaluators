@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $email
  * @property int $years_of_experience
  * @property string $cv_content
+ * @property string|null $primary_specialty
  * @property string $created_at
  * @property string $updated_at
  */
@@ -22,6 +23,7 @@ class CandidateModel extends Model
         'email',
         'years_of_experience',
         'cv_content',
+        'primary_specialty',
         'created_at'
     ];
 }

@@ -23,22 +23,35 @@ class AssignCandidateToEvaluatorUseCase
 
     public function execute(AssignCandidateRequest $request): void
     {
-        // Use transaction with pessimistic lock to prevent race conditions
         DB::transaction(function () use ($request) {
-            // 1. Verify that the candidate exists
             $candidate = $this->candidateRepository->findById($request->candidateId);
             if (!$candidate) {
                 throw AssignmentException::candidateNotFound($request->candidateId);
             }
 
-            // 2. Verify that the evaluator exists
             $evaluator = $this->evaluatorRepository->findById($request->evaluatorId);
             if (!$evaluator) {
                 throw EvaluatorNotFoundException::withId($request->evaluatorId);
             }
 
-            // 3. Verify that the candidate is not already assigned
-            // Use lockForUpdate to block the row and prevent concurrent assignments
+            $assignedToEvaluator = $this->assignmentRepository->findByEvaluatorId($request->evaluatorId);
+            if (!$evaluator->canAcceptMoreCandidates(count($assignedToEvaluator))) {
+                throw AssignmentException::evaluatorOverloaded(
+                    $request->evaluatorId,
+                    \Src\Evaluators\Domain\Evaluator::MAX_CONCURRENT_CANDIDATES
+                );
+            }
+
+            $candidateSpecialty = $candidate->primarySpecialty();
+            $evaluatorSpecialty = $evaluator->specialty()->value();
+            if ($candidateSpecialty !== null && $candidateSpecialty !== $evaluatorSpecialty) {
+                throw AssignmentException::invalidSpecialtyMatch(
+                    $request->candidateId,
+                    $candidateSpecialty,
+                    $evaluatorSpecialty
+                );
+            }
+
             $existingAssignment = DB::table('candidate_assignments')
                 ->where('candidate_id', $request->candidateId)
                 ->lockForUpdate()
@@ -52,16 +65,13 @@ class AssignCandidateToEvaluatorUseCase
                 );
             }
 
-            // 4. Create the assignment
             $assignment = CandidateAssignment::create(
                 $request->candidateId,
                 $request->evaluatorId
             );
 
-            // 5. Persist the assignment
             $assignmentId = $this->assignmentRepository->save($assignment);
 
-            // 6. Dispatch Domain Event
             event(new \Src\Evaluators\Domain\Events\CandidateAssigned(
                 $assignmentId,
                 $request->candidateId,
@@ -70,7 +80,6 @@ class AssignCandidateToEvaluatorUseCase
             ));
         });
 
-        // 6. Invalidate cache after successful assignment
         $this->consolidatedUseCase->invalidateCache();
     }
 }

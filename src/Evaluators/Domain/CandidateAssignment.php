@@ -12,7 +12,9 @@ class CandidateAssignment
         private int $candidateId,
         private int $evaluatorId,
         private AssignmentStatus $status,
-        private DateTimeImmutable $assignedAt
+        private DateTimeImmutable $assignedAt,
+        private DateTimeImmutable $deadline,
+        private ?DateTimeImmutable $lastReminder
     ) {
     }
 
@@ -21,12 +23,16 @@ class CandidateAssignment
         int $candidateId,
         int $evaluatorId
     ): self {
+        $assignedAt = new DateTimeImmutable();
+
         return new self(
             null, // ID is assigned when persisting
             $candidateId,
             $evaluatorId,
             AssignmentStatus::pending(),
-            new DateTimeImmutable()
+            $assignedAt,
+            $assignedAt->modify('+7 days'),
+            null
         );
     }
 
@@ -36,14 +42,18 @@ class CandidateAssignment
         int $candidateId,
         int $evaluatorId,
         string $status,
-        DateTimeImmutable $assignedAt
+        DateTimeImmutable $assignedAt,
+        DateTimeImmutable $deadline,
+        ?DateTimeImmutable $lastReminder
     ): self {
         return new self(
             $id,
             $candidateId,
             $evaluatorId,
             AssignmentStatus::fromString($status),
-            $assignedAt
+            $assignedAt,
+            $deadline,
+            $lastReminder
         );
     }
 
@@ -73,6 +83,16 @@ class CandidateAssignment
         return $this->assignedAt;
     }
 
+    public function deadline(): DateTimeImmutable
+    {
+        return $this->deadline;
+    }
+
+    public function lastReminder(): ?DateTimeImmutable
+    {
+        return $this->lastReminder;
+    }
+
     // Behavior methods
     public function startProgress(): void
     {
@@ -87,5 +107,15 @@ class CandidateAssignment
     public function reject(): void
     {
         $this->status = AssignmentStatus::rejected();
+    }
+
+    public function isOverdue(DateTimeImmutable $now): bool
+    {
+        return $now > $this->deadline;
+    }
+
+    public function updateLastReminder(DateTimeImmutable $when): void
+    {
+        $this->lastReminder = $when;
     }
 }
