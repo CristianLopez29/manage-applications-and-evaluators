@@ -2,7 +2,7 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.2-blue.svg)](https://php.net)
-[![Tests](https://img.shields.io/badge/Tests-91%20passing-green.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-109%20passing-green.svg)](#testing)
 [![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/manage-applications-and-evaluators)
 
 > Modular and scalable system for managing candidacies and evaluators, implemented with **Hexagonal Architecture**, **advanced design patterns**, and **software best practices**.
@@ -22,7 +22,7 @@
 - **Benefit:** I can replace Laravel with Symfony without touching business logic
 
 #### ✅ **Superior Testability**
-- 91 tests passing with 353 assertions (comprehensive coverage)
+- 109 tests passing (comprehensive coverage)
 - Unit tests do not require the framework
 - Fakes and mocks are trivial to implement
 - **Benefit:** Fast and reliable tests
@@ -706,6 +706,41 @@ Assign candidate to evaluator.
 
 ---
 
+#### `PUT /api/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress`
+Move assignment status to `in_progress`. Triggers status-change email notifications.
+
+**Response:** `200 OK`
+
+---
+
+#### `PUT /api/evaluators/{evaluatorId}/assignments/{candidateId}/complete`
+Mark assignment as `completed`. Triggers status-change email notifications.
+
+**Response:** `200 OK`
+
+---
+
+#### `PUT /api/evaluators/{evaluatorId}/assignments/{candidateId}/reject`
+Mark assignment as `rejected`. Triggers status-change email notifications.
+
+**Response:** `200 OK`
+
+---
+
+#### `DELETE /api/evaluators/{evaluatorId}/assignments/{candidateId}`
+Unassign a candidate from an evaluator.
+
+**Response:** `200 OK`
+
+---
+
+#### `PUT /api/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}`
+Reassign a candidate to a new evaluator. Sends assignment notifications.
+
+**Response:** `200 OK`
+
+---
+
 #### `GET /api/evaluators/{evaluatorId}/candidates`
 Get candidates assigned to an evaluator.
 
@@ -753,16 +788,17 @@ The report is generated in the background and sent by email when ready.
 
 ### Coverage
 
-- **Total:** 91 tests passing (353 assertions)
+- **Total:** 109 tests passing
 - **Unit:** 29 tests
   - Validators (Chain of Responsibility): 8 tests
   - Domain Entities: 8 tests
   - Value Objects: 13 tests
-- **Feature:** 62 integration tests
-  - Candidates endpoints: 11 tests
-  - Evaluators endpoints: 50 tests
-  - Audit logging: 1 test
-  - Complete coverage of edge cases and validations
+- **Feature:** Expanded integration coverage
+  - Candidates endpoints
+  - Evaluators endpoints (including status transitions, reassign, unassign)
+  - Audit logging
+  - Email notifications (assignment, status change, overdue/escalation)
+  - Permissions cascade (admin/evaluator/candidate)
 
 ### Featured Tests
 
