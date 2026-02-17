@@ -32,5 +32,10 @@ class AppServiceProvider extends ServiceProvider
             \Src\Evaluators\Domain\Events\CandidateAssigned::class,
             \Src\Evaluators\Infrastructure\Listeners\LogCandidateAssignment::class
         );
+
+        \Illuminate\Support\Facades\Event::listen(
+            \Src\Evaluators\Domain\Events\CandidateAssigned::class,
+            \Src\Evaluators\Infrastructure\Listeners\SendAssignmentNotifications::class
+        );
     }
 }

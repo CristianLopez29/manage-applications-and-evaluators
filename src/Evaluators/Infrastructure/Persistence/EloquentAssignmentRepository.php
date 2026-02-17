@@ -14,6 +14,8 @@ class EloquentAssignmentRepository implements AssignmentRepository
             'evaluator_id' => $assignment->evaluatorId(),
             'status' => $assignment->status()->value(),
             'assigned_at' => $assignment->assignedAt()->format('Y-m-d H:i:s'),
+            'deadline' => $assignment->deadline()->format('Y-m-d H:i:s'),
+            'last_reminder' => $assignment->lastReminder(),
         ]);
 
         return $model->id;
@@ -28,6 +30,8 @@ class EloquentAssignmentRepository implements AssignmentRepository
         CandidateAssignmentModel::where('id', $assignment->id())
             ->update([
                 'status' => $assignment->status()->value(),
+                'deadline' => $assignment->deadline()->format('Y-m-d H:i:s'),
+                'last_reminder' => $assignment->lastReminder(),
             ]);
     }
 
@@ -44,7 +48,9 @@ class EloquentAssignmentRepository implements AssignmentRepository
             $model->candidate_id,
             $model->evaluator_id,
             $model->status,
-            new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s'))
+            new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s')),
+            new \DateTimeImmutable($model->deadline->format('Y-m-d H:i:s')),
+            $model->last_reminder ? new \DateTimeImmutable($model->last_reminder->format('Y-m-d H:i:s')) : null
         );
     }
 
@@ -61,7 +67,9 @@ class EloquentAssignmentRepository implements AssignmentRepository
                 $model->candidate_id,
                 $model->evaluator_id,
                 $model->status,
-                new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s'))
+                new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s')),
+                new \DateTimeImmutable($model->deadline->format('Y-m-d H:i:s')),
+                $model->last_reminder ? new \DateTimeImmutable($model->last_reminder->format('Y-m-d H:i:s')) : null
             );
         })->all();
     }
@@ -81,7 +89,9 @@ class EloquentAssignmentRepository implements AssignmentRepository
             $model->candidate_id,
             $model->evaluator_id,
             $model->status,
-            new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s'))
+            new \DateTimeImmutable($model->assigned_at->format('Y-m-d H:i:s')),
+            new \DateTimeImmutable($model->deadline->format('Y-m-d H:i:s')),
+            $model->last_reminder ? new \DateTimeImmutable($model->last_reminder->format('Y-m-d H:i:s')) : null
         );
     }
 

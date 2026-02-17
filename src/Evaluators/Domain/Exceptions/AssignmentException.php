@@ -24,4 +24,23 @@ class AssignmentException extends DomainException
             "Assignment already exists for candidate {$candidateId} to evaluator {$evaluatorId}"
         );
     }
+
+    public static function invalidSpecialtyMatch(
+        int $candidateId,
+        ?string $candidateSpecialty,
+        string $evaluatorSpecialty
+    ): self {
+        $candidateSpec = $candidateSpecialty ?? 'none';
+
+        return new self(
+            "Cannot assign candidate {$candidateId} with specialty '{$candidateSpec}' to evaluator with specialty '{$evaluatorSpecialty}'"
+        );
+    }
+
+    public static function evaluatorOverloaded(int $evaluatorId, int $max): self
+    {
+        return new self(
+            "Evaluator {$evaluatorId} has reached the maximum number of concurrent candidates ({$max})"
+        );
+    }
 }

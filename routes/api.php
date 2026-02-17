@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use Src\Candidates\Infrastructure\Http\RegisterCandidacyController;
 use Src\Candidates\Infrastructure\Http\GetCandidateSummaryController;
+use Src\Candidates\Infrastructure\Http\ListCandidatesController;
 use Src\Evaluators\Infrastructure\Http\RegisterEvaluatorController;
 use Src\Evaluators\Infrastructure\Http\AssignCandidateController;
 use Src\Evaluators\Infrastructure\Http\StartAssignmentProgressController;
@@ -22,6 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::post('/candidates', RegisterCandidacyController::class);
+    Route::get('/candidates', ListCandidatesController::class);
+    Route::get('/candidates/search', ListCandidatesController::class);
     Route::get('/candidates/{id}/summary', GetCandidateSummaryController::class);
 
     Route::post('/evaluators', RegisterEvaluatorController::class);

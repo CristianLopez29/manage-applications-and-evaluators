@@ -16,6 +16,7 @@ class Candidate extends AggregateRoot
     private Email $email;
     private YearsOfExperience $yearsOfExperience;
     private CV $cv;
+    private ?string $primarySpecialty;
     private DateTimeImmutable $createdAt;
 
     private function __construct(
@@ -24,6 +25,7 @@ class Candidate extends AggregateRoot
         Email $email,
         YearsOfExperience $yearsOfExperience,
         CV $cv,
+        ?string $primarySpecialty,
         DateTimeImmutable $createdAt
     ) {
         $this->id = $id;
@@ -31,6 +33,7 @@ class Candidate extends AggregateRoot
         $this->email = $email;
         $this->yearsOfExperience = $yearsOfExperience;
         $this->cv = $cv;
+        $this->primarySpecialty = $primarySpecialty;
         $this->createdAt = $createdAt;
     }
 
@@ -38,7 +41,8 @@ class Candidate extends AggregateRoot
         string $name,
         string $email,
         int $yearsOfExperience,
-        string $cvContent
+        string $cvContent,
+        ?string $primarySpecialty = null
     ): self {
         $candidate = new self(
             null,
@@ -46,6 +50,7 @@ class Candidate extends AggregateRoot
             Email::fromString($email),
             YearsOfExperience::fromInt($yearsOfExperience),
             CV::fromString($cvContent),
+            $primarySpecialty,
             new DateTimeImmutable()
         );
 
@@ -64,7 +69,8 @@ class Candidate extends AggregateRoot
         string $email,
         int $yearsOfExperience,
         string $cvContent,
-        DateTimeImmutable $createdAt
+        DateTimeImmutable $createdAt,
+        ?string $primarySpecialty = null
     ): self {
         return new self(
             $id,
@@ -72,6 +78,7 @@ class Candidate extends AggregateRoot
             Email::fromString($email),
             YearsOfExperience::fromInt($yearsOfExperience),
             CV::fromString($cvContent),
+            $primarySpecialty,
             $createdAt
         );
     }
@@ -99,6 +106,11 @@ class Candidate extends AggregateRoot
     public function cv(): CV
     {
         return $this->cv;
+    }
+
+    public function primarySpecialty(): ?string
+    {
+        return $this->primarySpecialty;
     }
 
     public function createdAt(): DateTimeImmutable

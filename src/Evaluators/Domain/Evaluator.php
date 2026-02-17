@@ -9,6 +9,8 @@ use Src\Evaluators\Domain\ValueObjects\Specialty;
 
 class Evaluator
 {
+    public const MAX_CONCURRENT_CANDIDATES = 10;
+
     private function __construct(
         private ?int $id,
         private EvaluatorName $name,
@@ -74,5 +76,10 @@ class Evaluator
     public function createdAt(): DateTimeImmutable
     {
         return $this->createdAt;
+    }
+
+    public function canAcceptMoreCandidates(int $currentAssigned): bool
+    {
+        return $currentAssigned < self::MAX_CONCURRENT_CANDIDATES;
     }
 }

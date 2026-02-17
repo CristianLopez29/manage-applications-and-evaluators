@@ -26,18 +26,16 @@ class RegisterCandidacyUseCase
 
     public function execute(RegisterCandidacyRequest $request): void
     {
-        // 1. Create the Domain Entity
         $candidate = Candidate::register(
             $request->name,
             $request->email,
             $request->yearsOfExperience,
-            $request->cvContent
+            $request->cvContent,
+            $request->primarySpecialty
         );
 
-        // 2. Validate using Chain of Responsibility
         $this->validatorChain->validate($candidate);
 
-        // 3. Persist using the repository
         $this->repository->save($candidate);
     }
 }
