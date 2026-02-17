@@ -18,6 +18,8 @@ class CandidateAssignmentTest extends TestCase
         $this->assertTrue($assignment->status()->isPending());
         $this->assertNull($assignment->id());
         $this->assertInstanceOf(\DateTimeImmutable::class, $assignment->assignedAt());
+        $this->assertInstanceOf(\DateTimeImmutable::class, $assignment->deadline());
+        $this->assertNull($assignment->lastReminder());
     }
 
     #[Test]
@@ -54,13 +56,16 @@ class CandidateAssignmentTest extends TestCase
     public function should_reconstruct_assignment_from_persistence(): void
     {
         $assignedAt = new \DateTimeImmutable('2025-11-28 10:00:00');
+        $deadline = $assignedAt->modify('+7 days');
 
         $assignment = CandidateAssignment::reconstruct(
             1,
             10,
             2,
             'completed',
-            $assignedAt
+            $assignedAt,
+            $deadline,
+            null
         );
 
         $this->assertEquals(1, $assignment->id());
@@ -68,5 +73,16 @@ class CandidateAssignmentTest extends TestCase
         $this->assertEquals(2, $assignment->evaluatorId());
         $this->assertTrue($assignment->status()->isCompleted());
         $this->assertEquals($assignedAt, $assignment->assignedAt());
+    }
+
+    #[Test]
+    public function should_detect_overdue_assignments(): void
+    {
+        $assignment = CandidateAssignment::create(5, 1);
+
+        $future = $assignment->deadline()->modify('+1 day');
+
+        $this->assertTrue($assignment->isOverdue($future));
+        $this->assertFalse($assignment->isOverdue($assignment->assignedAt()));
     }
 }

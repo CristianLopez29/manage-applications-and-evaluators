@@ -44,7 +44,7 @@ class AssignCandidateToEvaluatorUseCase
 
             $candidateSpecialty = $candidate->primarySpecialty();
             $evaluatorSpecialty = $evaluator->specialty()->value();
-            if ($candidateSpecialty === null || $candidateSpecialty !== $evaluatorSpecialty) {
+            if ($candidateSpecialty !== null && $candidateSpecialty !== $evaluatorSpecialty) {
                 throw AssignmentException::invalidSpecialtyMatch(
                     $request->candidateId,
                     $candidateSpecialty,
