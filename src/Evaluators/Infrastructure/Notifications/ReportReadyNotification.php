@@ -26,11 +26,7 @@ class ReportReadyNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $url = Storage::disk('public')->url($this->filePath);
-
-        if (!str_starts_with($url, 'http')) {
-            $url = url($url);
-        }
+        $url = url('/api/reports/download?file=' . urlencode($this->filePath));
 
         return (new MailMessage)
             ->subject('Evaluators Report Ready')

@@ -35,17 +35,22 @@ class RequestEvaluatorsReportController
      */
     public function __invoke(Request $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email'
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'format' => 'sometimes|string|in:xlsx,csv',
         ]);
 
-        $email = $request->input('email');
+        $email = $validated['email'] ?? null;
         if (!is_string($email)) {
             throw new \InvalidArgumentException('Email must be a string');
         }
 
-        // Dispatch the Job to the queue
-        GenerateEvaluatorsReportJob::dispatch($email);
+        $format = $validated['format'] ?? 'xlsx';
+        if (!is_string($format)) {
+            $format = 'xlsx';
+        }
+
+        GenerateEvaluatorsReportJob::dispatch($email, $format);
 
         return response()->json([
             'message' => 'Report generation started. You will receive an email shortly.',

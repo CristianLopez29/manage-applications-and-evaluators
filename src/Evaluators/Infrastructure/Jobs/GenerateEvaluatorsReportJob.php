@@ -18,13 +18,11 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    /**
-     * Time in seconds that the job will be unique (1 hour)
-     */
     public int $uniqueFor = 3600;
 
     public function __construct(
-        private readonly string $userEmail
+        private readonly string $userEmail,
+        private readonly string $format = 'xlsx'
     ) {
     }
 
@@ -39,16 +37,20 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 
     public function handle(GetConsolidatedEvaluatorsUseCase $useCase): void
     {
-        $fileName = 'reports/evaluators_' . now()->timestamp . '.xlsx';
+        $extension = $this->format === 'csv' ? 'csv' : 'xlsx';
+        $writerType = $this->format === 'csv'
+            ? \Maatwebsite\Excel\Excel::CSV
+            : \Maatwebsite\Excel\Excel::XLSX;
 
-        // Generate and save the Excel
+        $fileName = 'evaluators_' . now()->timestamp . '.' . $extension;
+
         Excel::store(
             new EvaluatorsExport($useCase),
             $fileName,
-            'public' // Disk storage/app/public
+            'reports',
+            $writerType
         );
 
-        // Notify the user (simulating an anonymous user with route notification)
         Notification::route('mail', $this->userEmail)
             ->notify(new ReportReadyNotification($fileName));
     }
