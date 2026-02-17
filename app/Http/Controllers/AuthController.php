@@ -15,13 +15,13 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($credentials)) {
+        if (!Auth::guard('web')->attempt($credentials)) {
             return response()->json([
                 'message' => 'Invalid credentials',
             ], 401);
         }
 
-        $user = $request->user();
+        $user = Auth::guard('web')->user();
         $token = $user->createToken('api')->plainTextToken;
 
         return response()->json([
@@ -47,5 +47,34 @@ class AuthController extends Controller
             'message' => 'Logged out',
         ]);
     }
-}
 
+    public function refresh(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $current = $user?->currentAccessToken();
+        if ($user === null || $current === null) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        $newToken = $user->createToken('api')->plainTextToken;
+        $current->delete();
+        return response()->json([
+            'token' => $newToken,
+        ]);
+    }
+
+    public function revokeAllTokens(Request $request, int $id): JsonResponse
+    {
+        $actor = $request->user();
+        if ($actor === null || $actor->role !== 'admin') {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+        $userClass = \App\Models\User::class;
+        /** @var \App\Models\User|null $target */
+        $target = $userClass::find($id);
+        if ($target === null) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+        $target->tokens()->delete();
+        return response()->json(['message' => 'All tokens revoked']);
+    }
+}

@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\EnsureCandidateAccess;
+use App\Http\Middleware\EnsureEvaluatorAccess;
+use App\Http\Middleware\EnsureRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,24 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(SecurityHeaders::class);
+
         $middleware->alias([
-            'role' => \App\Http\Middleware\EnsureRole::class,
-            'can.view.evaluator' => \App\Http\Middleware\EnsureEvaluatorAccess::class,
-            'can.view.candidate' => \App\Http\Middleware\EnsureCandidateAccess::class,
+            'role' => EnsureRole::class,
+            'can.view.candidate' => EnsureCandidateAccess::class,
+            'can.view.evaluator' => EnsureEvaluatorAccess::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
-        if (class_exists(\Sentry\Laravel\Integration::class)) {
-            \Sentry\Laravel\Integration::handles($exceptions);
-        }
-
-        $exceptions->render(function (Src\Candidates\Domain\Exceptions\InvalidCandidateException $e) {
-            return response()->json([
-                'message' => $e->getMessage(),
-                'errors' => [
-                    'domain' => [$e->getMessage()]
-                ]
-            ], 422);
-        });
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
     })->create();
