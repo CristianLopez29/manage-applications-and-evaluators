@@ -29,23 +29,21 @@ class OverdueAssignmentNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        $deadlineFormatted = $this->deadline->format('Y-m-d H:i:s');
-
         if ($this->recipientType === 'evaluator') {
             return (new MailMessage)
                 ->subject('Overdue candidate assignment reminder')
-                ->line('You have a candidate assignment that is overdue.')
-                ->line("Candidate: {$this->candidateName} ({$this->candidateEmail})")
-                ->line("Deadline: {$deadlineFormatted}")
-                ->line('Please review this candidate as soon as possible.');
+                ->markdown('emails.overdue_assignment_evaluator', [
+                    'candidateName' => $this->candidateName,
+                    'candidateEmail' => $this->candidateEmail,
+                    'deadline' => $this->deadline,
+                ]);
         }
 
         return (new MailMessage)
             ->subject('Your candidacy review is delayed')
-            ->line('The review of your candidacy is taking longer than expected.')
-            ->line("Evaluator: {$this->evaluatorName}")
-            ->line("Original deadline: {$deadlineFormatted}")
-            ->line('We apologize for the delay and will notify you once a decision is made.');
+            ->markdown('emails.overdue_assignment_candidate', [
+                'evaluatorName' => $this->evaluatorName,
+                'deadline' => $this->deadline,
+            ]);
     }
 }
-
