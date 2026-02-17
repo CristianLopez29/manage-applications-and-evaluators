@@ -12,7 +12,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureRole::class,
+            'can.view.evaluator' => \App\Http\Middleware\EnsureEvaluatorAccess::class,
+            'can.view.candidate' => \App\Http\Middleware\EnsureCandidateAccess::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (Src\Candidates\Domain\Exceptions\InvalidCandidateException $e) {
