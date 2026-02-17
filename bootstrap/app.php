@@ -19,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        if (class_exists(\Sentry\Laravel\Integration::class)) {
+            \Sentry\Laravel\Integration::handles($exceptions);
+        }
+
         $exceptions->render(function (Src\Candidates\Domain\Exceptions\InvalidCandidateException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
