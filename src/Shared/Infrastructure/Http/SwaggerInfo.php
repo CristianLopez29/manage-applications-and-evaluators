@@ -5,8 +5,8 @@ namespace Src\Shared\Infrastructure\Http;
 /**
  * @OA\Info(
  *      version="1.0.0",
- *      title="Nalanda Challenge API",
- *      description="API documentation for Nalanda Challenge Backend",
+ *      title="Manage Applications API",
+ *      description="REST API documentation for the Manage Applications & Evaluators backend",
  *      @OA\Contact(
  *          email="admin@example.com"
  *      )

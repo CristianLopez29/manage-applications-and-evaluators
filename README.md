@@ -540,8 +540,8 @@ ORDER BY avg_experience DESC
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/CristianLopez29/nalanda-backend-challenge.git
-cd nalanda-backend-challenge
+git clone https://github.com/CristianLopez29/manage-applications-and-evaluators.git
+cd manage-applications-and-evaluators
 
 # 2. Install dependencies (first time)
 docker run --rm \
@@ -659,7 +659,7 @@ Get complete candidacy summary with validations.
   "cv_content": "...",
   "assignment": {
     "evaluator_name": "Dr. Albert Martinez",
-    "evaluator_email": "albert@nalanda.com",
+    "evaluator_email": "albert@example.com",
     "assigned_at": "2024-11-20 10:30:00",
     "status": "in_progress"
   },
@@ -716,7 +716,7 @@ Consolidated list with complex SQL (GROUP_CONCAT, JOIN, AVG, COUNT).
     {
       "id": 1,
       "name": "Dr. Albert Martinez",
-      "email": "albert@nalanda.com",
+      "email": "albert@example.com",
       "specialty": "backend",
       "average_candidate_experience": 5.3,
       "total_assigned_candidates": 4,
