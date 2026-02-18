@@ -31,7 +31,9 @@ class GetCandidateSummaryController
      *             @OA\Property(property="name", type="string", example="Juan Perez"),
      *             @OA\Property(property="email", type="string", example="juan@example.com"),
      *             @OA\Property(property="years_of_experience", type="integer", example=5),
-     *             @OA\Property(property="cv", type="string", example="CV Content"),
+     *             @OA\Property(property="cv_preview", type="string", example="CV Content..."),
+     *             @OA\Property(property="cv_pdf", type="boolean", example=true),
+     *             @OA\Property(property="cv_download_url", type="string", nullable=true, example="http://localhost/api/candidates/1/cv"),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(
      *                 property="assignment",
@@ -61,17 +63,19 @@ class GetCandidateSummaryController
         try {
             $dto = $this->useCase->execute($id);
 
-            $response = collect([
+            $response = [
                 'candidate_info' => [
                     'id' => $dto->id,
                     'name' => $dto->name,
                     'email' => $dto->email,
                     'experience_years' => $dto->yearsOfExperience,
-                    'cv_preview' => substr($dto->cvContent, 0, 100) . '...'
+                    'cv_preview' => substr($dto->cvContent, 0, 100) . '...',
+                    'cv_pdf' => $dto->hasPdf,
+                    'cv_download_url' => $dto->hasPdf ? url("/api/candidates/{$dto->id}/cv") : null,
                 ],
                 'assignment_info' => $dto->assignment ?? 'Unassigned',
                 'compliance_report' => $dto->validationResults
-            ]);
+            ];
 
             return response()->json([
                 'data' => $response

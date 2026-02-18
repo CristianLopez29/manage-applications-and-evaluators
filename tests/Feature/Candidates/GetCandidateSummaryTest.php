@@ -86,6 +86,24 @@ class GetCandidateSummaryTest extends TestCase
     }
 
     #[Test]
+    public function should_include_pdf_flag_and_download_url_when_pdf_is_present(): void
+    {
+        $file = \Illuminate\Http\UploadedFile::fake()->create('cv.pdf', 50, 'application/pdf');
+
+        $this->post('/api/candidates', [
+            'name' => 'PDF Summ',
+            'email' => 'pdf.summ@example.com',
+            'years_of_experience' => 3,
+            'cv_file' => $file,
+        ])->assertStatus(201);
+
+        $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'pdf.summ@example.com')->firstOrFail();
+
+        $res = $this->getJson("/api/candidates/{$candidate->id}/summary")->assertStatus(200);
+        $this->assertTrue($res->json('data.candidate_info.cv_pdf'));
+        $this->assertNotEmpty($res->json('data.candidate_info.cv_download_url'));
+    }
+    #[Test]
     public function should_return_404_if_candidate_not_found(): void
     {
         $response = $this->getJson("/api/candidates/999/summary");
