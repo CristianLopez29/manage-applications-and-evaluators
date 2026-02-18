@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "Nalanda Challenge API",
-        "description": "API documentation for Nalanda Challenge Backend",
+        "title": "Manage Applications API",
+        "description": "REST API documentation for the Manage Applications & Evaluators backend",
         "contact": {
             "email": "admin@example.com"
         },
@@ -15,6 +15,201 @@
         }
     ],
     "paths": {
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login and obtain API token",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "test@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authenticated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "2|abcdef..."
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Test User"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email",
+                                                    "example": "test@example.com"
+                                                },
+                                                "role": {
+                                                    "type": "string",
+                                                    "example": "admin"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials"
+                    }
+                }
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout current session (revoke current token)",
+                "operationId": "fe8f3429cd6979b3b4517e186505f9f9",
+                "responses": {
+                    "200": {
+                        "description": "Logged out"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/refresh-token": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Refresh API token (rotate current token)",
+                "operationId": "41b109d150a67fd6df88cced4d491a6f",
+                "responses": {
+                    "200": {
+                        "description": "New token issued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "type": "string",
+                                            "example": "3|ghijkl..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{id}/tokens/revoke-all": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Revoke all tokens for a user (admin only)",
+                "operationId": "703b0fa53b2fbdf1fbdf3f52bcb23f9d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "User ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "All tokens revoked"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "User not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/candidates/{id}/cv": {
+            "get": {
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Download candidate CV PDF",
+                "operationId": "2310fd084d0bf2cf306a6c268fb7d7ae",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF file stream"
+                    },
+                    "404": {
+                        "description": "Candidate or CV not found"
+                    }
+                }
+            }
+        },
         "/api/candidates/{id}/summary": {
             "get": {
                 "tags": [
@@ -55,9 +250,18 @@
                                             "type": "integer",
                                             "example": 5
                                         },
-                                        "cv": {
+                                        "cv_preview": {
                                             "type": "string",
-                                            "example": "CV Content"
+                                            "example": "CV Content..."
+                                        },
+                                        "cv_pdf": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "cv_download_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/candidates/1/cv",
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -111,6 +315,88 @@
             }
         },
         "/api/candidates": {
+            "get": {
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "List candidates with filters",
+                "operationId": "2e8d8d265bd99a35b1fdec90138b857a",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by assignment status (unassigned, pending, in_progress, completed, rejected)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "experience_min",
+                        "in": "query",
+                        "description": "Minimum years of experience",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "specialty",
+                        "in": "query",
+                        "description": "Primary specialty (Backend, Frontend, Fullstack, DevOps, Mobile, QA, Data, Security)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of candidates",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Juan Perez"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "juan@example.com"
+                                                    },
+                                                    "years_of_experience": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "primary_specialty": {
+                                                        "type": "string",
+                                                        "example": "Backend"
+                                                    },
+                                                    "assignment_status": {
+                                                        "type": "string",
+                                                        "example": "unassigned"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "post": {
                 "tags": [
                     "Candidates"
@@ -149,6 +435,42 @@
                                 },
                                 "type": "object"
                             }
+                        },
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "years_of_experience"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Juan Perez"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "juan@example.com"
+                                    },
+                                    "years_of_experience": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "cv": {
+                                        "type": "string",
+                                        "example": "CV Content",
+                                        "nullable": true
+                                    },
+                                    "cv_file": {
+                                        "description": "PDF CV file",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
                         }
                     }
                 },
@@ -180,6 +502,90 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/candidates/search": {
+            "get": {
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Search candidates by email and filters",
+                "operationId": "d815381651de6b2157b1494bbb924e36",
+                "parameters": [
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Email contains (substring match)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "experience_min",
+                        "in": "query",
+                        "description": "Minimum years of experience",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "specialty",
+                        "in": "query",
+                        "description": "Primary specialty (Backend, Frontend, Fullstack, DevOps, Mobile, QA, Data, Security)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of candidates",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Juan Perez"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "juan@example.com"
+                                                    },
+                                                    "years_of_experience": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "primary_specialty": {
+                                                        "type": "string",
+                                                        "example": "Backend"
+                                                    },
+                                                    "assignment_status": {
+                                                        "type": "string",
+                                                        "example": "unassigned"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -242,6 +648,41 @@
                     },
                     "409": {
                         "description": "Candidate already assigned"
+                    }
+                }
+            }
+        },
+        "/api/evaluators/{evaluatorId}/assignments/{candidateId}/complete": {
+            "put": {
+                "tags": [
+                    "Evaluators"
+                ],
+                "summary": "Mark assignment as completed",
+                "operationId": "a95efa3134156f3d51fcd6fa6307ad3a",
+                "parameters": [
+                    {
+                        "name": "evaluatorId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment completed"
+                    },
+                    "404": {
+                        "description": "Assignment not found"
                     }
                 }
             }
@@ -553,6 +994,41 @@
                 }
             }
         },
+        "/api/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}": {
+            "put": {
+                "tags": [
+                    "Evaluators"
+                ],
+                "summary": "Reassign candidate to a new evaluator",
+                "operationId": "e0cb0de02120c4f3007a264027af655e",
+                "parameters": [
+                    {
+                        "name": "newEvaluatorId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Candidate reassigned to new evaluator"
+                    },
+                    "404": {
+                        "description": "Evaluator or Assignment not found"
+                    }
+                }
+            }
+        },
         "/api/evaluators": {
             "post": {
                 "tags": [
@@ -626,6 +1102,41 @@
                 }
             }
         },
+        "/api/evaluators/{evaluatorId}/assignments/{candidateId}/reject": {
+            "put": {
+                "tags": [
+                    "Evaluators"
+                ],
+                "summary": "Reject an assignment",
+                "operationId": "6dfb527e1b0ce105761d67420b65d2d8",
+                "parameters": [
+                    {
+                        "name": "evaluatorId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment rejected"
+                    },
+                    "404": {
+                        "description": "Assignment not found"
+                    }
+                }
+            }
+        },
         "/api/evaluators/report": {
             "post": {
                 "tags": [
@@ -675,9 +1186,83 @@
                     }
                 }
             }
+        },
+        "/api/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress": {
+            "put": {
+                "tags": [
+                    "Evaluators"
+                ],
+                "summary": "Move assignment to in_progress",
+                "operationId": "61f29f13e825227647a0c02c3779b3eb",
+                "parameters": [
+                    {
+                        "name": "evaluatorId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment moved to in_progress"
+                    },
+                    "404": {
+                        "description": "Assignment not found"
+                    }
+                }
+            }
+        },
+        "/api/evaluators/{evaluatorId}/assignments/{candidateId}": {
+            "delete": {
+                "tags": [
+                    "Evaluators"
+                ],
+                "summary": "Unassign a candidate from an evaluator",
+                "operationId": "021c03767345fcd2b8a3ba08411492e5",
+                "parameters": [
+                    {
+                        "name": "evaluatorId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Candidate unassigned from evaluator"
+                    },
+                    "404": {
+                        "description": "Assignment not found"
+                    }
+                }
+            }
         }
     },
     "tags": [
+        {
+            "name": "Auth",
+            "description": "Auth"
+        },
         {
             "name": "Candidates",
             "description": "Candidates"
@@ -685,6 +1270,21 @@
         {
             "name": "Evaluators",
             "description": "Evaluators"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "apiKey",
+                "description": "Enter token in format (Bearer <token>)",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    },
+    "security": [
+        {
+            "sanctum": []
         }
     ]
 }
