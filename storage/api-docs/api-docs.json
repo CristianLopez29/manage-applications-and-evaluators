@@ -183,6 +183,33 @@
                 ]
             }
         },
+        "/api/candidates/{id}/analyze": {
+            "post": {
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Queue AI analysis for candidate CV",
+                "operationId": "e42ec31e9bc4a1fb307c7da4c73697ee",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Analysis queued"
+                    },
+                    "404": {
+                        "description": "Candidate not found"
+                    }
+                }
+            }
+        },
         "/api/candidates/{id}/cv": {
             "get": {
                 "tags": [
@@ -206,6 +233,36 @@
                     },
                     "404": {
                         "description": "Candidate or CV not found"
+                    }
+                }
+            }
+        },
+        "/api/candidates/{id}/evaluation": {
+            "get": {
+                "tags": [
+                    "Candidates"
+                ],
+                "summary": "Get latest AI evaluation for a candidate",
+                "operationId": "38473e996e8ae94821567131d1144049",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Evaluation found"
+                    },
+                    "202": {
+                        "description": "Evaluation pending"
+                    },
+                    "404": {
+                        "description": "Candidate not found"
                     }
                 }
             }

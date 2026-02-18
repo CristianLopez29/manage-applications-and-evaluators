@@ -7,12 +7,14 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Src\Candidates\Application\DTO\RegisterCandidacyRequest;
 use Src\Candidates\Application\RegisterCandidacyUseCase;
+use Src\Candidates\Application\RequestCandidateAnalysisUseCase;
 use Src\Evaluators\Domain\ValueObjects\Specialty;
 
 class RegisterCandidacyController
 {
     public function __construct(
-        private readonly RegisterCandidacyUseCase $useCase
+        private readonly RegisterCandidacyUseCase $useCase,
+        private readonly RequestCandidateAnalysisUseCase $analysisUseCase
     ) {
     }
 
@@ -45,18 +47,20 @@ class RegisterCandidacyController
      *             )
      *         )
      *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Candidacy registered successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Candidacy registered successfully"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 @OA\Property(property="email", type="string", example="juan@example.com")
+     *         @OA\Response(
+     *             response=201,
+     *             description="Candidacy registered successfully and analysis queued",
+     *             @OA\JsonContent(
+     *                 @OA\Property(property="message", type="string", example="Candidacy registered successfully"),
+     *                 @OA\Property(
+     *                     property="data",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="email", type="string", example="juan@example.com"),
+     *                     @OA\Property(property="analysis_status", type="string", example="processing")
+     *                 )
      *             )
-     *         )
-     *     ),
+     *         ),
      *     @OA\Response(
      *         response=422,
      *         description="Validation error"
@@ -129,14 +133,18 @@ class RegisterCandidacyController
                 : null
         );
 
-        // 3. Execute Use Case
-        $this->useCase->execute($dto);
+        $candidateId = $this->useCase->execute($dto);
 
-        // 4. HTTP Response
+        if ($candidateId > 0) {
+            $this->analysisUseCase->execute($candidateId);
+        }
+
         return response()->json([
             'message' => 'Candidacy registered successfully',
             'data' => [
-                'email' => $dto->email
+                'id' => $candidateId,
+                'email' => $dto->email,
+                'analysis_status' => 'processing',
             ]
         ], 201);
     }

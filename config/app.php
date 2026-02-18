@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'run_ai_integration_tests' => env('RUN_AI_INTEGRATION_TESTS', false),
+
 ];
