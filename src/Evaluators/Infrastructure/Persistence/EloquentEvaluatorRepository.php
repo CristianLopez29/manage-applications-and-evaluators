@@ -169,7 +169,9 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
                     $candidateModel->email,
                     $candidateModel->years_of_experience,
                     $candidateModel->cv_content,
-                    new \DateTimeImmutable($candidateModel->created_at)
+                    $candidateModel->cv_file_path ?? null,
+                    new \DateTimeImmutable($candidateModel->created_at),
+                    $candidateModel->primary_specialty
                 );
             })->all();
 

@@ -15,31 +15,31 @@ class EvaluatorSeeder extends Seeder
         $evaluators = [
             [
                 'name' => 'Dr. Alberto Martínez',
-                'email' => 'alberto.martinez@nalanda.com',
+                'email' => 'alberto.martinez@example.com',
                 'specialty' => 'Backend',
                 'created_at' => now()->subMonths(6),
             ],
             [
                 'name' => 'Ing. Lucía Fernández',
-                'email' => 'lucia.fernandez@nalanda.com',
+                'email' => 'lucia.fernandez@example.com',
                 'specialty' => 'Frontend',
                 'created_at' => now()->subMonths(5),
             ],
             [
                 'name' => 'David Sánchez',
-                'email' => 'david.sanchez@nalanda.com',
+                'email' => 'david.sanchez@example.com',
                 'specialty' => 'Fullstack',
                 'created_at' => now()->subMonths(4),
             ],
             [
                 'name' => 'Marta López',
-                'email' => 'marta.lopez@nalanda.com',
+                'email' => 'marta.lopez@example.com',
                 'specialty' => 'DevOps',
                 'created_at' => now()->subMonths(3),
             ],
             [
                 'name' => 'Roberto García',
-                'email' => 'roberto.garcia@nalanda.com',
+                'email' => 'roberto.garcia@example.com',
                 'specialty' => 'Mobile',
                 'created_at' => now()->subMonths(2),
             ],
