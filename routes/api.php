@@ -8,6 +8,7 @@ use App\Http\Controllers\ReportsController;
 use Src\Candidates\Infrastructure\Http\RegisterCandidacyController;
 use Src\Candidates\Infrastructure\Http\GetCandidateSummaryController;
 use Src\Candidates\Infrastructure\Http\ListCandidatesController;
+use Src\Candidates\Infrastructure\Http\DownloadCandidateCvController;
 use Src\Evaluators\Infrastructure\Http\RegisterEvaluatorController;
 use Src\Evaluators\Infrastructure\Http\AssignCandidateController;
 use Src\Evaluators\Infrastructure\Http\StartAssignmentProgressController;
@@ -73,10 +74,11 @@ Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     Route::post('/users/{id}/tokens/revoke-all', [AuthController::class, 'revokeAllTokens'])->middleware('role:admin');
     Route::get('/reports/download', [ReportsController::class, 'download'])->middleware('role:admin');
 
-    Route::post('/candidates', RegisterCandidacyController::class)->middleware('role:admin');
+    Route::post('/candidates', RegisterCandidacyController::class)->middleware('role:admin,candidate');
     Route::get('/candidates', ListCandidatesController::class)->middleware('role:admin');
     Route::get('/candidates/search', ListCandidatesController::class)->middleware('role:admin');
     Route::get('/candidates/{id}/summary', GetCandidateSummaryController::class)->middleware('can.view.candidate');
+    Route::get('/candidates/{id}/cv', DownloadCandidateCvController::class)->middleware('can.view.candidate');
 
     Route::post('/evaluators', RegisterEvaluatorController::class)->middleware('role:admin');
     Route::get('/evaluators/consolidated', GetConsolidatedEvaluatorsController::class)->middleware('role:admin');

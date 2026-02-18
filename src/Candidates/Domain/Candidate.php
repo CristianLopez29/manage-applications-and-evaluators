@@ -16,6 +16,7 @@ class Candidate extends AggregateRoot
     private Email $email;
     private YearsOfExperience $yearsOfExperience;
     private CV $cv;
+    private ?string $cvFilePath;
     private ?string $primarySpecialty;
     private DateTimeImmutable $createdAt;
 
@@ -25,6 +26,7 @@ class Candidate extends AggregateRoot
         Email $email,
         YearsOfExperience $yearsOfExperience,
         CV $cv,
+        ?string $cvFilePath,
         ?string $primarySpecialty,
         DateTimeImmutable $createdAt
     ) {
@@ -33,6 +35,7 @@ class Candidate extends AggregateRoot
         $this->email = $email;
         $this->yearsOfExperience = $yearsOfExperience;
         $this->cv = $cv;
+        $this->cvFilePath = $cvFilePath;
         $this->primarySpecialty = $primarySpecialty;
         $this->createdAt = $createdAt;
     }
@@ -42,6 +45,7 @@ class Candidate extends AggregateRoot
         string $email,
         int $yearsOfExperience,
         string $cvContent,
+        ?string $cvFilePath = null,
         ?string $primarySpecialty = null
     ): self {
         $candidate = new self(
@@ -50,6 +54,7 @@ class Candidate extends AggregateRoot
             Email::fromString($email),
             YearsOfExperience::fromInt($yearsOfExperience),
             CV::fromString($cvContent),
+            $cvFilePath,
             $primarySpecialty,
             new DateTimeImmutable()
         );
@@ -69,6 +74,7 @@ class Candidate extends AggregateRoot
         string $email,
         int $yearsOfExperience,
         string $cvContent,
+        ?string $cvFilePath,
         DateTimeImmutable $createdAt,
         ?string $primarySpecialty = null
     ): self {
@@ -78,6 +84,7 @@ class Candidate extends AggregateRoot
             Email::fromString($email),
             YearsOfExperience::fromInt($yearsOfExperience),
             CV::fromString($cvContent),
+            $cvFilePath,
             $primarySpecialty,
             $createdAt
         );
@@ -106,6 +113,11 @@ class Candidate extends AggregateRoot
     public function cv(): CV
     {
         return $this->cv;
+    }
+
+    public function cvFilePath(): ?string
+    {
+        return $this->cvFilePath;
     }
 
     public function primarySpecialty(): ?string

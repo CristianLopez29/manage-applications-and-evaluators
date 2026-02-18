@@ -31,6 +31,7 @@ class RegisterCandidacyUseCase
             $request->email,
             $request->yearsOfExperience,
             $request->cvContent,
+            $request->cvFilePath,
             $request->primarySpecialty
         );
 
