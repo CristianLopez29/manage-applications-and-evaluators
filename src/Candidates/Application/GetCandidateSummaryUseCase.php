@@ -60,6 +60,7 @@ class GetCandidateSummaryUseCase
             $candidate->email()->value(),
             $candidate->yearsOfExperience()->value(),
             $candidate->cv()->content(),
+            $candidate->cvFilePath() !== null,
             $assignmentData,
             $validationResults
         );

@@ -14,6 +14,7 @@ readonly class CandidateSummaryDTO
         public string $email,
         public int $yearsOfExperience,
         public string $cvContent,
+        public bool $hasPdf,
         public ?array $assignment, // Data of the evaluator assigned
         public array $validationResults // ['rule' => 'Pass/Fail']
     ) {
