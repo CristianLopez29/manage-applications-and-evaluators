@@ -8,7 +8,7 @@ use Src\Candidates\Domain\Events\CandidateRegistered;
 
 class EloquentCandidateRepository implements CandidateRepository
 {
-    public function save(Candidate $candidate): void
+    public function save(Candidate $candidate): int
     {
         $model = CandidateModel::updateOrCreate(
             ['email' => $candidate->email()->value()],
@@ -35,6 +35,8 @@ class EloquentCandidateRepository implements CandidateRepository
 
             event($event);
         }
+
+        return (int) $model->id;
     }
 
     public function findById(int $id): ?Candidate

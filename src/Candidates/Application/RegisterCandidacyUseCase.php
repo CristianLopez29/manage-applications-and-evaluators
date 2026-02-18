@@ -24,7 +24,7 @@ class RegisterCandidacyUseCase
             ->setNext(new MinimumExperienceValidator());
     }
 
-    public function execute(RegisterCandidacyRequest $request): void
+    public function execute(RegisterCandidacyRequest $request): int
     {
         $candidate = Candidate::register(
             $request->name,
@@ -37,6 +37,6 @@ class RegisterCandidacyUseCase
 
         $this->validatorChain->validate($candidate);
 
-        $this->repository->save($candidate);
+        return $this->repository->save($candidate);
     }
 }
