@@ -9,6 +9,7 @@ readonly class RegisterCandidacyRequest
         public string $email,
         public int $yearsOfExperience,
         public string $cvContent,
+        public ?string $cvFilePath = null,
         public ?string $primarySpecialty = null
     ) {
     }

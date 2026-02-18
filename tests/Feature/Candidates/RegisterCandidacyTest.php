@@ -2,7 +2,11 @@
 
 namespace Tests\Feature\Candidates;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\Sanctum;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -149,6 +153,63 @@ class RegisterCandidacyTest extends TestCase
             'email' => 'carlos@example.com',
             'name' => 'Carlos Ruiz Updated',
             'years_of_experience' => 5,
+        ]);
+    }
+
+    #[Test]
+    public function should_register_candidacy_with_pdf_instead_of_text(): void
+    {
+        Storage::fake();
+        $file = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
+
+        $response = $this->post('/api/candidates', [
+            'name' => 'PDF Candidate',
+            'email' => 'pdf.candidate@example.com',
+            'years_of_experience' => 4,
+            'cv_file' => $file,
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'message' => 'Candidacy registered successfully',
+                'data' => [
+                    'email' => 'pdf.candidate@example.com',
+                ],
+            ]);
+
+        $this->assertDatabaseHas('candidates', [
+            'email' => 'pdf.candidate@example.com',
+            'years_of_experience' => 4,
+        ]);
+    }
+
+    #[Test]
+    public function candidate_role_can_register_candidacy(): void
+    {
+        $candidateUser = User::factory()->create([
+            'role' => 'candidate',
+        ]);
+
+        Sanctum::actingAs($candidateUser, ['*']);
+
+        $payload = [
+            'name' => 'Role Candidate',
+            'email' => 'role.candidate@example.com',
+            'years_of_experience' => 3,
+            'cv' => 'CV for role candidate',
+        ];
+
+        $response = $this->postJson('/api/candidates', $payload);
+
+        $response->assertStatus(201)
+            ->assertJson([
+                'data' => [
+                    'email' => 'role.candidate@example.com',
+                ],
+            ]);
+
+        $this->assertDatabaseHas('candidates', [
+            'email' => 'role.candidate@example.com',
         ]);
     }
 }

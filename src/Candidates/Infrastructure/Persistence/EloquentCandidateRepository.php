@@ -16,6 +16,7 @@ class EloquentCandidateRepository implements CandidateRepository
                 'name' => $candidate->name(),
                 'years_of_experience' => $candidate->yearsOfExperience()->value(),
                 'cv_content' => $candidate->cv()->content(),
+                'cv_file_path' => $candidate->cvFilePath(),
                 'primary_specialty' => $candidate->primarySpecialty(),
                 'created_at' => $candidate->createdAt()->format('Y-m-d H:i:s'),
             ]
@@ -50,6 +51,7 @@ class EloquentCandidateRepository implements CandidateRepository
             $model->email,
             $model->years_of_experience,
             $model->cv_content,
+            $model->cv_file_path ?? null,
             new \DateTimeImmutable($model->created_at),
             $model->primary_specialty
         );
@@ -86,6 +88,7 @@ class EloquentCandidateRepository implements CandidateRepository
                 $model->email,
                 $model->years_of_experience,
                 $model->cv_content,
+                $model->cv_file_path ?? null,
                 new \DateTimeImmutable($model->created_at),
                 $model->primary_specialty
             );

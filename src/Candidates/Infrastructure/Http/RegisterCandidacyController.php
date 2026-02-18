@@ -23,12 +23,26 @@ class RegisterCandidacyController
      *     tags={"Candidates"},
      *     @OA\RequestBody(
      *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name", "email", "years_of_experience", "cv"},
-     *             @OA\Property(property="name", type="string", example="Juan Perez"),
-     *             @OA\Property(property="email", type="string", format="email", example="juan@example.com"),
-     *             @OA\Property(property="years_of_experience", type="integer", example=5),
-     *             @OA\Property(property="cv", type="string", example="CV Content")
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 required={"name", "email", "years_of_experience", "cv"},
+     *                 @OA\Property(property="name", type="string", example="Juan Perez"),
+     *                 @OA\Property(property="email", type="string", format="email", example="juan@example.com"),
+     *                 @OA\Property(property="years_of_experience", type="integer", example=5),
+     *                 @OA\Property(property="cv", type="string", example="CV Content")
+     *             )
+     *         ),
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 required={"name", "email", "years_of_experience"},
+     *                 @OA\Property(property="name", type="string", example="Juan Perez"),
+     *                 @OA\Property(property="email", type="string", format="email", example="juan@example.com"),
+     *                 @OA\Property(property="years_of_experience", type="integer", example=5),
+     *                 @OA\Property(property="cv", type="string", nullable=true, example="CV Content"),
+     *                 @OA\Property(property="cv_file", type="string", format="binary", nullable=true, description="PDF CV file")
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -56,16 +70,60 @@ class RegisterCandidacyController
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'years_of_experience' => 'required|integer|min:0',
-            'cv' => 'required|string',
+            'cv' => [
+                'required_without:cv_file',
+                'string',
+                function (string $attribute, mixed $value, callable $fail) use ($request): void {
+                    $hasPdf = $request->hasFile('cv_file');
+                    $text = is_string($value) ? trim($value) : '';
+
+                    if (!$hasPdf && $text === '') {
+                        $fail('The CV field is required when no PDF is uploaded.');
+                    }
+                },
+            ],
+            'cv_file' => [
+                'nullable',
+                'file',
+                'mimetypes:application/pdf',
+                'max:5120',
+            ],
             'primary_specialty' => ['nullable', 'string', Rule::in(Specialty::validSpecialties())],
         ]);
+
+        $cvText = isset($validated['cv']) && is_string($validated['cv'])
+            ? trim($validated['cv'])
+            : '';
+
+        $cvContent = $cvText;
+        $cvFilePath = null;
+
+        if ($request->hasFile('cv_file')) {
+            $path = $request->file('cv_file')?->store('cvs');
+            if (is_string($path)) {
+                $cvFilePath = $path;
+                if ($cvContent === '') {
+                    $cvContent = '[PDF attached]';
+                }
+            }
+        }
+
+        if ($cvContent === '') {
+            return response()->json([
+                'message' => 'The given data was invalid.',
+                'errors' => [
+                    'cv' => ['The CV field is required when no PDF is uploaded.'],
+                ],
+            ], 422);
+        }
 
         // 2. Map to DTO
         $dto = new RegisterCandidacyRequest(
             name: $validated['name'],
             email: $validated['email'],
             yearsOfExperience: $validated['years_of_experience'],
-            cvContent: $validated['cv'],
+            cvContent: $cvContent,
+            cvFilePath: $cvFilePath,
             primarySpecialty: isset($validated['primary_specialty']) && is_string($validated['primary_specialty'])
                 ? $validated['primary_specialty']
                 : null
