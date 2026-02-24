@@ -1,20 +1,22 @@
 <?php
 
-namespace Src\Candidates\Infrastructure\Http;
+namespace Src\Candidates\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Src\Candidates\Application\DTO\RegisterCandidacyRequest;
-use Src\Candidates\Application\RegisterCandidacyUseCase;
-use Src\Candidates\Application\RequestCandidateAnalysisUseCase;
-use Src\Evaluators\Domain\ValueObjects\Specialty;
+use Src\Candidates\Application\DTOs\RegisterCandidacyRequest;
+use Src\Candidates\Application\DTOs\CandidacyRegisteredResponse;
+use Src\Candidates\Application\UseCases\RegisterCandidacy;
+use Src\Candidates\Application\UseCases\RequestCandidateAnalysis;
+use Src\Evaluators\Domain\Enums\Specialty;
+use Symfony\Component\HttpFoundation\Response;
 
 class RegisterCandidacyController
 {
     public function __construct(
-        private readonly RegisterCandidacyUseCase $useCase,
-        private readonly RequestCandidateAnalysisUseCase $analysisUseCase
+        private readonly RegisterCandidacy $useCase,
+        private readonly RequestCandidateAnalysis $analysisUseCase
     ) {
     }
 
@@ -92,60 +94,49 @@ class RegisterCandidacyController
                 'mimetypes:application/pdf',
                 'max:5120',
             ],
-            'primary_specialty' => ['nullable', 'string', Rule::in(Specialty::validSpecialties())],
+            'primary_specialty' => ['nullable', 'string', Rule::in(array_column(Specialty::cases(), 'value'))],
         ]);
 
         $cvText = isset($validated['cv']) && is_string($validated['cv'])
             ? trim($validated['cv'])
             : '';
 
-        $cvContent = $cvText;
         $cvFilePath = null;
-
         if ($request->hasFile('cv_file')) {
-            $path = $request->file('cv_file')?->store('cvs');
+            $path = $request->file('cv_file')->store('cvs', 'local');
             if (is_string($path)) {
                 $cvFilePath = $path;
-                if ($cvContent === '') {
-                    $cvContent = '[PDF attached]';
-                }
             }
         }
 
-        if ($cvContent === '') {
-            return response()->json([
-                'message' => 'The given data was invalid.',
-                'errors' => [
-                    'cv' => ['The CV field is required when no PDF is uploaded.'],
-                ],
-            ], 422);
-        }
-
-        // 2. Map to DTO
         $dto = new RegisterCandidacyRequest(
-            name: $validated['name'],
-            email: $validated['email'],
-            yearsOfExperience: $validated['years_of_experience'],
-            cvContent: $cvContent,
-            cvFilePath: $cvFilePath,
-            primarySpecialty: isset($validated['primary_specialty']) && is_string($validated['primary_specialty'])
-                ? $validated['primary_specialty']
-                : null
+            $validated['name'],
+            $validated['email'],
+            (int)$validated['years_of_experience'],
+            $cvText,
+            $cvFilePath,
+            $validated['primary_specialty'] ?? null
         );
 
         $candidateId = $this->useCase->execute($dto);
 
-        if ($candidateId > 0) {
+        // Queue analysis
+        try {
             $this->analysisUseCase->execute($candidateId);
+            $analysisStatus = 'processing';
+        } catch (\Throwable $e) {
+            $analysisStatus = 'failed_to_queue';
         }
 
-        return response()->json([
+        $responseDto = new CandidacyRegisteredResponse(
+            $candidateId,
+            $dto->email,
+            $analysisStatus
+        );
+
+        return new JsonResponse([
             'message' => 'Candidacy registered successfully',
-            'data' => [
-                'id' => $candidateId,
-                'email' => $dto->email,
-                'analysis_status' => 'processing',
-            ]
-        ], 201);
+            'data' => $responseDto
+        ], Response::HTTP_CREATED);
     }
 }
