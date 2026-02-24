@@ -1,18 +1,20 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Evaluators\Application\GetConsolidatedEvaluatorsUseCase;
-use Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO;
+use Src\Evaluators\Application\DTOs\EvaluatorListItemResponse;
+use Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators;
+use Src\Evaluators\Application\DTOs\EvaluatorWithCandidatesDTO;
 
 use Illuminate\Http\Request;
 use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
+use Symfony\Component\HttpFoundation\Response;
 
 class GetConsolidatedEvaluatorsController
 {
     public function __construct(
-        private readonly GetConsolidatedEvaluatorsUseCase $useCase
+        private readonly GetConsolidatedEvaluators $useCase
     ) {
     }
 
@@ -207,39 +209,14 @@ class GetConsolidatedEvaluatorsController
 
         $paginator = $this->useCase->execute($criteria);
 
-        /** @var array<int, EvaluatorWithCandidatesDTO> $items */
-        $items = $paginator->items();
-
-        // Transform the paginator items (which are already DTOs) to array
-        $data = collect($items)->map(function (EvaluatorWithCandidatesDTO $dto) {
-            return [
-                'id' => $dto->evaluator->id(),
-                'name' => $dto->evaluator->name()->value(),
-                'email' => $dto->evaluator->email()->value(),
-                'specialty' => $dto->evaluator->specialty()->value(),
-                'average_candidate_experience' => round($dto->averageExperience, 1),
-                'total_assigned_candidates' => count($dto->candidates), // COUNT desde SQL
-                'concatenated_candidate_emails' => $dto->concatenatedEmails, // GROUP_CONCAT desde SQL
-                'candidates' => array_map(function ($candidate) use ($dto) {
-                    return [
-                        'id' => $candidate->id(),
-                        'name' => $candidate->name(),
-                        'email' => $candidate->email()->value(),
-                        'years_of_experience' => $candidate->yearsOfExperience()->value(),
-                        'assigned_at' => $dto->assignmentsByCandidateId[$candidate->id()] ?? null,
-                    ];
-                }, $dto->candidates)
-            ];
-        });
-
-        return response()->json([
-            'data' => $data,
+        return new JsonResponse([
+            'data' => $paginator->items(),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'last_page' => $paginator->lastPage(),
                 'per_page' => $paginator->perPage(),
                 'total' => $paginator->total(),
             ]
-        ], 200);
+        ], Response::HTTP_OK);
     }
 }

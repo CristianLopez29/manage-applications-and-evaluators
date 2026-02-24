@@ -3,7 +3,7 @@
 namespace Src\Evaluators\Infrastructure\Persistence;
 
 use Src\Candidates\Domain\Candidate;
-use Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO;
+use Src\Evaluators\Application\DTOs\EvaluatorWithCandidatesDTO;
 use Src\Evaluators\Domain\Evaluator;
 use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
 use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
@@ -11,16 +11,18 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class EloquentEvaluatorRepository implements EvaluatorRepository
 {
-    public function save(Evaluator $evaluator): void
+    public function save(Evaluator $evaluator): int
     {
-        EvaluatorModel::updateOrCreate(
+        $model = EvaluatorModel::updateOrCreate(
             ['email' => $evaluator->email()->value()],
             [
                 'name' => $evaluator->name()->value(),
-                'specialty' => $evaluator->specialty()->value(),
+                'specialty' => $evaluator->specialty()->value,
                 'created_at' => $evaluator->createdAt()->format('Y-m-d H:i:s'),
             ]
         );
+
+        return $model->id;
     }
 
     public function findById(int $id): ?Evaluator
@@ -35,7 +37,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
             $model->id,
             $model->name,
             $model->email,
-            $model->specialty,
+            $model->specialty->value,
             new \DateTimeImmutable($model->created_at)
         );
     }
@@ -52,7 +54,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
             $model->id,
             $model->name,
             $model->email,
-            $model->specialty,
+            $model->specialty->value,
             new \DateTimeImmutable($model->created_at)
         );
     }
@@ -146,7 +148,7 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
                 $model->id,
                 $model->name,
                 $model->email,
-                $model->specialty,
+                $model->specialty->value,
                 new \DateTimeImmutable($model->created_at)
             );
 

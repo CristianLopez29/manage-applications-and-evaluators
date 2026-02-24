@@ -7,11 +7,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Src\Candidates\Infrastructure\Persistence\CandidateModel;
 
+use Src\Evaluators\Domain\Enums\Specialty;
+
 /**
  * @property int $id
  * @property string $name
  * @property string $email
- * @property string $specialty
+ * @property Specialty $specialty
  * @property string $created_at
  * @property string $updated_at
  * @property float|null $avg_experience
@@ -27,6 +29,10 @@ class EvaluatorModel extends Model
         'email',
         'specialty',
         'created_at'
+    ];
+
+    protected $casts = [
+        'specialty' => Specialty::class,
     ];
 
     /**

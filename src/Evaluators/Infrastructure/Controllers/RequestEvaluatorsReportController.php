@@ -1,10 +1,11 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Src\Evaluators\Infrastructure\Jobs\GenerateEvaluatorsReportJob;
+use Symfony\Component\HttpFoundation\Response;
 
 class RequestEvaluatorsReportController
 {
@@ -52,9 +53,9 @@ class RequestEvaluatorsReportController
 
         GenerateEvaluatorsReportJob::dispatch($email, $format);
 
-        return response()->json([
+        return new JsonResponse([
             'message' => 'Report generation started. You will receive an email shortly.',
             'status' => 'processing'
-        ], 202);
+        ], Response::HTTP_ACCEPTED);
     }
 }

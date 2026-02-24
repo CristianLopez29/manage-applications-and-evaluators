@@ -1,22 +1,23 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Evaluators\Application\RejectAssignmentUseCase;
+use Src\Evaluators\Application\UseCases\StartAssignmentProgress;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
+use Symfony\Component\HttpFoundation\Response;
 
-class RejectAssignmentController
+class StartAssignmentProgressController
 {
     public function __construct(
-        private readonly RejectAssignmentUseCase $useCase
+        private readonly StartAssignmentProgress $useCase
     ) {
     }
 
     /**
      * @OA\Put(
-     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/reject",
-     *     summary="Reject an assignment",
+     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress",
+     *     summary="Move assignment to in_progress",
      *     tags={"Evaluators"},
      *     @OA\Parameter(
      *         name="evaluatorId",
@@ -32,7 +33,7 @@ class RejectAssignmentController
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Assignment rejected"
+     *         description="Assignment moved to in_progress"
      *     ),
      *     @OA\Response(
      *         response=404,
@@ -45,11 +46,11 @@ class RejectAssignmentController
         try {
             $this->useCase->execute($evaluatorId, $candidateId);
 
-            return response()->json([
-                'message' => 'Assignment rejected',
-            ], 200);
+            return new JsonResponse([
+                'message' => 'Assignment moved to in_progress',
+            ], Response::HTTP_OK);
         } catch (AssignmentException $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 }

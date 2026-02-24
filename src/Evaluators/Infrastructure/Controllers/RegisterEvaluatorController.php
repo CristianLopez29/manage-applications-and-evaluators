@@ -1,18 +1,20 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Src\Evaluators\Application\DTO\RegisterEvaluatorRequest;
-use Src\Evaluators\Application\RegisterEvaluatorUseCase;
-use Src\Evaluators\Domain\ValueObjects\Specialty;
+use Src\Evaluators\Application\DTOs\RegisterEvaluatorRequest;
+use Src\Evaluators\Application\DTOs\EvaluatorResponse;
+use Src\Evaluators\Application\UseCases\RegisterEvaluator;
+use Src\Evaluators\Domain\Enums\Specialty;
+use Symfony\Component\HttpFoundation\Response;
 
 class RegisterEvaluatorController
 {
     public function __construct(
-        private readonly RegisterEvaluatorUseCase $useCase
+        private readonly RegisterEvaluator $useCase
     ) {
     }
 
@@ -55,7 +57,7 @@ class RegisterEvaluatorController
         $validated = $request->validate([
             'name' => 'required|string|min:3|max:255',
             'email' => 'required|email|max:255|unique:evaluators,email',
-            'specialty' => ['required', 'string', Rule::in(Specialty::validSpecialties())],
+            'specialty' => ['required', 'string', Rule::in(array_column(Specialty::cases(), 'value'))],
         ]);
 
         // 2. Map to DTO
@@ -66,14 +68,12 @@ class RegisterEvaluatorController
         );
 
         // 3. Execute the Use Case
-        $this->useCase->execute($dto);
+        $evaluatorResponse = $this->useCase->execute($dto);
 
         // 4. Return the HTTP response
-        return response()->json([
+        return new JsonResponse([
             'message' => 'Evaluator registered successfully',
-            'data' => [
-                'email' => $dto->email
-            ]
-        ], 201);
+            'data' => $evaluatorResponse
+        ], Response::HTTP_CREATED);
     }
 }
