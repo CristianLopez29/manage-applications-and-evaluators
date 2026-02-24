@@ -1,22 +1,23 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Evaluators\Application\CompleteAssignmentUseCase;
+use Src\Evaluators\Application\UseCases\RejectAssignment;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
+use Symfony\Component\HttpFoundation\Response;
 
-class CompleteAssignmentController
+class RejectAssignmentController
 {
     public function __construct(
-        private readonly CompleteAssignmentUseCase $useCase
+        private readonly RejectAssignment $useCase
     ) {
     }
 
     /**
      * @OA\Put(
-     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/complete",
-     *     summary="Mark assignment as completed",
+     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/reject",
+     *     summary="Reject an assignment",
      *     tags={"Evaluators"},
      *     @OA\Parameter(
      *         name="evaluatorId",
@@ -32,7 +33,7 @@ class CompleteAssignmentController
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Assignment completed"
+     *         description="Assignment rejected"
      *     ),
      *     @OA\Response(
      *         response=404,
@@ -45,11 +46,11 @@ class CompleteAssignmentController
         try {
             $this->useCase->execute($evaluatorId, $candidateId);
 
-            return response()->json([
-                'message' => 'Assignment completed',
-            ], 200);
+            return new JsonResponse([
+                'message' => 'Assignment rejected',
+            ], Response::HTTP_OK);
         } catch (AssignmentException $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 }

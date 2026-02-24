@@ -1,15 +1,17 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Evaluators\Application\GetEvaluatorCandidatesUseCase;
+use Src\Evaluators\Application\DTOs\EvaluatorCandidateResponse;
+use Src\Evaluators\Application\UseCases\GetEvaluatorCandidates;
 use Src\Evaluators\Domain\Exceptions\EvaluatorNotFoundException;
+use Symfony\Component\HttpFoundation\Response;
 
 class GetEvaluatorCandidatesController
 {
     public function __construct(
-        private readonly GetEvaluatorCandidatesUseCase $useCase
+        private readonly GetEvaluatorCandidates $useCase
     ) {
     }
 
@@ -52,33 +54,18 @@ class GetEvaluatorCandidatesController
     {
         try {
             // 1. Execute the Use Case
-            $result = $this->useCase->execute($evaluatorId);
+            $candidates = $this->useCase->execute($evaluatorId);
 
-            // 2. Map the response
-            $candidates = array_map(function ($item) {
-                $candidate = $item['candidate'];
-                $assignment = $item['assignment'];
-
-                return [
-                    'id' => $candidate->id(),
-                    'name' => $candidate->name(),
-                    'email' => $candidate->email()->value(),
-                    'years_of_experience' => $candidate->yearsOfExperience()->value(),
-                    'assigned_at' => $assignment->assignedAt()->format('Y-m-d H:i:s'),
-                    'status' => $assignment->status()->value()
-                ];
-            }, $result);
-
-            // 3. Return the HTTP response
-            return response()->json([
+            // 2. Return the HTTP response
+            return new JsonResponse([
                 'data' => $candidates,
                 'meta' => [
                     'total' => count($candidates),
                     'evaluator_id' => $evaluatorId
                 ]
-            ], 200);
+            ], Response::HTTP_OK);
         } catch (EvaluatorNotFoundException $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 }

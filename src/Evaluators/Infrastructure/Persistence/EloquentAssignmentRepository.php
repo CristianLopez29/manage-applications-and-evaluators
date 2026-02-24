@@ -4,6 +4,7 @@ namespace Src\Evaluators\Infrastructure\Persistence;
 
 use Src\Evaluators\Domain\CandidateAssignment;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
+use Src\Evaluators\Domain\Enums\AssignmentStatus;
 
 class EloquentAssignmentRepository implements AssignmentRepository
 {
@@ -12,7 +13,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
         $model = CandidateAssignmentModel::create([
             'candidate_id' => $assignment->candidateId(),
             'evaluator_id' => $assignment->evaluatorId(),
-            'status' => $assignment->status()->value(),
+            'status' => $assignment->status()->value,
             'assigned_at' => $assignment->assignedAt()->format('Y-m-d H:i:s'),
             'deadline' => $assignment->deadline()->format('Y-m-d H:i:s'),
             'last_reminder' => $assignment->lastReminder(),
@@ -29,7 +30,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
 
         CandidateAssignmentModel::where('id', $assignment->id())
             ->update([
-                'status' => $assignment->status()->value(),
+                'status' => $assignment->status()->value,
                 'deadline' => $assignment->deadline()->format('Y-m-d H:i:s'),
                 'last_reminder' => $assignment->lastReminder(),
             ]);
@@ -63,7 +64,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
             $model->id,
             $model->candidate_id,
             $model->evaluator_id,
-            $model->status,
+            $model->status->value,
             new \DateTimeImmutable($assignedAt->format('Y-m-d H:i:s')),
             new \DateTimeImmutable($deadline->format('Y-m-d H:i:s')),
             $lastReminder
@@ -98,7 +99,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
                 $model->id,
                 $model->candidate_id,
                 $model->evaluator_id,
-                $model->status,
+                $model->status->value,
                 new \DateTimeImmutable($assignedAt->format('Y-m-d H:i:s')),
                 new \DateTimeImmutable($deadline->format('Y-m-d H:i:s')),
                 $lastReminder
@@ -136,7 +137,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
             $model->id,
             $model->candidate_id,
             $model->evaluator_id,
-            $model->status,
+            $model->status->value,
             new \DateTimeImmutable($assignedAt->format('Y-m-d H:i:s')),
             new \DateTimeImmutable($deadline->format('Y-m-d H:i:s')),
             $lastReminder
@@ -153,7 +154,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
     public function candidateHasActiveAssignment(int $candidateId): bool
     {
         return CandidateAssignmentModel::where('candidate_id', $candidateId)
-            ->whereIn('status', ['pending', 'in_progress'])
+            ->whereIn('status', [AssignmentStatus::PENDING, AssignmentStatus::IN_PROGRESS])
             ->exists();
     }
 

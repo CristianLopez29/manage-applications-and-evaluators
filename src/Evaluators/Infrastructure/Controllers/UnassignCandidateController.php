@@ -1,15 +1,16 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Evaluators\Application\UnassignCandidateUseCase;
+use Src\Evaluators\Application\UseCases\UnassignCandidate;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
+use Symfony\Component\HttpFoundation\Response;
 
 class UnassignCandidateController
 {
     public function __construct(
-        private readonly UnassignCandidateUseCase $useCase
+        private readonly UnassignCandidate $useCase
     ) {
     }
 
@@ -45,11 +46,11 @@ class UnassignCandidateController
         try {
             $this->useCase->execute($evaluatorId, $candidateId);
 
-            return response()->json([
+            return new JsonResponse([
                 'message' => 'Candidate unassigned from evaluator',
-            ], 200);
+            ], Response::HTTP_OK);
         } catch (AssignmentException $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 }

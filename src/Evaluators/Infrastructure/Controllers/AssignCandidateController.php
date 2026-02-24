@@ -1,18 +1,20 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Src\Evaluators\Application\AssignCandidateToEvaluatorUseCase;
-use Src\Evaluators\Application\DTO\AssignCandidateRequest;
+use Src\Evaluators\Application\UseCases\AssignCandidateToEvaluator;
+use Src\Evaluators\Application\DTOs\AssignCandidateRequest;
+use Src\Evaluators\Application\DTOs\AssignmentResponse;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
 use Src\Evaluators\Domain\Exceptions\EvaluatorNotFoundException;
+use Symfony\Component\HttpFoundation\Response;
 
 class AssignCandidateController
 {
     public function __construct(
-        private readonly AssignCandidateToEvaluatorUseCase $useCase
+        private readonly AssignCandidateToEvaluator $useCase
     ) {
     }
 
@@ -69,17 +71,19 @@ class AssignCandidateController
             $this->useCase->execute($dto);
 
             // 4. HTTP Response
-            return response()->json([
+            $responseDto = new AssignmentResponse(
+                $dto->candidateId,
+                $dto->evaluatorId
+            );
+
+            return new JsonResponse([
                 'message' => 'Candidate assigned successfully',
-                'data' => [
-                    'candidate_id' => $dto->candidateId,
-                    'evaluator_id' => $dto->evaluatorId
-                ]
-            ], 200);
+                'data' => $responseDto
+            ], Response::HTTP_OK);
         } catch (EvaluatorNotFoundException $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         } catch (AssignmentException $e) {
-            return response()->json(['error' => $e->getMessage()], 409);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_CONFLICT);
         }
     }
 }

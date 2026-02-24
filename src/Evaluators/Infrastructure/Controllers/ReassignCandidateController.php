@@ -1,16 +1,18 @@
 <?php
 
-namespace Src\Evaluators\Infrastructure\Http;
+namespace Src\Evaluators\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Evaluators\Application\ReassignCandidateUseCase;
+use Src\Evaluators\Application\DTOs\AssignmentResponse;
+use Src\Evaluators\Application\UseCases\ReassignCandidate;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
 use Src\Evaluators\Domain\Exceptions\EvaluatorNotFoundException;
+use Symfony\Component\HttpFoundation\Response;
 
 class ReassignCandidateController
 {
     public function __construct(
-        private readonly ReassignCandidateUseCase $useCase
+        private readonly ReassignCandidate $useCase
     ) {
     }
 
@@ -46,15 +48,17 @@ class ReassignCandidateController
         try {
             $this->useCase->execute($newEvaluatorId, $candidateId);
 
-            return response()->json([
+            $responseDto = new AssignmentResponse(
+                $candidateId,
+                $newEvaluatorId
+            );
+
+            return new JsonResponse([
                 'message' => 'Candidate reassigned to new evaluator',
-                'data' => [
-                    'candidate_id' => $candidateId,
-                    'evaluator_id' => $newEvaluatorId,
-                ],
-            ], 200);
+                'data' => $responseDto
+            ], Response::HTTP_OK);
         } catch (AssignmentException|EvaluatorNotFoundException $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 }

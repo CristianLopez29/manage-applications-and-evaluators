@@ -4,7 +4,7 @@ namespace Src\Evaluators\Infrastructure\Export;
 
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\WithMultipleSheets;
-use Src\Evaluators\Application\GetConsolidatedEvaluatorsUseCase;
+use Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators;
 use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
 
 class EvaluatorsExport implements WithMultipleSheets
@@ -14,7 +14,7 @@ class EvaluatorsExport implements WithMultipleSheets
     private const RECORDS_PER_SHEET = 50;
 
     public function __construct(
-        private readonly GetConsolidatedEvaluatorsUseCase $useCase
+        private readonly GetConsolidatedEvaluators $useCase
     ) {
     }
 

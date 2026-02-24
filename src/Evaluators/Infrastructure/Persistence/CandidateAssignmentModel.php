@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Src\Candidates\Infrastructure\Persistence\CandidateModel;
 
+use Src\Evaluators\Domain\Enums\AssignmentStatus;
+
 /**
  * @property int $id
  * @property int $candidate_id
  * @property int $evaluator_id
- * @property string $status
+ * @property AssignmentStatus $status
  * @property \DateTimeInterface $assigned_at
  * @property \DateTimeInterface $deadline
  * @property \DateTimeInterface|null $last_reminder
@@ -31,6 +33,7 @@ class CandidateAssignmentModel extends Model
     ];
 
     protected $casts = [
+        'status' => AssignmentStatus::class,
         'assigned_at' => 'datetime',
         'deadline' => 'datetime',
         'last_reminder' => 'datetime',
