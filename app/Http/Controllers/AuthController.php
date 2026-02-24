@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
@@ -47,15 +48,15 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::guard('web')->attempt($credentials)) {
-            return response()->json([
+            return new JsonResponse([
                 'message' => 'Invalid credentials',
-            ], 401);
+            ], Response::HTTP_UNAUTHORIZED);
         }
 
         $user = Auth::guard('web')->user();
         $token = $user->createToken('api')->plainTextToken;
 
-        return response()->json([
+        return new JsonResponse([
             'token' => $token,
             'user' => [
                 'id' => $user->id,
@@ -63,7 +64,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'role' => $user->role,
             ],
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -83,9 +84,9 @@ class AuthController extends Controller
             $user->currentAccessToken()->delete();
         }
 
-        return response()->json([
+        return new JsonResponse([
             'message' => 'Logged out',
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -109,13 +110,13 @@ class AuthController extends Controller
         $user = $request->user();
         $current = $user?->currentAccessToken();
         if ($user === null || $current === null) {
-            return response()->json(['message' => 'Unauthorized'], 401);
+            return new JsonResponse(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
         $newToken = $user->createToken('api')->plainTextToken;
         $current->delete();
-        return response()->json([
+        return new JsonResponse([
             'token' => $newToken,
-        ]);
+        ], Response::HTTP_OK);
     }
 
     /**
@@ -140,20 +141,20 @@ class AuthController extends Controller
     {
         $userId = (int) $id;
         if ($userId <= 0) {
-            return response()->json(['message' => 'User not found'], 404);
+            return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
         $actor = $request->user();
         if ($actor === null || $actor->role !== 'admin') {
-            return response()->json(['message' => 'Forbidden'], 403);
+            return new JsonResponse(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
         }
         $userClass = \App\Models\User::class;
         /** @var \App\Models\User|null $target */
         $target = $userClass::find($userId);
         if ($target === null) {
-            return response()->json(['message' => 'User not found'], 404);
+            return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
         $target->tokens()->delete();
-        return response()->json(['message' => 'All tokens revoked']);
+        return new JsonResponse(['message' => 'All tokens revoked'], Response::HTTP_OK);
     }
 }
