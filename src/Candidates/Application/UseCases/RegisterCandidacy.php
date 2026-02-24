@@ -1,8 +1,8 @@
 <?php
 
-namespace Src\Candidates\Application;
+namespace Src\Candidates\Application\UseCases;
 
-use Src\Candidates\Application\DTO\RegisterCandidacyRequest;
+use Src\Candidates\Application\DTOs\RegisterCandidacyRequest;
 use Src\Candidates\Domain\Candidate;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Candidates\Domain\Validators\CandidateValidator;
@@ -10,7 +10,7 @@ use Src\Candidates\Domain\Validators\RequiredCVValidator;
 use Src\Candidates\Domain\Validators\ValidEmailValidator;
 use Src\Candidates\Domain\Validators\MinimumExperienceValidator;
 
-class RegisterCandidacyUseCase
+class RegisterCandidacy
 {
     private CandidateValidator $validatorChain;
 

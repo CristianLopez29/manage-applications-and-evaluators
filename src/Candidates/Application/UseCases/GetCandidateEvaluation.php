@@ -1,11 +1,11 @@
 <?php
 
-namespace Src\Candidates\Application;
+namespace Src\Candidates\Application\UseCases;
 
 use Src\Candidates\Domain\Repositories\CandidateEvaluationRepository;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 
-class GetCandidateEvaluationUseCase
+class GetCandidateEvaluation
 {
     public function __construct(
         private readonly CandidateRepository $candidates,
@@ -23,4 +23,3 @@ class GetCandidateEvaluationUseCase
         return $this->evaluations->findLatestByCandidateId($candidateId);
     }
 }
-

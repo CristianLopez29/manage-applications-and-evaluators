@@ -1,20 +1,24 @@
 <?php
 
-namespace Src\Candidates\Application;
+namespace Src\Candidates\Application\UseCases;
 
+use Src\Candidates\Application\DTOs\CandidateListItemResponse;
+use Src\Candidates\Application\Transformers\CandidateListItemTransformer;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
+use Src\Evaluators\Domain\Enums\AssignmentStatus;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 
-class ListCandidatesUseCase
+class ListCandidates
 {
     public function __construct(
         private readonly CandidateRepository $candidateRepository,
-        private readonly AssignmentRepository $assignmentRepository
+        private readonly AssignmentRepository $assignmentRepository,
+        private readonly CandidateListItemTransformer $transformer
     ) {
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * @return array<int, CandidateListItemResponse>
      */
     public function execute(
         ?string $status,
@@ -37,14 +41,15 @@ class ListCandidatesUseCase
 
                 return !$this->assignmentRepository->candidateHasActiveAssignment($id);
             });
-        } elseif (in_array($status, ['pending', 'in_progress', 'completed', 'rejected'], true)) {
-            $candidates = array_filter($candidates, function ($candidate) use ($status) {
+        } elseif ($status && AssignmentStatus::tryFrom($status)) {
+            $statusEnum = AssignmentStatus::from($status);
+            $candidates = array_filter($candidates, function ($candidate) use ($statusEnum) {
                 $id = $candidate->id();
                 if ($id === null) {
                     return false;
                 }
                 $assignment = $this->assignmentRepository->findByCandidateId($id);
-                return $assignment !== null && $assignment->status()->value() === $status;
+                return $assignment !== null && $assignment->status() === $statusEnum;
             });
         }
 
@@ -56,14 +61,7 @@ class ListCandidatesUseCase
                 $assignment = $this->assignmentRepository->findByCandidateId($id);
             }
 
-            return [
-                'id' => $id,
-                'name' => $candidate->name(),
-                'email' => $candidate->email()->value(),
-                'years_of_experience' => $candidate->yearsOfExperience()->value(),
-                'primary_specialty' => $candidate->primarySpecialty(),
-                'assignment_status' => $assignment ? $assignment->status()->value() : null,
-            ];
+            return $this->transformer->transform($candidate, $assignment);
         }, $candidates);
     }
 }

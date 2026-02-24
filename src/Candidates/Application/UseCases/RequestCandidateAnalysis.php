@@ -1,11 +1,11 @@
 <?php
 
-namespace Src\Candidates\Application;
+namespace Src\Candidates\Application\UseCases;
 
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Candidates\Infrastructure\Jobs\AnalyzeCandidateCvJob;
 
-class RequestCandidateAnalysisUseCase
+class RequestCandidateAnalysis
 {
     public function __construct(
         private readonly CandidateRepository $candidates
@@ -22,4 +22,3 @@ class RequestCandidateAnalysisUseCase
         AnalyzeCandidateCvJob::dispatch($candidateId);
     }
 }
-
