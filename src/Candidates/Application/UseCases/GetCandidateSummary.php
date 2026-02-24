@@ -1,8 +1,8 @@
 <?php
 
-namespace Src\Candidates\Application;
+namespace Src\Candidates\Application\UseCases;
 
-use Src\Candidates\Application\DTO\CandidateSummaryDTO;
+use Src\Candidates\Application\DTOs\CandidateSummaryDTO;
 use Src\Candidates\Domain\Exceptions\InvalidCandidateException;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Candidates\Domain\Validators\RequiredCVValidator;
@@ -13,7 +13,7 @@ use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
 use Src\Candidates\Domain\Candidate;
 use Src\Candidates\Domain\Validators\CandidateValidator;
 
-class GetCandidateSummaryUseCase
+class GetCandidateSummary
 {
     public function __construct(
         private readonly CandidateRepository $candidateRepository,
@@ -41,7 +41,7 @@ class GetCandidateSummaryUseCase
                     'evaluator_name' => $evaluator->name()->value(),
                     'evaluator_email' => $evaluator->email()->value(),
                     'assigned_at' => $assignment->assignedAt()->format('Y-m-d H:i:s'),
-                    'status' => $assignment->status()->value()
+                    'status' => $assignment->status()->value
                 ];
             }
         }

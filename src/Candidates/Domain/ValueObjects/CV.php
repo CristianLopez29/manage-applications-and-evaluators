@@ -19,9 +19,7 @@ final readonly class CV
 
     private function validate(string $content): void
     {
-        if (trim($content) === '') {
-            throw EmptyCVException::create();
-        }
+        // Validation moved to RequiredCVValidator to support PDF-only CVs
     }
 
     public function content(): string

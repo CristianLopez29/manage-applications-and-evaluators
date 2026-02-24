@@ -9,10 +9,12 @@ class RequiredCVValidator extends AbstractCandidateValidator
 {
     protected function doValidate(Candidate $candidate): void
     {
-        // Validation already done in the CV Value Object, we only need to verify that we can access the CV
         try {
             $cv = $candidate->cv();
-            if (trim($cv->content()) === '') {
+            $hasContent = trim($cv->content()) !== '';
+            $hasFile = $candidate->cvFilePath() !== null;
+
+            if (!$hasContent && !$hasFile) {
                 throw EmptyCVException::create();
             }
         } catch (\Throwable $e) {

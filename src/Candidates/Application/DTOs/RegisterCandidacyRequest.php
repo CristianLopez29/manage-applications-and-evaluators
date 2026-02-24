@@ -1,6 +1,6 @@
 <?php
 
-namespace Src\Candidates\Application\DTO;
+namespace Src\Candidates\Application\DTOs;
 
 readonly class RegisterCandidacyRequest
 {
