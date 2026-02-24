@@ -1,23 +1,26 @@
 <?php
 
-namespace Src\Evaluators\Application;
+namespace Src\Evaluators\Application\UseCases;
 
 use Src\Candidates\Domain\Repositories\CandidateRepository;
+use Src\Evaluators\Application\DTOs\EvaluatorCandidateResponse;
+use Src\Evaluators\Application\Transformers\EvaluatorCandidateTransformer;
 use Src\Evaluators\Domain\Exceptions\EvaluatorNotFoundException;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
 
-class GetEvaluatorCandidatesUseCase
+class GetEvaluatorCandidates
 {
     public function __construct(
         private readonly EvaluatorRepository $evaluatorRepository,
         private readonly AssignmentRepository $assignmentRepository,
-        private readonly CandidateRepository $candidateRepository
+        private readonly CandidateRepository $candidateRepository,
+        private readonly EvaluatorCandidateTransformer $transformer
     ) {
     }
 
     /**
-     * @return array<int, array{candidate: \Src\Candidates\Domain\Candidate, assignment: \Src\Evaluators\Domain\CandidateAssignment}>
+     * @return array<int, EvaluatorCandidateResponse>
      */
     public function execute(int $evaluatorId): array
     {
@@ -36,10 +39,7 @@ class GetEvaluatorCandidatesUseCase
             $candidate = $this->candidateRepository->findById($assignment->candidateId());
 
             if ($candidate) {
-                $result[] = [
-                    'candidate' => $candidate,
-                    'assignment' => $assignment
-                ];
+                $result[] = $this->transformer->transform($candidate, $assignment);
             }
         }
 

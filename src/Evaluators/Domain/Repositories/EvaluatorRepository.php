@@ -5,11 +5,11 @@ namespace Src\Evaluators\Domain\Repositories;
 use Src\Evaluators\Domain\Evaluator;
 use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Src\Evaluators\Application\DTO\EvaluatorWithCandidatesDTO;
+use Src\Evaluators\Application\DTOs\EvaluatorWithCandidatesDTO;
 
 interface EvaluatorRepository
 {
-    public function save(Evaluator $evaluator): void;
+    public function save(Evaluator $evaluator): int;
 
     public function findById(int $id): ?Evaluator;
 

@@ -5,7 +5,7 @@ namespace Src\Evaluators\Domain;
 use DateTimeImmutable;
 use Src\Candidates\Domain\ValueObjects\Email;
 use Src\Evaluators\Domain\ValueObjects\EvaluatorName;
-use Src\Evaluators\Domain\ValueObjects\Specialty;
+use Src\Evaluators\Domain\Enums\Specialty;
 
 class Evaluator
 {
@@ -30,7 +30,7 @@ class Evaluator
             null, // ID is assigned when persisting
             EvaluatorName::fromString($name),
             Email::fromString($email),
-            Specialty::fromString($specialty),
+            Specialty::from($specialty),
             new DateTimeImmutable()
         );
     }
@@ -47,7 +47,7 @@ class Evaluator
             $id,
             EvaluatorName::fromString($name),
             Email::fromString($email),
-            Specialty::fromString($specialty),
+            Specialty::from($specialty),
             $createdAt
         );
     }
@@ -81,5 +81,16 @@ class Evaluator
     public function canAcceptMoreCandidates(int $currentAssigned): bool
     {
         return $currentAssigned < self::MAX_CONCURRENT_CANDIDATES;
+    }
+
+    public function withId(int $id): self
+    {
+        return new self(
+            $id,
+            $this->name,
+            $this->email,
+            $this->specialty,
+            $this->createdAt
+        );
     }
 }

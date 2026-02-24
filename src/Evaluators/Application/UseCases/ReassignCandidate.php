@@ -1,6 +1,6 @@
 <?php
 
-namespace Src\Evaluators\Application;
+namespace Src\Evaluators\Application\UseCases;
 
 use Illuminate\Support\Facades\DB;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
@@ -10,13 +10,13 @@ use Src\Evaluators\Domain\Exceptions\EvaluatorNotFoundException;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
 
-class ReassignCandidateUseCase
+class ReassignCandidate
 {
     public function __construct(
         private readonly CandidateRepository $candidateRepository,
         private readonly EvaluatorRepository $evaluatorRepository,
         private readonly AssignmentRepository $assignmentRepository,
-        private readonly GetConsolidatedEvaluatorsUseCase $consolidatedUseCase
+        private readonly GetConsolidatedEvaluators $consolidatedUseCase
     ) {
     }
 
@@ -42,7 +42,7 @@ class ReassignCandidateUseCase
             }
 
             $candidateSpecialty = $candidate->primarySpecialty();
-            $evaluatorSpecialty = $newEvaluator->specialty()->value();
+            $evaluatorSpecialty = $newEvaluator->specialty()->value;
             if ($candidateSpecialty !== null && $candidateSpecialty !== $evaluatorSpecialty) {
                 throw AssignmentException::invalidSpecialtyMatch(
                     $candidateId,
