@@ -1,14 +1,16 @@
 <?php
 
-namespace Src\Candidates\Infrastructure\Http;
+namespace Src\Candidates\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Candidates\Application\GetCandidateSummaryUseCase;
+use Src\Candidates\Application\DTOs\CandidateSummaryResponse;
+use Src\Candidates\Application\UseCases\GetCandidateSummary;
+use Symfony\Component\HttpFoundation\Response;
 
 class GetCandidateSummaryController
 {
     public function __construct(
-        private readonly GetCandidateSummaryUseCase $useCase
+        private readonly GetCandidateSummary $useCase
     ) {
     }
 
@@ -63,8 +65,8 @@ class GetCandidateSummaryController
         try {
             $dto = $this->useCase->execute($id);
 
-            $response = [
-                'candidate_info' => [
+            $response = new CandidateSummaryResponse(
+                candidateInfo: [
                     'id' => $dto->id,
                     'name' => $dto->name,
                     'email' => $dto->email,
@@ -73,16 +75,16 @@ class GetCandidateSummaryController
                     'cv_pdf' => $dto->hasPdf,
                     'cv_download_url' => $dto->hasPdf ? url("/api/candidates/{$dto->id}/cv") : null,
                 ],
-                'assignment_info' => $dto->assignment ?? 'Unassigned',
-                'compliance_report' => $dto->validationResults
-            ];
+                assignmentInfo: $dto->assignment ?? 'Unassigned',
+                complianceReport: $dto->validationResults
+            );
 
-            return response()->json([
+            return new JsonResponse([
                 'data' => $response
-            ], 200);
+            ], Response::HTTP_OK);
 
         } catch (\RuntimeException $e) {
-            return response()->json(['error' => $e->getMessage()], 404);
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
         }
     }
 }

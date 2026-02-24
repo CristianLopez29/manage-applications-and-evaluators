@@ -1,14 +1,15 @@
 <?php
 
-namespace Src\Candidates\Infrastructure\Http;
+namespace Src\Candidates\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Candidates\Application\GetCandidateEvaluationUseCase;
+use Src\Candidates\Application\UseCases\GetCandidateEvaluation;
+use Symfony\Component\HttpFoundation\Response;
 
 class GetCandidateEvaluationController
 {
     public function __construct(
-        private readonly GetCandidateEvaluationUseCase $useCase
+        private readonly GetCandidateEvaluation $useCase
     ) {
     }
 
@@ -41,15 +42,14 @@ class GetCandidateEvaluationController
     {
         $result = $this->useCase->execute($id);
         if ($result === null) {
-            return response()->json([
+            return new JsonResponse([
                 'status' => 'processing',
                 'message' => 'Evaluation not ready yet',
-            ], 202);
+            ], Response::HTTP_ACCEPTED);
         }
 
-        return response()->json([
+        return new JsonResponse([
             'data' => $result,
-        ]);
+        ], Response::HTTP_OK);
     }
 }
-

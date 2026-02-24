@@ -1,14 +1,15 @@
 <?php
 
-namespace Src\Candidates\Infrastructure\Http;
+namespace Src\Candidates\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
-use Src\Candidates\Application\RequestCandidateAnalysisUseCase;
+use Src\Candidates\Application\UseCases\RequestCandidateAnalysis;
+use Symfony\Component\HttpFoundation\Response;
 
 class AnalyzeCandidateController
 {
     public function __construct(
-        private readonly RequestCandidateAnalysisUseCase $useCase
+        private readonly RequestCandidateAnalysis $useCase
     ) {
     }
 
@@ -37,10 +38,9 @@ class AnalyzeCandidateController
     {
         $this->useCase->execute($id);
 
-        return response()->json([
+        return new JsonResponse([
             'status' => 'processing',
             'message' => 'Analysis queued',
-        ], 202);
+        ], Response::HTTP_ACCEPTED);
     }
 }
-
