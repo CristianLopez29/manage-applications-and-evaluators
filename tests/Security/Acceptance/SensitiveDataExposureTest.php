@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Security;
+namespace Tests\Security\Acceptance;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
