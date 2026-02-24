@@ -1,15 +1,15 @@
 <?php
 
-namespace Src\Evaluators\Application;
+namespace Src\Evaluators\Application\UseCases;
 
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 
-class RejectAssignmentUseCase
+class CompleteAssignment
 {
     public function __construct(
         private readonly AssignmentRepository $assignmentRepository,
-        private readonly GetConsolidatedEvaluatorsUseCase $consolidatedUseCase
+        private readonly GetConsolidatedEvaluators $consolidatedUseCase
     ) {
     }
 
@@ -21,8 +21,8 @@ class RejectAssignmentUseCase
             throw new AssignmentException("Assignment not found for evaluator {$evaluatorId} and candidate {$candidateId}");
         }
 
-        $previous = $assignment->status()->value();
-        $assignment->reject();
+        $previous = $assignment->status()->value;
+        $assignment->complete();
 
         $this->assignmentRepository->update($assignment);
         event(new \Src\Evaluators\Domain\Events\AssignmentStatusChanged(
@@ -30,7 +30,7 @@ class RejectAssignmentUseCase
             $assignment->candidateId(),
             $assignment->evaluatorId(),
             $previous,
-            $assignment->status()->value(),
+            $assignment->status()->value,
             new \DateTimeImmutable()
         ));
         $this->consolidatedUseCase->invalidateCache();

@@ -1,6 +1,6 @@
 <?php
 
-namespace Src\Evaluators\Application\DTO;
+namespace Src\Evaluators\Application\DTOs;
 
 readonly class AssignCandidateRequest
 {

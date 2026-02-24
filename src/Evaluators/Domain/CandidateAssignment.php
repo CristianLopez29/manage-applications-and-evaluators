@@ -3,7 +3,7 @@
 namespace Src\Evaluators\Domain;
 
 use DateTimeImmutable;
-use Src\Evaluators\Domain\ValueObjects\AssignmentStatus;
+use Src\Evaluators\Domain\Enums\AssignmentStatus;
 
 class CandidateAssignment
 {
@@ -29,7 +29,7 @@ class CandidateAssignment
             null, // ID is assigned when persisting
             $candidateId,
             $evaluatorId,
-            AssignmentStatus::pending(),
+            AssignmentStatus::PENDING,
             $assignedAt,
             $assignedAt->modify('+7 days'),
             null
@@ -50,7 +50,7 @@ class CandidateAssignment
             $id,
             $candidateId,
             $evaluatorId,
-            AssignmentStatus::fromString($status),
+            AssignmentStatus::from($status),
             $assignedAt,
             $deadline,
             $lastReminder
@@ -96,17 +96,17 @@ class CandidateAssignment
     // Behavior methods
     public function startProgress(): void
     {
-        $this->status = AssignmentStatus::inProgress();
+        $this->status = AssignmentStatus::IN_PROGRESS;
     }
 
     public function complete(): void
     {
-        $this->status = AssignmentStatus::completed();
+        $this->status = AssignmentStatus::COMPLETED;
     }
 
     public function reject(): void
     {
-        $this->status = AssignmentStatus::rejected();
+        $this->status = AssignmentStatus::REJECTED;
     }
 
     public function isOverdue(DateTimeImmutable $now): bool
