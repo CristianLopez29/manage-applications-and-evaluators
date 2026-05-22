@@ -1,15 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Src\Evaluators\Application\UseCases;
 
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Evaluators\Application\DTOs\AssignCandidateRequest;
 use Src\Evaluators\Domain\CandidateAssignment;
+use Src\Evaluators\Domain\Events\CandidateAssigned;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
 use Src\Evaluators\Domain\Exceptions\EvaluatorNotFoundException;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
-use Illuminate\Support\Facades\DB;
+use Src\Shared\Application\Ports\TransactionManager;
+use Src\Shared\Domain\DomainEventPublisher;
 
 class AssignCandidateToEvaluator
 {
@@ -17,51 +21,50 @@ class AssignCandidateToEvaluator
         private readonly CandidateRepository $candidateRepository,
         private readonly EvaluatorRepository $evaluatorRepository,
         private readonly AssignmentRepository $assignmentRepository,
-        private readonly GetConsolidatedEvaluators $consolidatedUseCase
+        private readonly TransactionManager $transactionManager,
+        private readonly DomainEventPublisher $eventPublisher,
     ) {
     }
 
     public function execute(AssignCandidateRequest $request): void
     {
-        DB::transaction(function () use ($request) {
-            $candidate = $this->candidateRepository->findById($request->candidateId);
-            if (!$candidate) {
-                throw AssignmentException::candidateNotFound($request->candidateId);
-            }
+        $candidate = $this->candidateRepository->findById($request->candidateId);
+        if (!$candidate) {
+            throw AssignmentException::candidateNotFound($request->candidateId);
+        }
 
-            $evaluator = $this->evaluatorRepository->findById($request->evaluatorId);
-            if (!$evaluator) {
-                throw EvaluatorNotFoundException::withId($request->evaluatorId);
-            }
+        $evaluator = $this->evaluatorRepository->findById($request->evaluatorId);
+        if (!$evaluator) {
+            throw EvaluatorNotFoundException::withId($request->evaluatorId);
+        }
 
-            $assignedToEvaluator = $this->assignmentRepository->findByEvaluatorId($request->evaluatorId);
-            if (!$evaluator->canAcceptMoreCandidates(count($assignedToEvaluator))) {
-                throw AssignmentException::evaluatorOverloaded(
-                    $request->evaluatorId,
-                    \Src\Evaluators\Domain\Evaluator::MAX_CONCURRENT_CANDIDATES
-                );
-            }
+        $assignedToEvaluator = $this->assignmentRepository->findByEvaluatorId($request->evaluatorId);
+        if (!$evaluator->canAcceptMoreCandidates(count($assignedToEvaluator))) {
+            throw AssignmentException::evaluatorOverloaded(
+                $request->evaluatorId,
+                \Src\Evaluators\Domain\Evaluator::MAX_CONCURRENT_CANDIDATES
+            );
+        }
 
-            $candidateSpecialty = $candidate->primarySpecialty();
-            $evaluatorSpecialty = $evaluator->specialty()->value;
-            if ($candidateSpecialty !== null && $candidateSpecialty !== $evaluatorSpecialty) {
-                throw AssignmentException::invalidSpecialtyMatch(
-                    $request->candidateId,
-                    $candidateSpecialty,
-                    $evaluatorSpecialty
-                );
-            }
+        $candidateSpecialty = $candidate->primarySpecialty();
+        $evaluatorSpecialty = $evaluator->specialty()->value;
+        if ($candidateSpecialty !== null && $candidateSpecialty !== $evaluatorSpecialty) {
+            throw AssignmentException::invalidSpecialtyMatch(
+                $request->candidateId,
+                $candidateSpecialty,
+                $evaluatorSpecialty
+            );
+        }
 
-            $existingAssignment = DB::table('candidate_assignments')
-                ->where('candidate_id', $request->candidateId)
-                ->lockForUpdate()
-                ->first();
+        // Pessimistic lock inside a transaction prevents double-assignment races
+        $publishedEvent = null;
+        $this->transactionManager->run(function () use ($request, &$publishedEvent) {
+            $existing = $this->assignmentRepository->findByCandidateIdForUpdate($request->candidateId);
 
-            if ($existingAssignment) {
-                /** @var object{evaluator_id: int} $existingAssignment */
+            if ($existing) {
                 throw AssignmentException::candidateAlreadyAssigned(
                     $request->candidateId,
-                    $existingAssignment->evaluator_id
+                    $existing->evaluatorId()
                 );
             }
 
@@ -72,14 +75,16 @@ class AssignCandidateToEvaluator
 
             $assignmentId = $this->assignmentRepository->save($assignment);
 
-            event(new \Src\Evaluators\Domain\Events\CandidateAssigned(
+            $publishedEvent = new CandidateAssigned(
                 $assignmentId,
                 $request->candidateId,
                 $request->evaluatorId,
                 new \DateTimeImmutable()
-            ));
+            );
         });
 
-        $this->consolidatedUseCase->invalidateCache();
+        if ($publishedEvent !== null) {
+            $this->eventPublisher->publish($publishedEvent);
+        }
     }
 }

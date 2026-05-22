@@ -1,15 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Src\Evaluators\Application\UseCases;
 
+use Src\Evaluators\Domain\Events\AssignmentStatusChanged;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
+use Src\Shared\Domain\DomainEventPublisher;
 
 class UnassignCandidate
 {
     public function __construct(
         private readonly AssignmentRepository $assignmentRepository,
-        private readonly GetConsolidatedEvaluators $consolidatedUseCase
+        private readonly DomainEventPublisher $eventPublisher,
     ) {
     }
 
@@ -22,7 +26,14 @@ class UnassignCandidate
         }
 
         $this->assignmentRepository->deleteByEvaluatorAndCandidate($evaluatorId, $candidateId);
-        $this->consolidatedUseCase->invalidateCache();
+
+        $this->eventPublisher->publish(new AssignmentStatusChanged(
+            $assignment->id() ?? 0,
+            $assignment->candidateId(),
+            $assignment->evaluatorId(),
+            $assignment->status()->value,
+            'unassigned',
+            new \DateTimeImmutable()
+        ));
     }
 }
-

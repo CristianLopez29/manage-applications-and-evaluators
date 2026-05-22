@@ -3,10 +3,15 @@
 namespace Src\Evaluators;
 
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Src\Evaluators\Application\Ports\EvaluatorCachePort;
+use Src\Evaluators\Domain\Events\AssignmentStatusChanged;
+use Src\Evaluators\Domain\Events\CandidateAssigned;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
+use Src\Evaluators\Infrastructure\Cache\LaravelEvaluatorCache;
 use Src\Evaluators\Infrastructure\Controllers\AssignCandidateController;
 use Src\Evaluators\Infrastructure\Controllers\CompleteAssignmentController;
 use Src\Evaluators\Infrastructure\Controllers\GetConsolidatedEvaluatorsController;
@@ -17,6 +22,7 @@ use Src\Evaluators\Infrastructure\Controllers\RejectAssignmentController;
 use Src\Evaluators\Infrastructure\Controllers\RequestEvaluatorsReportController;
 use Src\Evaluators\Infrastructure\Controllers\StartAssignmentProgressController;
 use Src\Evaluators\Infrastructure\Controllers\UnassignCandidateController;
+use Src\Evaluators\Infrastructure\Listeners\InvalidateEvaluatorCache;
 use Src\Evaluators\Infrastructure\Persistence\EloquentAssignmentRepository;
 use Src\Evaluators\Infrastructure\Persistence\EloquentEvaluatorRepository;
 
@@ -33,10 +39,18 @@ class Bindings extends ServiceProvider
             AssignmentRepository::class,
             EloquentAssignmentRepository::class
         );
+
+        $this->app->bind(
+            EvaluatorCachePort::class,
+            LaravelEvaluatorCache::class
+        );
     }
 
     public function boot(Router $router): void
     {
+        Event::listen(CandidateAssigned::class, InvalidateEvaluatorCache::class);
+        Event::listen(AssignmentStatusChanged::class, InvalidateEvaluatorCache::class);
+
         Route::prefix('api')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
             Route::post('/evaluators', RegisterEvaluatorController::class)->middleware('role:admin');
             Route::get('/evaluators/consolidated', GetConsolidatedEvaluatorsController::class)->middleware('role:admin');
@@ -51,3 +65,4 @@ class Bindings extends ServiceProvider
         });
     }
 }
+

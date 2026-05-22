@@ -1,15 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Src\Evaluators\Application\UseCases;
 
+use Src\Evaluators\Domain\Events\AssignmentStatusChanged;
 use Src\Evaluators\Domain\Exceptions\AssignmentException;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
+use Src\Shared\Domain\DomainEventPublisher;
 
 class StartAssignmentProgress
 {
     public function __construct(
         private readonly AssignmentRepository $assignmentRepository,
-        private readonly GetConsolidatedEvaluators $consolidatedUseCase
+        private readonly DomainEventPublisher $eventPublisher,
     ) {
     }
 
@@ -25,7 +29,8 @@ class StartAssignmentProgress
         $assignment->startProgress();
 
         $this->assignmentRepository->update($assignment);
-        event(new \Src\Evaluators\Domain\Events\AssignmentStatusChanged(
+
+        $this->eventPublisher->publish(new AssignmentStatusChanged(
             $assignment->id() ?? 0,
             $assignment->candidateId(),
             $assignment->evaluatorId(),
@@ -33,6 +38,5 @@ class StartAssignmentProgress
             $assignment->status()->value,
             new \DateTimeImmutable()
         ));
-        $this->consolidatedUseCase->invalidateCache();
     }
 }
