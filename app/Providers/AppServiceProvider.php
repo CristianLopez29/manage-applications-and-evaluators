@@ -14,10 +14,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Audit Logger Binding
         $this->app->bind(
             \Src\Shared\Domain\Audit\AuditLogger::class,
             \Src\Shared\Infrastructure\Audit\EloquentAuditLogger::class
+        );
+
+        $this->app->bind(
+            \Src\Shared\Domain\DomainEventPublisher::class,
+            \Src\Shared\Infrastructure\LaravelDomainEventPublisher::class
+        );
+
+        $this->app->bind(
+            \Src\Shared\Application\Ports\TransactionManager::class,
+            \Src\Shared\Infrastructure\LaravelTransactionManager::class
         );
     }
 
@@ -47,7 +56,8 @@ class AppServiceProvider extends ServiceProvider
         );
 
         RateLimiter::for('login', function (Request $request) {
-            $email = (string) $request->input('email');
+            $input = $request->input('email');
+            $email = is_string($input) ? $input : '';
             return [
                 Limit::perMinute(5)->by($email.$request->ip()),
                 Limit::perMinute(30)->by($request->ip()),
