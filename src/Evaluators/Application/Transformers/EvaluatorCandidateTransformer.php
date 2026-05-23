@@ -10,8 +10,13 @@ final readonly class EvaluatorCandidateTransformer
 {
     public function transform(Candidate $candidate, CandidateAssignment $assignment): EvaluatorCandidateResponse
     {
+        $id = $candidate->id();
+        if ($id === null) {
+            throw new \LogicException('Candidate has no ID after retrieval from repository.');
+        }
+
         return new EvaluatorCandidateResponse(
-            $candidate->id(),
+            $id,
             $candidate->name(),
             $candidate->email()->value(),
             $candidate->yearsOfExperience()->value(),

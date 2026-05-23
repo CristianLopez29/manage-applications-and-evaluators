@@ -8,10 +8,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int $candidate_id
  * @property string|null $summary
- * @property array|null $skills
+ * @property array<int, string>|null $skills
  * @property int|null $years_experience
  * @property string|null $seniority_level
- * @property array|null $raw_response
+ * @property array<string, mixed>|null $raw_response
  * @property string|null $created_at
  */
 class CandidateEvaluationModel extends Model

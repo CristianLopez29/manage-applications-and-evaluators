@@ -36,7 +36,8 @@ class GeminiScreeningAdapter implements AiScreeningService
         ];
 
         $response = $this->postJson($payload);
-        $content = (string) data_get($response, 'candidates.0.content.parts.0.text', '');
+        $raw = data_get($response, 'candidates.0.content.parts.0.text', '');
+        $content = is_string($raw) ? $raw : '';
 
         return $this->parseResult($content, $response);
     }
@@ -64,7 +65,8 @@ class GeminiScreeningAdapter implements AiScreeningService
         ];
 
         $response = $this->postJson($payload);
-        $content = (string) data_get($response, 'candidates.0.content.parts.0.text', '');
+        $raw = data_get($response, 'candidates.0.content.parts.0.text', '');
+        $content = is_string($raw) ? $raw : '';
 
         return $this->parseResult($content, $response);
     }
@@ -132,9 +134,8 @@ Si no encuentras información, usa valores nulos o estimaciones conservadoras. N
         $years = $data['years_experience'] ?? null;
         $seniority = $data['seniority_level'] ?? null;
 
-        if ($skills !== null && !is_array($skills)) {
-            $skills = null;
-        }
+        /** @var list<string>|null $skills */
+        $skills = is_array($skills) ? array_values(array_filter($skills, 'is_string')) : null;
         if ($years !== null && !is_int($years)) {
             $years = (int) $years;
         }

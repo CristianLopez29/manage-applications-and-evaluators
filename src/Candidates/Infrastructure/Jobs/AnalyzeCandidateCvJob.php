@@ -19,11 +19,13 @@ class AnalyzeCandidateCvJob implements ShouldQueue
 
     public int $tries = 3;
 
+    /** @var array<int, int> */
+    public array $backoff = [60, 180, 600];
+
     public function __construct(
         public int $candidateId
     ) {
         $this->onQueue('default');
-        $this->backoff = [60, 180, 600];
     }
 
     public function handle(
@@ -39,7 +41,7 @@ class AnalyzeCandidateCvJob implements ShouldQueue
         $cvText = $candidate->cv()->content();
         $cvPdf = $candidate->cvFilePath();
 
-        if (is_string($cvText) && $cvText !== '') {
+        if ($cvText !== '') {
             $result = $ai->analyzeFromText($cvText);
         } elseif (is_string($cvPdf) && $cvPdf !== '') {
             $result = $ai->analyzeFromPdf($cvPdf);

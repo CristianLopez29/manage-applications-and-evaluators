@@ -6,6 +6,9 @@ use JsonSerializable;
 
 readonly class EvaluatorListItemResponse implements JsonSerializable
 {
+    /**
+     * @param array<int, array<string, mixed>> $candidates
+     */
     public function __construct(
         public int $id,
         public string $name,
@@ -18,6 +21,7 @@ readonly class EvaluatorListItemResponse implements JsonSerializable
     ) {
     }
 
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         return [
@@ -32,6 +36,7 @@ readonly class EvaluatorListItemResponse implements JsonSerializable
         ];
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return $this->toArray();

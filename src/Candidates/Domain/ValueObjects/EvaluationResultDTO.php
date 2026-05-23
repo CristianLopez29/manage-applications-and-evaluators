@@ -4,9 +4,12 @@ namespace Src\Candidates\Domain\ValueObjects;
 
 final readonly class EvaluationResultDTO
 {
+    /**
+     * @param array<int, string>|null $skills
+     * @param array<string, mixed> $rawResponse
+     */
     public function __construct(
         public ?string $summary,
-        /** @var array<int, string>|null */
         public ?array $skills,
         public ?int $yearsExperience,
         public ?string $seniorityLevel,

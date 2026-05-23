@@ -2,14 +2,13 @@
 
 namespace Src\Candidates\Domain\ValueObjects;
 
-use Src\Candidates\Domain\Exceptions\EmptyCVException;
-
 final readonly class CV
 {
     private function __construct(
         private string $content
     ) {
-        $this->validate($content);
+        // A CV can be empty when a candidate provides a PDF file.
+        // The invariant "CV or PDF required" is verified in RequiredCVValidator.
     }
 
     public static function fromString(string $content): self
@@ -17,9 +16,9 @@ final readonly class CV
         return new self($content);
     }
 
-    private function validate(string $content): void
+    public function isEmpty(): bool
     {
-        // Validation moved to RequiredCVValidator to support PDF-only CVs
+        return trim($this->content) === '';
     }
 
     public function content(): string

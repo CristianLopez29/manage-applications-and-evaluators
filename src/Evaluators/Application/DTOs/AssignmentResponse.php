@@ -12,6 +12,7 @@ readonly class AssignmentResponse implements JsonSerializable
     ) {
     }
 
+    /** @return array<string, mixed> */
     public function toArray(): array
     {
         return [
@@ -20,6 +21,7 @@ readonly class AssignmentResponse implements JsonSerializable
         ];
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return $this->toArray();

@@ -32,7 +32,7 @@ class ProcessOverdueAssignmentsJob implements ShouldQueue
             $candidate = CandidateModel::find($assignment->candidate_id);
             $evaluator = EvaluatorModel::find($assignment->evaluator_id);
 
-            if (!$candidate || !$evaluator) {
+            if (!$candidate || !$evaluator || $assignment->deadline === null) {
                 continue;
             }
 
@@ -56,7 +56,9 @@ class ProcessOverdueAssignmentsJob implements ShouldQueue
 
             // Escalation: if overdue beyond threshold, notify admins
             $thresholdDays = (int) (env('OVERDUE_ESCALATION_DAYS', 3));
-            $overdueDays = $assignment->deadline->diffInDays($now);
+            /** @var \Illuminate\Support\Carbon $deadlineCarbon */
+            $deadlineCarbon = $assignment->deadline;
+            $overdueDays = (int) $deadlineCarbon->diffInDays($now);
             if ($overdueDays >= $thresholdDays) {
                 $admins = User::query()->where('role', 'admin')->get();
                 if ($admins->isNotEmpty()) {

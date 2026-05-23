@@ -21,8 +21,13 @@ final readonly class EvaluatorListItemTransformer
             ];
         }, $dto->candidates);
 
+        $evaluatorId = $evaluator->id();
+        if ($evaluatorId === null) {
+            throw new \LogicException('Evaluator has no ID after retrieval from repository.');
+        }
+
         return new EvaluatorListItemResponse(
-            $evaluator->id(),
+            $evaluatorId,
             $evaluator->name()->value(),
             $evaluator->email()->value(),
             $evaluator->specialty()->value, // Enum value

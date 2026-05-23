@@ -10,8 +10,13 @@ final readonly class CandidateListItemTransformer
 {
     public function transform(Candidate $candidate, ?CandidateAssignment $assignment): CandidateListItemResponse
     {
+        $id = $candidate->id();
+        if ($id === null) {
+            throw new \LogicException('Candidate has no ID after retrieval from repository.');
+        }
+
         return new CandidateListItemResponse(
-            $candidate->id(),
+            $id,
             $candidate->name(),
             $candidate->email()->value(),
             $candidate->yearsOfExperience()->value(),

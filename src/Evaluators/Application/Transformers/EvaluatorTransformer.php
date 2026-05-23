@@ -9,8 +9,13 @@ final readonly class EvaluatorTransformer
 {
     public function transform(Evaluator $evaluator): EvaluatorResponse
     {
+        $id = $evaluator->id();
+        if ($id === null) {
+            throw new \LogicException('Evaluator has no ID after retrieval from repository.');
+        }
+
         return new EvaluatorResponse(
-            $evaluator->id(),
+            $id,
             $evaluator->name()->value(),
             $evaluator->email()->value(),
             $evaluator->specialty()->value, // Enum value
