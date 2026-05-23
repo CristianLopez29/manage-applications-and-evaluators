@@ -129,7 +129,7 @@ Si no encuentras información, usa valores nulos o estimaciones conservadoras. N
         /** @var list<string>|null $skills */
         $skills = is_array($skills) ? array_values(array_filter($skills, 'is_string')) : null;
         if ($years !== null && !is_int($years)) {
-            $years = (int) $years;
+            $years = is_numeric($years) ? (int) $years : null;
         }
         if ($summary !== null && !is_string($summary)) {
             $summary = null;
