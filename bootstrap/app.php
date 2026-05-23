@@ -3,6 +3,7 @@
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\EnsureCandidateAccess;
 use App\Http\Middleware\EnsureEvaluatorAccess;
+use Illuminate\Http\Request;
 use App\Http\Middleware\EnsureRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -25,5 +26,20 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Map all DomainExceptions to HTTP 422 Unprocessable Entity
+        $exceptions->render(function (\DomainException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'type'    => class_basename($e),
+                ], 422);
+            }
+        });
+
+        // Map EvaluatorNotFoundException to HTTP 404
+        $exceptions->render(function (\Src\Evaluators\Domain\Exceptions\EvaluatorNotFoundException $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 404);
+            }
+        });
     })->create();

@@ -54,6 +54,10 @@ class AuthController extends Controller
         }
 
         $user = Auth::guard('web')->user();
+        if (!$user instanceof \App\Models\User) {
+            return new JsonResponse(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
+
         $token = $user->createToken('api')->plainTextToken;
 
         return new JsonResponse([
@@ -80,7 +84,7 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        if ($user !== null && $user->currentAccessToken() !== null) {
+        if ($user !== null) {
             $user->currentAccessToken()->delete();
         }
 
