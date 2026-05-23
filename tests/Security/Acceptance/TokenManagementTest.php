@@ -19,12 +19,12 @@ class TokenManagementTest extends TestCase
         $accessToken = $user->createToken('api');
         $plainTextToken = $accessToken->plainTextToken;
 
+        /** @var array<string, string> $response */
         $response = $this->withHeader('Authorization', 'Bearer ' . $plainTextToken)
             ->postJson('/api/refresh-token')
             ->assertStatus(200)
             ->json();
 
-        $this->assertIsArray($response);
         $this->assertArrayHasKey('token', $response);
         $this->assertNotSame($plainTextToken, $response['token']);
 

@@ -66,7 +66,7 @@ class RegisterCandidacyTest extends TestCase
             ->assertJsonValidationErrors(['email']);
     }
 
-    /** test */
+    #[Test]
     public function should_reject_candidacy_with_less_than_two_years_experience(): void
     {
         $payload = [
@@ -78,14 +78,9 @@ class RegisterCandidacyTest extends TestCase
 
         $response = $this->postJson('/api/candidates', $payload);
 
-        // Should fail in domain validation (MinimumExperienceValidator)
-        // Domain exceptions are mapped to 422
+        // Domain validation (MinimumExperienceValidator) maps to 422 via global exception handler
         $response->assertStatus(422)
-            ->assertJson([
-                'errors' => [
-                    'domain' => []
-                ]
-            ]);
+            ->assertJsonFragment(['type' => 'InsufficientExperienceException']);
     }
 
     #[Test]

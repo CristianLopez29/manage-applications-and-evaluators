@@ -46,14 +46,16 @@ class SensitiveDataExposureTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         Sanctum::actingAs($admin, ['*']);
 
+        /** @var array<string, mixed> $response */
         $response = $this->getJson("/api/evaluators/{$evaluatorId}/candidates")
             ->assertStatus(200)
             ->json();
 
         $this->assertArrayHasKey('data', $response);
-        $this->assertIsArray($response['data']);
-        $this->assertNotEmpty($response['data']);
-        $this->assertArrayNotHasKey('cv', $response['data'][0]);
-        $this->assertArrayNotHasKey('cv_content', $response['data'][0]);
+        /** @var array<int, array<string, mixed>> $data */
+        $data = $response['data'];
+        $this->assertNotEmpty($data);
+        $this->assertArrayNotHasKey('cv', $data[0]);
+        $this->assertArrayNotHasKey('cv_content', $data[0]);
     }
 }
