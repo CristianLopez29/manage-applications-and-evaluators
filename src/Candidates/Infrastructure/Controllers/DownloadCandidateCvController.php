@@ -36,7 +36,7 @@ class DownloadCandidateCvController
      *     )
      * )
      */
-    public function __invoke(int $id)
+    public function __invoke(int $id): \Symfony\Component\HttpFoundation\Response
     {
         $candidate = $this->candidates->findById($id);
         if ($candidate === null) {

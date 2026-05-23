@@ -32,7 +32,8 @@ class OpenAiScreeningAdapter implements AiScreeningService
         ];
 
         $response = $this->postJson('https://api.openai.com/v1/chat/completions', $payload);
-        $content = data_get($response, 'choices.0.message.content', '');
+        $raw = data_get($response, 'choices.0.message.content', '');
+        $content = is_string($raw) ? $raw : '';
 
         return $this->parseResult($content, $response);
     }
@@ -57,7 +58,8 @@ class OpenAiScreeningAdapter implements AiScreeningService
         ];
 
         $response = $this->postJson('https://api.openai.com/v1/chat/completions', $payload);
-        $content = data_get($response, 'choices.0.message.content', '');
+        $raw = data_get($response, 'choices.0.message.content', '');
+        $content = is_string($raw) ? $raw : '';
 
         return $this->parseResult($content, $response);
     }
@@ -124,9 +126,8 @@ Si no encuentras información, usa valores nulos o estimaciones conservadoras. N
         $years = $data['years_experience'] ?? null;
         $seniority = $data['seniority_level'] ?? null;
 
-        if ($skills !== null && !is_array($skills)) {
-            $skills = null;
-        }
+        /** @var list<string>|null $skills */
+        $skills = is_array($skills) ? array_values(array_filter($skills, 'is_string')) : null;
         if ($years !== null && !is_int($years)) {
             $years = (int) $years;
         }

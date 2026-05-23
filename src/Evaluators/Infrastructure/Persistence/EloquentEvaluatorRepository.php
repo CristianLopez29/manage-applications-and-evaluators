@@ -142,48 +142,69 @@ class EloquentEvaluatorRepository implements EvaluatorRepository
 
         $paginator = $query->paginate($criteria->perPage, ['*'], 'page', $criteria->page);
 
-        // Transform internal paginator collection to DTOs
-        $paginator->getCollection()->transform(function (EvaluatorModel $model) {
-            $evaluator = Evaluator::reconstruct(
-                $model->id,
-                $model->name,
-                $model->email,
-                $model->specialty->value,
-                new \DateTimeImmutable($model->created_at)
-            );
+        // Collect all evaluator IDs on this page for a single eager-load query
+        $evaluatorIds = $paginator->getCollection()->pluck('id')->all();
 
-            // Load candidates and their assignment timestamps
-            /** @var \Illuminate\Database\Eloquent\Collection<int, \Src\Candidates\Infrastructure\Persistence\CandidateModel> $candidateRows */
-            $candidateRows = \Src\Candidates\Infrastructure\Persistence\CandidateModel::query()
-                ->join('candidate_assignments', 'candidates.id', '=', 'candidate_assignments.candidate_id')
-                ->where('candidate_assignments.evaluator_id', $model->id)
-                ->select(['candidates.*', \Illuminate\Support\Facades\DB::raw('candidate_assignments.assigned_at as assignment_assigned_at')])
-                ->get();
+        // One query for ALL candidates on this page (fixes N+1)
+        $candidatesByEvaluator = \Src\Candidates\Infrastructure\Persistence\CandidateModel::query()
+            ->join('candidate_assignments', 'candidates.id', '=', 'candidate_assignments.candidate_id')
+            ->whereIn('candidate_assignments.evaluator_id', $evaluatorIds)
+            ->select([
+                'candidates.*',
+                'candidate_assignments.evaluator_id as ca_evaluator_id',
+                \Illuminate\Support\Facades\DB::raw('candidate_assignments.assigned_at as ca_assigned_at'),
+            ])
+            ->get()
+            ->groupBy('ca_evaluator_id');
 
-            $assignmentsByCandidateId = [];
-            $candidates = $candidateRows->map(function ($candidateModel) use (&$assignmentsByCandidateId) {
-                /** @var string $assignedAt */
-                $assignedAt = $candidateModel->getAttribute('assignment_assigned_at');
-                $assignmentsByCandidateId[$candidateModel->id] = (new \DateTimeImmutable($assignedAt))->format('Y-m-d H:i:s');
-                return Candidate::reconstruct(
-                    $candidateModel->id,
-                    $candidateModel->name,
-                    $candidateModel->email,
-                    $candidateModel->years_of_experience,
-                    $candidateModel->cv_content,
-                    $candidateModel->cv_file_path ?? null,
-                    new \DateTimeImmutable($candidateModel->created_at),
-                    $candidateModel->primary_specialty
-                );
-            })->all();
-
-            $avgExperience = (float) ($model->avg_experience ?? 0.0);
-            $concatenatedEmails = $model->candidate_emails; // SQL GROUP_CONCAT result
-
-            return new EvaluatorWithCandidatesDTO($evaluator, $candidates, $avgExperience, $concatenatedEmails, $assignmentsByCandidateId);
-        });
+        $paginator->getCollection()->transform(
+            fn(EvaluatorModel $model) => $this->hydrateDto($model, $candidatesByEvaluator->get($model->id, collect()))
+        );
 
         /** @var LengthAwarePaginator<int, EvaluatorWithCandidatesDTO> $paginator */
         return $paginator;
     }
+
+    /**
+     * Reconstruct a full EvaluatorWithCandidatesDTO from an EvaluatorModel + pre-loaded candidate rows.
+     *
+     * @param \Illuminate\Support\Collection<int, mixed> $candidateRows
+     */
+    private function hydrateDto(EvaluatorModel $model, \Illuminate\Support\Collection $candidateRows): EvaluatorWithCandidatesDTO
+    {
+        $evaluator = Evaluator::reconstruct(
+            $model->id,
+            $model->name,
+            $model->email,
+            $model->specialty->value,
+            new \DateTimeImmutable($model->created_at)
+        );
+
+        $assignmentsByCandidateId = [];
+        $candidates = $candidateRows->map(function ($row) use (&$assignmentsByCandidateId) {
+            /** @var object{id: int, ca_assigned_at: string, name: string, email: string, years_of_experience: int, cv_content: string|null, cv_file_path: string|null, created_at: string, primary_specialty: string|null} $row */
+            $assignmentsByCandidateId[$row->id] =
+                (new \DateTimeImmutable($row->ca_assigned_at))->format('Y-m-d H:i:s');
+
+            return Candidate::reconstruct(
+                $row->id,
+                $row->name,
+                $row->email,
+                $row->years_of_experience,
+                $row->cv_content ?? '',
+                $row->cv_file_path ?? null,
+                new \DateTimeImmutable($row->created_at),
+                $row->primary_specialty
+            );
+        })->all();
+
+        return new EvaluatorWithCandidatesDTO(
+            $evaluator,
+            $candidates,
+            (float) ($model->avg_experience ?? 0.0),
+            $model->candidate_emails,
+            $assignmentsByCandidateId
+        );
+    }
 }
+

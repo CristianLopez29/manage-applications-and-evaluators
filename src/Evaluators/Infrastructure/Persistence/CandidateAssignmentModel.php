@@ -14,7 +14,7 @@ use Src\Evaluators\Domain\Enums\AssignmentStatus;
  * @property int $evaluator_id
  * @property AssignmentStatus $status
  * @property \DateTimeInterface $assigned_at
- * @property \DateTimeInterface $deadline
+ * @property \DateTimeInterface|null $deadline
  * @property \DateTimeInterface|null $last_reminder
  * @property string|null $created_at
  * @property string|null $updated_at

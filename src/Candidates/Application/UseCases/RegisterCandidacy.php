@@ -7,7 +7,6 @@ use Src\Candidates\Domain\Candidate;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Candidates\Domain\Validators\CandidateValidator;
 use Src\Candidates\Domain\Validators\RequiredCVValidator;
-use Src\Candidates\Domain\Validators\ValidEmailValidator;
 use Src\Candidates\Domain\Validators\MinimumExperienceValidator;
 
 class RegisterCandidacy
@@ -17,11 +16,9 @@ class RegisterCandidacy
     public function __construct(
         private readonly CandidateRepository $repository
     ) {
-        // Build the validator chain
+        // Build the validator chain (Email format is guaranteed by the Email VO)
         $this->validatorChain = new RequiredCVValidator();
-        $this->validatorChain
-            ->setNext(new ValidEmailValidator())
-            ->setNext(new MinimumExperienceValidator());
+        $this->validatorChain->setNext(new MinimumExperienceValidator());
     }
 
     public function execute(RegisterCandidacyRequest $request): int

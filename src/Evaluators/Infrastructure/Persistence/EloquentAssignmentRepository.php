@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Src\Evaluators\Infrastructure\Persistence;
 
 use Src\Evaluators\Domain\CandidateAssignment;
@@ -40,35 +42,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
     {
         $model = CandidateAssignmentModel::where('candidate_id', $candidateId)->first();
 
-        if (!$model) {
-            return null;
-        }
-
-        $assignedAt = $model->assigned_at instanceof \DateTimeInterface
-            ? $model->assigned_at
-            : new \DateTimeImmutable((string) $model->assigned_at);
-
-        $deadlineSource = $model->deadline;
-        if ($deadlineSource instanceof \DateTimeInterface) {
-            $deadline = $deadlineSource;
-        } else {
-            $deadline = (clone $assignedAt)->modify('+7 days');
-        }
-
-        $lastReminderSource = $model->last_reminder;
-        $lastReminder = $lastReminderSource instanceof \DateTimeInterface
-            ? new \DateTimeImmutable($lastReminderSource->format('Y-m-d H:i:s'))
-            : null;
-
-        return CandidateAssignment::reconstruct(
-            $model->id,
-            $model->candidate_id,
-            $model->evaluator_id,
-            $model->status->value,
-            new \DateTimeImmutable($assignedAt->format('Y-m-d H:i:s')),
-            new \DateTimeImmutable($deadline->format('Y-m-d H:i:s')),
-            $lastReminder
-        );
+        return $model ? $this->reconstructAssignmentFromModel($model) : null;
     }
 
     /**
@@ -76,35 +50,10 @@ class EloquentAssignmentRepository implements AssignmentRepository
      */
     public function findByEvaluatorId(int $evaluatorId): array
     {
-        $models = CandidateAssignmentModel::where('evaluator_id', $evaluatorId)->get();
-
-        return $models->map(function (CandidateAssignmentModel $model) {
-            $assignedAt = $model->assigned_at instanceof \DateTimeInterface
-                ? $model->assigned_at
-                : new \DateTimeImmutable((string) $model->assigned_at);
-
-            $deadlineSource = $model->deadline;
-            if ($deadlineSource instanceof \DateTimeInterface) {
-                $deadline = $deadlineSource;
-            } else {
-                $deadline = (clone $assignedAt)->modify('+7 days');
-            }
-
-            $lastReminderSource = $model->last_reminder;
-            $lastReminder = $lastReminderSource instanceof \DateTimeInterface
-                ? new \DateTimeImmutable($lastReminderSource->format('Y-m-d H:i:s'))
-                : null;
-
-            return CandidateAssignment::reconstruct(
-                $model->id,
-                $model->candidate_id,
-                $model->evaluator_id,
-                $model->status->value,
-                new \DateTimeImmutable($assignedAt->format('Y-m-d H:i:s')),
-                new \DateTimeImmutable($deadline->format('Y-m-d H:i:s')),
-                $lastReminder
-            );
-        })->all();
+        return CandidateAssignmentModel::where('evaluator_id', $evaluatorId)
+            ->get()
+            ->map(fn(CandidateAssignmentModel $model) => $this->reconstructAssignmentFromModel($model))
+            ->all();
     }
 
     public function findByEvaluatorAndCandidate(int $evaluatorId, int $candidateId): ?CandidateAssignment
@@ -113,35 +62,7 @@ class EloquentAssignmentRepository implements AssignmentRepository
             ->where('candidate_id', $candidateId)
             ->first();
 
-        if (!$model) {
-            return null;
-        }
-
-        $assignedAt = $model->assigned_at instanceof \DateTimeInterface
-            ? $model->assigned_at
-            : new \DateTimeImmutable((string) $model->assigned_at);
-
-        $deadlineSource = $model->deadline;
-        if ($deadlineSource instanceof \DateTimeInterface) {
-            $deadline = $deadlineSource;
-        } else {
-            $deadline = (clone $assignedAt)->modify('+7 days');
-        }
-
-        $lastReminderSource = $model->last_reminder;
-        $lastReminder = $lastReminderSource instanceof \DateTimeInterface
-            ? new \DateTimeImmutable($lastReminderSource->format('Y-m-d H:i:s'))
-            : null;
-
-        return CandidateAssignment::reconstruct(
-            $model->id,
-            $model->candidate_id,
-            $model->evaluator_id,
-            $model->status->value,
-            new \DateTimeImmutable($assignedAt->format('Y-m-d H:i:s')),
-            new \DateTimeImmutable($deadline->format('Y-m-d H:i:s')),
-            $lastReminder
-        );
+        return $model ? $this->reconstructAssignmentFromModel($model) : null;
     }
 
     public function existsAssignment(int $candidateId, int $evaluatorId): bool
@@ -163,5 +84,37 @@ class EloquentAssignmentRepository implements AssignmentRepository
         CandidateAssignmentModel::where('evaluator_id', $evaluatorId)
             ->where('candidate_id', $candidateId)
             ->delete();
+    }
+
+    public function findByCandidateIdForUpdate(int $candidateId): ?CandidateAssignment
+    {
+        $model = CandidateAssignmentModel::where('candidate_id', $candidateId)
+            ->lockForUpdate()
+            ->first();
+
+        return $model ? $this->reconstructAssignmentFromModel($model) : null;
+    }
+
+    private function reconstructAssignmentFromModel(CandidateAssignmentModel $model): CandidateAssignment
+    {
+        $assignedAt = \DateTimeImmutable::createFromInterface($model->assigned_at);
+        $deadline = $model->deadline !== null
+            ? \DateTimeImmutable::createFromInterface($model->deadline)
+            : (clone $assignedAt)->modify('+7 days');
+
+        $lastReminderSource = $model->last_reminder;
+        $lastReminder = $lastReminderSource instanceof \DateTimeInterface
+            ? new \DateTimeImmutable($lastReminderSource->format('Y-m-d H:i:s'))
+            : null;
+
+        return CandidateAssignment::reconstruct(
+            $model->id,
+            $model->candidate_id,
+            $model->evaluator_id,
+            $model->status->value,
+            new \DateTimeImmutable($assignedAt->format('Y-m-d H:i:s')),
+            new \DateTimeImmutable($deadline->format('Y-m-d H:i:s')),
+            $lastReminder
+        );
     }
 }

@@ -13,6 +13,7 @@ class GetCandidateEvaluation
     ) {
     }
 
+    /** @return array<string, mixed>|null */
     public function execute(int $candidateId): ?array
     {
         $candidate = $this->candidates->findById($candidateId);

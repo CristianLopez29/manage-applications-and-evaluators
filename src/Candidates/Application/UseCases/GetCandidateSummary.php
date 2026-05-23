@@ -6,8 +6,8 @@ use Src\Candidates\Application\DTOs\CandidateSummaryDTO;
 use Src\Candidates\Domain\Exceptions\InvalidCandidateException;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Candidates\Domain\Validators\RequiredCVValidator;
-use Src\Candidates\Domain\Validators\MinimumExperienceValidator;
 use Src\Candidates\Domain\Validators\ValidEmailValidator;
+use Src\Candidates\Domain\Validators\MinimumExperienceValidator;
 use Src\Evaluators\Domain\Repositories\AssignmentRepository;
 use Src\Evaluators\Domain\Repositories\EvaluatorRepository;
 use Src\Candidates\Domain\Candidate;
@@ -49,13 +49,20 @@ class GetCandidateSummary
         // 3. Execute Validations (Report) using Collections
         /** @var array<string, string> $validationResults */
         $validationResults = collect([
-            'CV Required' => new RequiredCVValidator(),
-            'Valid Email' => new ValidEmailValidator(),
+            'CV Required'        => new RequiredCVValidator(),
+            'Valid Email'        => new ValidEmailValidator(),
             'Minimum Experience' => new MinimumExperienceValidator(),
         ])->map(fn(CandidateValidator $validator) => $this->checkRule($validator, $candidate))->toArray();
 
+        $id = $candidate->id();
+        if ($id === null) {
+            throw new \LogicException(
+                "Candidate {$candidate->email()->value()} has no ID after retrieval from repository."
+            );
+        }
+
         return new CandidateSummaryDTO(
-            $candidate->id() ?? 0,
+            $id,
             $candidate->name(),
             $candidate->email()->value(),
             $candidate->yearsOfExperience()->value(),

@@ -9,15 +9,10 @@ class RequiredCVValidator extends AbstractCandidateValidator
 {
     protected function doValidate(Candidate $candidate): void
     {
-        try {
-            $cv = $candidate->cv();
-            $hasContent = trim($cv->content()) !== '';
-            $hasFile = $candidate->cvFilePath() !== null;
+        $hasContent = !$candidate->cv()->isEmpty();
+        $hasFile    = $candidate->cvFilePath() !== null;
 
-            if (!$hasContent && !$hasFile) {
-                throw EmptyCVException::create();
-            }
-        } catch (\Throwable $e) {
+        if (!$hasContent && !$hasFile) {
             throw EmptyCVException::create();
         }
     }

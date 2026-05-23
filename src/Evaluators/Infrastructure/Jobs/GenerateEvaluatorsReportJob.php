@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Notification;
 use Maatwebsite\Excel\Facades\Excel;
 use Src\Evaluators\Infrastructure\Export\EvaluatorsExport;
 use Src\Evaluators\Infrastructure\Notifications\ReportReadyNotification;
-use Src\Evaluators\Application\GetConsolidatedEvaluatorsUseCase;
+use Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators;
 
 class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 {
@@ -35,7 +35,7 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
         return "generate-evaluators-report:{$this->userEmail}";
     }
 
-    public function handle(GetConsolidatedEvaluatorsUseCase $useCase): void
+    public function handle(GetConsolidatedEvaluators $useCase): void
     {
         $extension = $this->format === 'csv' ? 'csv' : 'xlsx';
         $writerType = $this->format === 'csv'
