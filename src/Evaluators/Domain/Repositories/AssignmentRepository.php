@@ -24,4 +24,10 @@ interface AssignmentRepository
     public function candidateHasActiveAssignment(int $candidateId): bool;
 
     public function deleteByEvaluatorAndCandidate(int $evaluatorId, int $candidateId): void;
+
+    /**
+     * Finds the active assignment for a candidate with a pessimistic lock.
+     * Must be called inside a transaction.
+     */
+    public function findByCandidateIdForUpdate(int $candidateId): ?CandidateAssignment;
 }
