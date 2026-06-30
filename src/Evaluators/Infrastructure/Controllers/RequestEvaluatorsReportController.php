@@ -11,7 +11,7 @@ class RequestEvaluatorsReportController
 {
     /**
      * @OA\Post(
-     *     path="/api/evaluators/report",
+     *     path="/api/v1/evaluators/report",
      *     summary="Request an Excel report of evaluators",
      *     tags={"Evaluators"},
      *     @OA\RequestBody(

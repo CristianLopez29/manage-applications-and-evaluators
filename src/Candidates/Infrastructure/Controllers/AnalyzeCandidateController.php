@@ -15,7 +15,7 @@ class AnalyzeCandidateController
 
     /**
      * @OA\Post(
-     *     path="/api/candidates/{id}/analyze",
+     *     path="/api/v1/candidates/{id}/analyze",
      *     summary="Queue AI analysis for candidate CV",
      *     tags={"Candidates"},
      *     @OA\Parameter(

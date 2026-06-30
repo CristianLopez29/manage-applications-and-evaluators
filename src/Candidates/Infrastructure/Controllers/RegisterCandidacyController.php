@@ -22,7 +22,7 @@ class RegisterCandidacyController
 
     /**
      * @OA\Post(
-     *     path="/api/candidates",
+     *     path="/api/v1/candidates",
      *     summary="Register a new candidacy",
      *     tags={"Candidates"},
      *     @OA\RequestBody(

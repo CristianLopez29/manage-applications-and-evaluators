@@ -17,7 +17,7 @@ class AssignmentNotificationTest extends TestCase
     {
         Notification::fake();
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
@@ -25,7 +25,7 @@ class AssignmentNotificationTest extends TestCase
             'primary_specialty' => 'Backend',
         ]);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
@@ -39,7 +39,7 @@ class AssignmentNotificationTest extends TestCase
         $this->assertNotNull($evaluator);
         $evaluatorId = $evaluator->id;
 
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidateId,
         ])->assertStatus(200);
 

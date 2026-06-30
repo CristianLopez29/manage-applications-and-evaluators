@@ -15,7 +15,7 @@ class ConsolidatedQueryCountTest extends TestCase
     {
         // Create 5 evaluators with 2 candidates each
         for ($i = 1; $i <= 5; $i++) {
-            $this->postJson('/api/evaluators', [
+            $this->postJson('/api/v1/evaluators', [
                 'name'      => "Eval {$i}",
                 'email'     => "eval{$i}@example.com",
                 'specialty' => 'Backend',
@@ -24,7 +24,7 @@ class ConsolidatedQueryCountTest extends TestCase
 
         // Create 10 candidates
         for ($j = 1; $j <= 10; $j++) {
-            $this->postJson('/api/candidates', [
+            $this->postJson('/api/v1/candidates', [
                 'name'                => "Candidate {$j}",
                 'email'               => "candidate{$j}@example.com",
                 'years_of_experience' => 3,
@@ -40,7 +40,7 @@ class ConsolidatedQueryCountTest extends TestCase
         foreach ($evaluators as $evaluator) {
             for ($k = 0; $k < 2; $k++) {
                 if (isset($candidates[$candidateIndex])) {
-                    $this->postJson("/api/evaluators/{$evaluator->id}/assign-candidate", [
+                    $this->postJson("/api/v1/evaluators/{$evaluator->id}/assign-candidate", [
                         'candidate_id' => $candidates[$candidateIndex]->id,
                     ]);
                     $candidateIndex++;
@@ -50,7 +50,7 @@ class ConsolidatedQueryCountTest extends TestCase
 
         // Measure query count for the consolidated page
         \DB::enableQueryLog();
-        $this->getJson('/api/evaluators/consolidated?per_page=5')->assertStatus(200);
+        $this->getJson('/api/v1/evaluators/consolidated?per_page=5')->assertStatus(200);
         $queryCount = count(\DB::getQueryLog());
         \DB::disableQueryLog();
 

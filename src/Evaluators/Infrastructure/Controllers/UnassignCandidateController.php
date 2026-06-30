@@ -16,7 +16,7 @@ class UnassignCandidateController
 
     /**
      * @OA\Delete(
-     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}",
+     *     path="/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}",
      *     summary="Unassign a candidate from an evaluator",
      *     tags={"Evaluators"},
      *     @OA\Parameter(

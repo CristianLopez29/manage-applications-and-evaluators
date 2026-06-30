@@ -14,21 +14,21 @@ class GetEvaluatorCandidatesTest extends TestCase
     public function should_return_all_assigned_candidates(): void
     {
         // Create evaluator
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
         ]);
 
         // Create candidates
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
             'cv' => 'CV de Juan',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Ana García',
             'email' => 'ana@example.com',
             'years_of_experience' => 3,
@@ -48,16 +48,16 @@ class GetEvaluatorCandidatesTest extends TestCase
         $candidate2Id = $candidate2Model->id;
 
         // Assign both candidates
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidate1Id,
         ]);
 
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidate2Id,
         ]);
 
         // Get evaluator candidates
-        $response = $this->getJson("/api/evaluators/{$evaluatorId}/candidates");
+        $response = $this->getJson("/api/v1/evaluators/{$evaluatorId}/candidates");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -85,7 +85,7 @@ class GetEvaluatorCandidatesTest extends TestCase
     public function should_return_empty_for_evaluator_without_candidates(): void
     {
         // Create evaluator without candidates
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
@@ -95,7 +95,7 @@ class GetEvaluatorCandidatesTest extends TestCase
         $this->assertNotNull($evaluatorModel);
         $evaluatorId = $evaluatorModel->id;
 
-        $response = $this->getJson("/api/evaluators/{$evaluatorId}/candidates");
+        $response = $this->getJson("/api/v1/evaluators/{$evaluatorId}/candidates");
 
         $response->assertStatus(200)
             ->assertJson([
@@ -110,7 +110,7 @@ class GetEvaluatorCandidatesTest extends TestCase
     #[Test]
     public function should_return_404_for_nonexistent_evaluator(): void
     {
-        $response = $this->getJson("/api/evaluators/999/candidates");
+        $response = $this->getJson("/api/v1/evaluators/999/candidates");
 
         $response->assertStatus(404);
     }
@@ -119,13 +119,13 @@ class GetEvaluatorCandidatesTest extends TestCase
     public function should_include_assignment_status_in_response(): void
     {
         // Create evaluator and candidate
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
@@ -141,12 +141,12 @@ class GetEvaluatorCandidatesTest extends TestCase
         $candidateId = $candidateModel->id;
 
         // Assign
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidateId,
         ]);
 
         // Get candidates
-        $response = $this->getJson("/api/evaluators/{$evaluatorId}/candidates");
+        $response = $this->getJson("/api/v1/evaluators/{$evaluatorId}/candidates");
 
         $response->assertStatus(200);
 
@@ -160,27 +160,27 @@ class GetEvaluatorCandidatesTest extends TestCase
     public function should_only_return_candidates_for_specific_evaluator(): void
     {
         // Create two evaluators
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
         ]);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Pedro Sánchez',
             'email' => 'pedro@example.com',
             'specialty' => 'Frontend',
         ]);
 
         // Create two candidates
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
             'cv' => 'CV de Juan',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Ana García',
             'email' => 'ana@example.com',
             'years_of_experience' => 3,
@@ -204,17 +204,17 @@ class GetEvaluatorCandidatesTest extends TestCase
         $candidate2Id = $candidate2Model->id;
 
         // Assign Juan to María
-        $this->postJson("/api/evaluators/{$evaluator1Id}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluator1Id}/assign-candidate", [
             'candidate_id' => $candidate1Id,
         ]);
 
         // Assign Ana to Pedro
-        $this->postJson("/api/evaluators/{$evaluator2Id}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluator2Id}/assign-candidate", [
             'candidate_id' => $candidate2Id,
         ]);
 
         // Verify that María only sees Juan
-        $response1 = $this->getJson("/api/evaluators/{$evaluator1Id}/candidates");
+        $response1 = $this->getJson("/api/v1/evaluators/{$evaluator1Id}/candidates");
         $response1->assertStatus(200);
         /** @var array<int, array{email: string}> $data1 */
         $data1 = $response1->json('data');
@@ -222,7 +222,7 @@ class GetEvaluatorCandidatesTest extends TestCase
         $this->assertEquals('juan@example.com', $data1[0]['email']);
 
         // Verify that Pedro only sees Ana
-        $response2 = $this->getJson("/api/evaluators/{$evaluator2Id}/candidates");
+        $response2 = $this->getJson("/api/v1/evaluators/{$evaluator2Id}/candidates");
         $response2->assertStatus(200);
         /** @var array<int, array{email: string}> $data2 */
         $data2 = $response2->json('data');

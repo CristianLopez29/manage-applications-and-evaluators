@@ -16,7 +16,7 @@ class GetCandidateSummaryController
 
     /**
      * @OA\Get(
-     *     path="/api/candidates/{id}/summary",
+     *     path="/api/v1/candidates/{id}/summary",
      *     summary="Get candidate summary",
      *     tags={"Candidates"},
      *     @OA\Parameter(
@@ -35,7 +35,7 @@ class GetCandidateSummaryController
      *             @OA\Property(property="years_of_experience", type="integer", example=5),
      *             @OA\Property(property="cv_preview", type="string", example="CV Content..."),
      *             @OA\Property(property="cv_pdf", type="boolean", example=true),
-     *             @OA\Property(property="cv_download_url", type="string", nullable=true, example="http://localhost/api/candidates/1/cv"),
+     *             @OA\Property(property="cv_download_url", type="string", nullable=true, example="http://localhost/api/v1/candidates/1/cv"),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(
      *                 property="assignment",
@@ -73,7 +73,7 @@ class GetCandidateSummaryController
                     'experience_years' => $dto->yearsOfExperience,
                     'cv_preview' => substr($dto->cvContent, 0, 100) . '...',
                     'cv_pdf' => $dto->hasPdf,
-                    'cv_download_url' => $dto->hasPdf ? url("/api/candidates/{$dto->id}/cv") : null,
+                    'cv_download_url' => $dto->hasPdf ? url("/api/v1/candidates/{$dto->id}/cv") : null,
                 ],
                 assignmentInfo: $dto->assignment ?? 'Unassigned',
                 complianceReport: $dto->validationResults

@@ -41,7 +41,7 @@ class AssignmentAuditLogTest extends TestCase
         ]);
 
         // Act
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidateId
         ])->assertStatus(200);
 

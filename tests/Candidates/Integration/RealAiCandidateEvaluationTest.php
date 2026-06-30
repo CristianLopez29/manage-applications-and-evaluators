@@ -30,7 +30,7 @@ class RealAiCandidateEvaluationTest extends TestCase
 
         $email = 'real.ai.candidate@example.com';
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'AI Real Candidate',
             'email' => $email,
             'years_of_experience' => 8,
@@ -40,13 +40,13 @@ class RealAiCandidateEvaluationTest extends TestCase
 
         $candidate = CandidateModel::where('email', $email)->firstOrFail();
 
-        $this->postJson("/api/candidates/{$candidate->id}/analyze")
+        $this->postJson("/api/v1/candidates/{$candidate->id}/analyze")
             ->assertStatus(202)
             ->assertJson([
                 'status' => 'processing',
             ]);
 
-        $response = $this->getJson("/api/candidates/{$candidate->id}/evaluation");
+        $response = $this->getJson("/api/v1/candidates/{$candidate->id}/evaluation");
 
         $response->assertStatus(200);
 

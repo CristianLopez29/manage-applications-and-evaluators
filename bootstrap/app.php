@@ -3,6 +3,7 @@
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\EnsureCandidateAccess;
 use App\Http\Middleware\EnsureEvaluatorAccess;
+use App\Http\Middleware\AddRequestContext;
 use Illuminate\Http\Request;
 use App\Http\Middleware\EnsureRole;
 use Illuminate\Foundation\Application;
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => EnsureRole::class,
             'can.view.candidate' => EnsureCandidateAccess::class,
             'can.view.evaluator' => EnsureEvaluatorAccess::class,
+            'request.context' => AddRequestContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

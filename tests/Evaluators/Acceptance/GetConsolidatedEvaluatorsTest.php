@@ -14,27 +14,27 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     public function should_return_consolidated_list_of_evaluators_and_candidates(): void
     {
         // 1. Create evaluators
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
         ]);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Pedro Sánchez',
             'email' => 'pedro@example.com',
             'specialty' => 'Frontend',
         ]);
 
         // 2. Create candidates
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
             'cv' => 'CV Juan',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Ana García',
             'email' => 'ana@example.com',
             'years_of_experience' => 3,
@@ -59,11 +59,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $candidate2Id = $candidate2->id;
 
         // 4. Assign candidates (Juan -> María, Ana -> Pedro)
-        $this->postJson("/api/evaluators/{$evaluator1Id}/assign-candidate", ['candidate_id' => $candidate1Id]);
-        $this->postJson("/api/evaluators/{$evaluator2Id}/assign-candidate", ['candidate_id' => $candidate2Id]);
+        $this->postJson("/api/v1/evaluators/{$evaluator1Id}/assign-candidate", ['candidate_id' => $candidate1Id]);
+        $this->postJson("/api/v1/evaluators/{$evaluator2Id}/assign-candidate", ['candidate_id' => $candidate2Id]);
 
         // 5. Query consolidated endpoint
-        $response = $this->getJson('/api/evaluators/consolidated');
+        $response = $this->getJson('/api/v1/evaluators/consolidated');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -112,13 +112,13 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_empty_candidates_list_for_evaluator_without_assignments(): void
     {
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Only Evaluator',
             'email' => 'solo@example.com',
             'specialty' => 'QA',
         ]);
 
-        $response = $this->getJson('/api/evaluators/consolidated');
+        $response = $this->getJson('/api/v1/evaluators/consolidated');
 
         $response->assertStatus(200);
         /** @var array<int, array{email: string, candidates: array<mixed>}> $data */
@@ -132,7 +132,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_empty_list_when_no_evaluators_exist(): void
     {
-        $response = $this->getJson('/api/evaluators/consolidated');
+        $response = $this->getJson('/api/v1/evaluators/consolidated');
 
         $response->assertStatus(200)
             ->assertJson([
@@ -146,13 +146,13 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_not_expose_sensitive_data_in_consolidated_list(): void
     {
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Secure Evaluator',
             'email' => 'seguro@example.com',
             'specialty' => 'Security',
         ]);
 
-        $response = $this->getJson('/api/evaluators/consolidated');
+        $response = $this->getJson('/api/v1/evaluators/consolidated');
 
         /** @var array<string, mixed> $data */
         $data = $response->json('data.0');
@@ -177,10 +177,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_evaluators_by_name(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Alice', 'email' => 'alice@test.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Bob', 'email' => 'bob@test.com', 'specialty' => 'Frontend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Alice', 'email' => 'alice@test.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Bob', 'email' => 'bob@test.com', 'specialty' => 'Frontend'])->assertStatus(201);
 
-        $response = $this->getJson('/api/evaluators/consolidated?search=Alice');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?search=Alice');
 
         $response->assertStatus(200);
         /** @var array<int, array{name: string}> $data */
@@ -193,7 +193,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     public function should_return_concatenated_emails_from_sql_group_concat(): void
     {
         // Create evaluator
-        $evaluatorResponse = $this->postJson('/api/evaluators', [
+        $evaluatorResponse = $this->postJson('/api/v1/evaluators', [
             'name' => 'SQL Tester',
             'email' => 'sql@example.com',
             'specialty' => 'Backend',
@@ -206,21 +206,21 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $evaluatorId = $evaluatorModel->id;
 
         // Create 3 candidates with emails that will be sorted alphabetically
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Candidate A',
             'email' => 'alpha@example.com',
             'years_of_experience' => 3,
             'cv' => 'CV A',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Candidate C',
             'email' => 'charlie@example.com',
             'years_of_experience' => 5,
             'cv' => 'CV C',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Candidate B',
             'email' => 'bravo@example.com',
             'years_of_experience' => 4,
@@ -235,12 +235,12 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $candidateC = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'charlie@example.com')->first();
         $this->assertNotNull($candidateC);
 
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateA->id]);
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateB->id]);
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateC->id]);
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateA->id]);
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateB->id]);
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateC->id]);
 
         // Get consolidated list
-        $response = $this->getJson('/api/evaluators/consolidated');
+        $response = $this->getJson('/api/v1/evaluators/consolidated');
 
         $response->assertStatus(200);
 
@@ -271,12 +271,12 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     public function should_filter_by_specialty_backend_only(): void
     {
         // Evaluators
-        $this->postJson('/api/evaluators', ['name' => 'Backend Eva', 'email' => 'beva@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Frontend Eve', 'email' => 'feve@example.com', 'specialty' => 'Frontend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Backend Eva', 'email' => 'beva@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Frontend Eve', 'email' => 'feve@example.com', 'specialty' => 'Frontend'])->assertStatus(201);
 
         // Candidates
-        $this->postJson('/api/candidates', ['name' => 'Juan', 'email' => 'juan@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'Ana', 'email' => 'ana@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Juan', 'email' => 'juan@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Ana', 'email' => 'ana@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
 
         // Assign: one each
         $backend = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'beva@example.com')->first();
@@ -295,11 +295,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($ana);
         $anaId = $ana->id;
 
-        $this->postJson("/api/evaluators/{$backendId}/assign-candidate", ['candidate_id' => $juanId]);
-        $this->postJson("/api/evaluators/{$frontendId}/assign-candidate", ['candidate_id' => $anaId]);
+        $this->postJson("/api/v1/evaluators/{$backendId}/assign-candidate", ['candidate_id' => $juanId]);
+        $this->postJson("/api/v1/evaluators/{$frontendId}/assign-candidate", ['candidate_id' => $anaId]);
 
         // Filter by specialty
-        $response = $this->getJson('/api/evaluators/consolidated?specialty=Backend');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?specialty=Backend');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -311,14 +311,14 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     public function should_filter_by_min_average_experience(): void
     {
         // Evaluators
-        $this->postJson('/api/evaluators', ['name' => 'Low Avg', 'email' => 'low@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'High Avg', 'email' => 'high@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Low Avg', 'email' => 'low@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'High Avg', 'email' => 'high@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
         // Candidates
-        $this->postJson('/api/candidates', ['name' => 'C1', 'email' => 'c1@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'C2', 'email' => 'c2@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'C3', 'email' => 'c3@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'C4', 'email' => 'c4@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C1', 'email' => 'c1@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C2', 'email' => 'c2@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C3', 'email' => 'c3@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C4', 'email' => 'c4@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
         // Assign
         $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'low@example.com')->first();
@@ -345,13 +345,13 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($c4Model);
         $c4 = $c4Model->id;
 
-        $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $c1]);
-        $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $c2]);
-        $this->postJson("/api/evaluators/{$highId}/assign-candidate", ['candidate_id' => $c3]);
-        $this->postJson("/api/evaluators/{$highId}/assign-candidate", ['candidate_id' => $c4]);
+        $this->postJson("/api/v1/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $c1]);
+        $this->postJson("/api/v1/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $c2]);
+        $this->postJson("/api/v1/evaluators/{$highId}/assign-candidate", ['candidate_id' => $c3]);
+        $this->postJson("/api/v1/evaluators/{$highId}/assign-candidate", ['candidate_id' => $c4]);
 
         // min_average_experience = 5 should include only High Avg (avg 5.5)
-        $response = $this->getJson('/api/evaluators/consolidated?min_average_experience=5');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?min_average_experience=5');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -364,13 +364,13 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     public function should_filter_by_min_total_assigned(): void
     {
         // Evaluators
-        $this->postJson('/api/evaluators', ['name' => 'One', 'email' => 'one@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Two', 'email' => 'two@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'One', 'email' => 'one@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Two', 'email' => 'two@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
         // Candidates
-        $this->postJson('/api/candidates', ['name' => 'A', 'email' => 'a@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'B', 'email' => 'b@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'C', 'email' => 'c@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'A', 'email' => 'a@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'B', 'email' => 'b@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C', 'email' => 'c@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
         $one = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'one@example.com')->first();
         $this->assertNotNull($one);
@@ -393,11 +393,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $cId = $c->id;
 
         // Assign: One -> A; Two -> B, C (Two has 2 assigned)
-        $this->postJson("/api/evaluators/{$oneId}/assign-candidate", ['candidate_id' => $aId]);
-        $this->postJson("/api/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $bId]);
-        $this->postJson("/api/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $cId]);
+        $this->postJson("/api/v1/evaluators/{$oneId}/assign-candidate", ['candidate_id' => $aId]);
+        $this->postJson("/api/v1/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $bId]);
+        $this->postJson("/api/v1/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $cId]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?min_total_assigned=2');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?min_total_assigned=2');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -410,12 +410,12 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     public function should_filter_by_candidate_email_contains(): void
     {
         // Evaluators
-        $this->postJson('/api/evaluators', ['name' => 'Alpha', 'email' => 'alpha@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Beta', 'email' => 'beta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Alpha', 'email' => 'alpha@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Beta', 'email' => 'beta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
         // Candidates
-        $this->postJson('/api/candidates', ['name' => 'Alpha Cand', 'email' => 'alpha.cand@domain.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'Beta Cand', 'email' => 'beta.cand@domain.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Alpha Cand', 'email' => 'alpha.cand@domain.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Beta Cand', 'email' => 'beta.cand@domain.com', 'years_of_experience' => 4, 'cv' => 'CV']);
 
         $alpha = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'alpha@example.com')->first();
         $this->assertNotNull($alpha);
@@ -433,11 +433,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($betaCand);
         $betaCandId = $betaCand->id;
 
-        $this->postJson("/api/evaluators/{$alphaId}/assign-candidate", ['candidate_id' => $alphaCandId]);
-        $this->postJson("/api/evaluators/{$betaId}/assign-candidate", ['candidate_id' => $betaCandId]);
+        $this->postJson("/api/v1/evaluators/{$alphaId}/assign-candidate", ['candidate_id' => $alphaCandId]);
+        $this->postJson("/api/v1/evaluators/{$betaId}/assign-candidate", ['candidate_id' => $betaCandId]);
 
         // Filter for beta.cand substring
-        $response = $this->getJson('/api/evaluators/consolidated?candidate_email_contains=beta.cand');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?candidate_email_contains=beta.cand');
         $response->assertStatus(200);
         /** @var array<int, array{email: string, concatenated_candidate_emails: string}> $data */
         $data = $response->json('data');
@@ -449,11 +449,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_max_average_experience(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Low', 'email' => 'lowavg@example.com', 'specialty' => 'Backend']);
-        $this->postJson('/api/evaluators', ['name' => 'High', 'email' => 'highavg@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Low', 'email' => 'lowavg@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'High', 'email' => 'highavg@example.com', 'specialty' => 'Backend']);
 
-        $this->postJson('/api/candidates', ['name' => 'L1', 'email' => 'l1@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'H1', 'email' => 'h1@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'L1', 'email' => 'l1@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'H1', 'email' => 'h1@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
         $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowavg@example.com')->first();
         $this->assertNotNull($low);
@@ -471,10 +471,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($h1Model);
         $h1 = $h1Model->id;
 
-        $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $l1]);
-        $this->postJson("/api/evaluators/{$highId}/assign-candidate", ['candidate_id' => $h1]);
+        $this->postJson("/api/v1/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $l1]);
+        $this->postJson("/api/v1/evaluators/{$highId}/assign-candidate", ['candidate_id' => $h1]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?max_average_experience=3');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?max_average_experience=3');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -486,13 +486,13 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_average_experience_range(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Low', 'email' => 'lowr@example.com', 'specialty' => 'Backend']);
-        $this->postJson('/api/evaluators', ['name' => 'Mid', 'email' => 'midr@example.com', 'specialty' => 'Backend']);
-        $this->postJson('/api/evaluators', ['name' => 'High', 'email' => 'highr@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Low', 'email' => 'lowr@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Mid', 'email' => 'midr@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'High', 'email' => 'highr@example.com', 'specialty' => 'Backend']);
 
-        $this->postJson('/api/candidates', ['name' => 'L', 'email' => 'lr@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'M', 'email' => 'mr@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'H', 'email' => 'hr@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'L', 'email' => 'lr@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'M', 'email' => 'mr@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'H', 'email' => 'hr@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
         $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowr@example.com')->first();
         $this->assertNotNull($low);
@@ -518,11 +518,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($hModel);
         $h = $hModel->id;
 
-        $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $l]);
-        $this->postJson("/api/evaluators/{$midId}/assign-candidate", ['candidate_id' => $m]);
-        $this->postJson("/api/evaluators/{$highId}/assign-candidate", ['candidate_id' => $h]);
+        $this->postJson("/api/v1/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $l]);
+        $this->postJson("/api/v1/evaluators/{$midId}/assign-candidate", ['candidate_id' => $m]);
+        $this->postJson("/api/v1/evaluators/{$highId}/assign-candidate", ['candidate_id' => $h]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?min_average_experience=3&max_average_experience=5');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?min_average_experience=3&max_average_experience=5');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -535,12 +535,12 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_max_total_assigned(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'One', 'email' => 'one2@example.com', 'specialty' => 'Backend']);
-        $this->postJson('/api/evaluators', ['name' => 'Two', 'email' => 'two2@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'One', 'email' => 'one2@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Two', 'email' => 'two2@example.com', 'specialty' => 'Backend']);
 
-        $this->postJson('/api/candidates', ['name' => 'A', 'email' => 'a2@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'B', 'email' => 'b2@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'C', 'email' => 'c2@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'A', 'email' => 'a2@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'B', 'email' => 'b2@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C', 'email' => 'c2@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
         $one = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'one2@example.com')->first();
         $this->assertNotNull($one);
@@ -562,11 +562,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($c);
         $cId = $c->id;
 
-        $this->postJson("/api/evaluators/{$oneId}/assign-candidate", ['candidate_id' => $aId]);
-        $this->postJson("/api/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $bId]);
-        $this->postJson("/api/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $cId]);
+        $this->postJson("/api/v1/evaluators/{$oneId}/assign-candidate", ['candidate_id' => $aId]);
+        $this->postJson("/api/v1/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $bId]);
+        $this->postJson("/api/v1/evaluators/{$twoId}/assign-candidate", ['candidate_id' => $cId]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?max_total_assigned=1');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?max_total_assigned=1');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -578,12 +578,12 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_total_assigned_desc(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Less', 'email' => 'less@example.com', 'specialty' => 'Backend']);
-        $this->postJson('/api/evaluators', ['name' => 'More', 'email' => 'more@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Less', 'email' => 'less@example.com', 'specialty' => 'Backend']);
+        $this->postJson('/api/v1/evaluators', ['name' => 'More', 'email' => 'more@example.com', 'specialty' => 'Backend']);
 
-        $this->postJson('/api/candidates', ['name' => 'X', 'email' => 'x@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'Y', 'email' => 'y@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'Z', 'email' => 'z@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'X', 'email' => 'x@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Y', 'email' => 'y@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Z', 'email' => 'z@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
         $less = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'less@example.com')->first();
         $this->assertNotNull($less);
@@ -601,11 +601,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($z);
         $zId = $z->id;
 
-        $this->postJson("/api/evaluators/{$lessId}/assign-candidate", ['candidate_id' => $xId]);
-        $this->postJson("/api/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $yId]);
-        $this->postJson("/api/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $zId]);
+        $this->postJson("/api/v1/evaluators/{$lessId}/assign-candidate", ['candidate_id' => $xId]);
+        $this->postJson("/api/v1/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $yId]);
+        $this->postJson("/api/v1/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $zId]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=total_assigned_candidates&sort_direction=desc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=total_assigned_candidates&sort_direction=desc');
         $response->assertStatus(200);
         $first = $response->json('data.0.email');
         $this->assertEquals('more@example.com', $first);
@@ -614,11 +614,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_concatenated_candidate_emails_asc(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Alice A', 'email' => 'a@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Bob B', 'email' => 'b@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Alice A', 'email' => 'a@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Bob B', 'email' => 'b@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $this->postJson('/api/candidates', ['name' => 'Alpha', 'email' => 'aaa@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'Beta', 'email' => 'bbb@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Alpha', 'email' => 'aaa@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'Beta', 'email' => 'bbb@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
 
         $a = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'a@example.com')->first();
         $this->assertNotNull($a);
@@ -633,10 +633,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($beta);
         $betaId = $beta->id;
 
-        $this->postJson("/api/evaluators/{$aId}/assign-candidate", ['candidate_id' => $betaId]);
-        $this->postJson("/api/evaluators/{$bId}/assign-candidate", ['candidate_id' => $alphaId]);
+        $this->postJson("/api/v1/evaluators/{$aId}/assign-candidate", ['candidate_id' => $betaId]);
+        $this->postJson("/api/v1/evaluators/{$bId}/assign-candidate", ['candidate_id' => $alphaId]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=concatenated_candidate_emails&sort_direction=asc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=concatenated_candidate_emails&sort_direction=asc');
         $response->assertStatus(200);
         $first = $response->json('data.0.email');
         $this->assertEquals('b@example.com', $first);
@@ -645,8 +645,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_exclude_evaluators_without_assignments_when_min_average_experience_is_set(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'NoAssign', 'email' => 'noassign@example.com', 'specialty' => 'Backend']);
-        $response = $this->getJson('/api/evaluators/consolidated?min_average_experience=1');
+        $this->postJson('/api/v1/evaluators', ['name' => 'NoAssign', 'email' => 'noassign@example.com', 'specialty' => 'Backend']);
+        $response = $this->getJson('/api/v1/evaluators/consolidated?min_average_experience=1');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -657,13 +657,13 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_paginate_with_filters(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Eval 1', 'email' => 'e1@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Eval 2', 'email' => 'e2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Eval 3', 'email' => 'e3@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Eval 1', 'email' => 'e1@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Eval 2', 'email' => 'e2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Eval 3', 'email' => 'e3@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $this->postJson('/api/candidates', ['name' => 'C1', 'email' => 'c1p@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'C2', 'email' => 'c2p@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'C3', 'email' => 'c3p@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C1', 'email' => 'c1p@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C2', 'email' => 'c2p@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C3', 'email' => 'c3p@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
         $e1Model = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'e1@example.com')->first();
         $this->assertNotNull($e1Model);
@@ -684,11 +684,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($c3Model);
         $c3 = $c3Model->id;
 
-        $this->postJson("/api/evaluators/{$e1}/assign-candidate", ['candidate_id' => $c1]);
-        $this->postJson("/api/evaluators/{$e2}/assign-candidate", ['candidate_id' => $c2]);
-        $this->postJson("/api/evaluators/{$e3}/assign-candidate", ['candidate_id' => $c3]);
+        $this->postJson("/api/v1/evaluators/{$e1}/assign-candidate", ['candidate_id' => $c1]);
+        $this->postJson("/api/v1/evaluators/{$e2}/assign-candidate", ['candidate_id' => $c2]);
+        $this->postJson("/api/v1/evaluators/{$e3}/assign-candidate", ['candidate_id' => $c3]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?specialty=Backend&per_page=1&page=2');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?specialty=Backend&per_page=1&page=2');
         $response->assertStatus(200);
         /** @var array<int, mixed> $data */
         $data = $response->json('data');
@@ -700,11 +700,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_apply_combined_filters(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Evaluator 1', 'email' => 'comb1@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Evaluator 2', 'email' => 'comb2@example.com', 'specialty' => 'Frontend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Evaluator 1', 'email' => 'comb1@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Evaluator 2', 'email' => 'comb2@example.com', 'specialty' => 'Frontend'])->assertStatus(201);
 
-        $this->postJson('/api/candidates', ['name' => 'CA', 'email' => 'match@domain.com', 'years_of_experience' => 6, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'CB', 'email' => 'other@domain.com', 'years_of_experience' => 2, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'CA', 'email' => 'match@domain.com', 'years_of_experience' => 6, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'CB', 'email' => 'other@domain.com', 'years_of_experience' => 2, 'cv' => 'CV']);
 
         $e1Model = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'comb1@example.com')->first();
         $this->assertNotNull($e1Model);
@@ -719,10 +719,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($cbModel);
         $cb = $cbModel->id;
 
-        $this->postJson("/api/evaluators/{$e1}/assign-candidate", ['candidate_id' => $ca]);
-        $this->postJson("/api/evaluators/{$e2}/assign-candidate", ['candidate_id' => $cb]);
+        $this->postJson("/api/v1/evaluators/{$e1}/assign-candidate", ['candidate_id' => $ca]);
+        $this->postJson("/api/v1/evaluators/{$e2}/assign-candidate", ['candidate_id' => $cb]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?specialty=Backend&min_average_experience=5&candidate_email_contains=match@domain.com');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?specialty=Backend&min_average_experience=5&candidate_email_contains=match@domain.com');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -733,8 +733,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_treat_specialty_filter_case_insensitively(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Case', 'email' => 'case@example.com', 'specialty' => 'Backend']);
-        $response = $this->getJson('/api/evaluators/consolidated?specialty=backend');
+        $this->postJson('/api/v1/evaluators', ['name' => 'Case', 'email' => 'case@example.com', 'specialty' => 'Backend']);
+        $response = $this->getJson('/api/v1/evaluators/consolidated?specialty=backend');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -751,7 +751,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
             ['name' => 'Newer', 'email' => 'newer@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(1), 'updated_at' => now()->subDays(1)],
         ]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=created_at&sort_direction=asc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=created_at&sort_direction=asc');
         $response->assertStatus(200);
         $first = $response->json('data.0.email');
         $this->assertEquals('older@example.com', $first);
@@ -765,7 +765,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
             ['name' => 'Anna', 'email' => 'anna@example.com', 'specialty' => 'Backend', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=name&sort_direction=asc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=name&sort_direction=asc');
         $response->assertStatus(200);
         $first = $response->json('data.0.email');
         $this->assertEquals('anna@example.com', $first);
@@ -781,7 +781,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         ]);
 
         $from = now()->subDays(6)->toDateTimeString();
-        $response = $this->getJson('/api/evaluators/consolidated?created_from=' . urlencode($from));
+        $response = $this->getJson('/api/v1/evaluators/consolidated?created_from=' . urlencode($from));
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -801,7 +801,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         ]);
 
         $to = now()->subDays(6)->toDateTimeString();
-        $response = $this->getJson('/api/evaluators/consolidated?created_to=' . urlencode($to));
+        $response = $this->getJson('/api/v1/evaluators/consolidated?created_to=' . urlencode($to));
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -822,7 +822,7 @@ class GetConsolidatedEvaluatorsTest extends TestCase
 
         $from = now()->subDays(6)->toDateTimeString();
         $to = now()->subDays(2)->toDateTimeString();
-        $response = $this->getJson('/api/evaluators/consolidated?created_from=' . urlencode($from) . '&created_to=' . urlencode($to));
+        $response = $this->getJson('/api/v1/evaluators/consolidated?created_from=' . urlencode($from) . '&created_to=' . urlencode($to));
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -836,11 +836,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     public function should_fallback_to_default_sort_when_unknown_sort_by(): void
     {
         // Setup evaluators with different avg experience
-        $this->postJson('/api/evaluators', ['name' => 'LowAvg', 'email' => 'lowavg2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'HighAvg', 'email' => 'highavg2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'LowAvg', 'email' => 'lowavg2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'HighAvg', 'email' => 'highavg2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $this->postJson('/api/candidates', ['name' => 'L', 'email' => 'l2@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'H', 'email' => 'h2@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'L', 'email' => 'l2@ex.com', 'years_of_experience' => 2, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'H', 'email' => 'h2@ex.com', 'years_of_experience' => 6, 'cv' => 'CV']);
 
         $low = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'lowavg2@example.com')->first();
         $this->assertNotNull($low);
@@ -855,10 +855,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($h);
         $hId = $h->id;
 
-        $this->postJson("/api/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $lId]);
-        $this->postJson("/api/evaluators/{$highId}/assign-candidate", ['candidate_id' => $hId]);
+        $this->postJson("/api/v1/evaluators/{$lowId}/assign-candidate", ['candidate_id' => $lId]);
+        $this->postJson("/api/v1/evaluators/{$highId}/assign-candidate", ['candidate_id' => $hId]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=unknown_field');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=unknown_field');
         $response->assertStatus(200);
         $first = $response->json('data.0.email');
         $this->assertEquals('highavg2@example.com', $first, 'Fallback should sort by average_experience desc');
@@ -867,19 +867,19 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_only_unassigned_when_max_total_assigned_zero(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Unassigned', 'email' => 'unassigned@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Assigned', 'email' => 'assigned@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Unassigned', 'email' => 'unassigned@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Assigned', 'email' => 'assigned@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $this->postJson('/api/candidates', ['name' => 'C', 'email' => 'c.zero@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'C', 'email' => 'c.zero@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
         $assigned = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'assigned@example.com')->first();
         $this->assertNotNull($assigned);
         $assignedId = $assigned->id;
         $c = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'c.zero@ex.com')->first();
         $this->assertNotNull($c);
         $cId = $c->id;
-        $this->postJson("/api/evaluators/{$assignedId}/assign-candidate", ['candidate_id' => $cId]);
+        $this->postJson("/api/v1/evaluators/{$assignedId}/assign-candidate", ['candidate_id' => $cId]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?max_total_assigned=0');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?max_total_assigned=0');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -891,10 +891,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_email_asc(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Alpha Sort', 'email' => 'alpha.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Beta Sort', 'email' => 'beta.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Alpha Sort', 'email' => 'alpha.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Beta Sort', 'email' => 'beta.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=email&sort_direction=asc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=email&sort_direction=asc');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -906,10 +906,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_email_desc(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Alpha Sort', 'email' => 'alpha.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Beta Sort', 'email' => 'beta.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Alpha Sort', 'email' => 'alpha.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Beta Sort', 'email' => 'beta.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=email&sort_direction=desc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=email&sort_direction=desc');
         $response->assertStatus(200);
         /** @var array<int, array{email: string}> $data */
         $data = $response->json('data');
@@ -921,12 +921,12 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_total_assigned_asc(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Less TA', 'email' => 'less.ta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'More TA', 'email' => 'more.ta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Less TA', 'email' => 'less.ta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'More TA', 'email' => 'more.ta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $this->postJson('/api/candidates', ['name' => 'T1', 'email' => 't1@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'T2', 'email' => 't2@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
-        $this->postJson('/api/candidates', ['name' => 'T3', 'email' => 't3@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'T1', 'email' => 't1@ex.com', 'years_of_experience' => 3, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'T2', 'email' => 't2@ex.com', 'years_of_experience' => 4, 'cv' => 'CV']);
+        $this->postJson('/api/v1/candidates', ['name' => 'T3', 'email' => 't3@ex.com', 'years_of_experience' => 5, 'cv' => 'CV']);
 
         $less = \Src\Evaluators\Infrastructure\Persistence\EvaluatorModel::where('email', 'less.ta@example.com')->first();
         $this->assertNotNull($less);
@@ -944,11 +944,11 @@ class GetConsolidatedEvaluatorsTest extends TestCase
         $this->assertNotNull($t3Model);
         $t3 = $t3Model->id;
 
-        $this->postJson("/api/evaluators/{$lessId}/assign-candidate", ['candidate_id' => $t1]);
-        $this->postJson("/api/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $t2]);
-        $this->postJson("/api/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $t3]);
+        $this->postJson("/api/v1/evaluators/{$lessId}/assign-candidate", ['candidate_id' => $t1]);
+        $this->postJson("/api/v1/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $t2]);
+        $this->postJson("/api/v1/evaluators/{$moreId}/assign-candidate", ['candidate_id' => $t3]);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=total_assigned_candidates&sort_direction=asc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=total_assigned_candidates&sort_direction=asc');
         $response->assertStatus(200);
         $first = $response->json('data.0.email');
         $this->assertEquals('less.ta@example.com', $first);
@@ -957,10 +957,10 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_name_desc(): void
     {
-        $this->postJson('/api/evaluators', ['name' => 'Anna', 'email' => 'anna.sort2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
-        $this->postJson('/api/evaluators', ['name' => 'Zoe', 'email' => 'zoe.sort2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Anna', 'email' => 'anna.sort2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
+        $this->postJson('/api/v1/evaluators', ['name' => 'Zoe', 'email' => 'zoe.sort2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
-        $response = $this->getJson('/api/evaluators/consolidated?sort_by=name&sort_direction=desc');
+        $response = $this->getJson('/api/v1/evaluators/consolidated?sort_by=name&sort_direction=desc');
         $response->assertStatus(200);
         $first = $response->json('data.0.email');
         $this->assertEquals('zoe.sort2@example.com', $first);

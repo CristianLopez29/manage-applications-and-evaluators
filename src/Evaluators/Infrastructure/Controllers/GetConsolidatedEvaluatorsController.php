@@ -20,7 +20,7 @@ class GetConsolidatedEvaluatorsController
 
     /**
      * @OA\Get(
-     *     path="/api/evaluators/consolidated",
+     *     path="/api/v1/evaluators/consolidated",
      *     summary="Get consolidated list of evaluators and their candidates",
      *     tags={"Evaluators"},
      *     @OA\Parameter(

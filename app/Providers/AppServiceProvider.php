@@ -55,6 +55,16 @@ class AppServiceProvider extends ServiceProvider
             \Src\Evaluators\Infrastructure\Listeners\SendAssignmentStatusChangeNotifications::class
         );
 
+        \Illuminate\Support\Facades\Event::listen(
+            \Src\Evaluators\Domain\Events\CandidateAssigned::class,
+            [\Src\Evaluators\Infrastructure\Listeners\RecordAssignmentHistory::class, 'handleAssigned']
+        );
+
+        \Illuminate\Support\Facades\Event::listen(
+            \Src\Evaluators\Domain\Events\AssignmentStatusChanged::class,
+            [\Src\Evaluators\Infrastructure\Listeners\RecordAssignmentHistory::class, 'handleStatusChanged']
+        );
+
         RateLimiter::for('login', function (Request $request) {
             $input = $request->input('email');
             $email = is_string($input) ? $input : '';

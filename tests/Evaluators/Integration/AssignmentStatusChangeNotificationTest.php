@@ -17,7 +17,7 @@ class AssignmentStatusChangeNotificationTest extends TestCase
     {
         Notification::fake();
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Status Candidate',
             'email' => 'status.candidate@example.com',
             'years_of_experience' => 6,
@@ -25,7 +25,7 @@ class AssignmentStatusChangeNotificationTest extends TestCase
             'primary_specialty' => 'Backend',
         ])->assertStatus(201);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Status Eval',
             'email' => 'status.eval@example.com',
             'specialty' => 'Backend',
@@ -36,11 +36,11 @@ class AssignmentStatusChangeNotificationTest extends TestCase
         $this->assertNotNull($candidate);
         $this->assertNotNull($evaluator);
 
-        $this->postJson("/api/evaluators/{$evaluator->id}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluator->id}/assign-candidate", [
             'candidate_id' => $candidate->id,
         ])->assertStatus(200);
 
-        $this->putJson("/api/evaluators/{$evaluator->id}/assignments/{$candidate->id}/start-progress")
+        $this->putJson("/api/v1/evaluators/{$evaluator->id}/assignments/{$candidate->id}/start-progress")
             ->assertStatus(200);
 
         Notification::assertSentOnDemand(AssignmentStatusChangedNotification::class, function (AssignmentStatusChangedNotification $notification, array $channels, $notifiable) {
@@ -48,7 +48,7 @@ class AssignmentStatusChangeNotificationTest extends TestCase
             return in_array('mail', $channels, true) && in_array($mail, ['status.eval@example.com', 'status.candidate@example.com'], true);
         });
 
-        $this->putJson("/api/evaluators/{$evaluator->id}/assignments/{$candidate->id}/complete")
+        $this->putJson("/api/v1/evaluators/{$evaluator->id}/assignments/{$candidate->id}/complete")
             ->assertStatus(200);
 
         Notification::assertSentOnDemand(AssignmentStatusChangedNotification::class);

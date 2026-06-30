@@ -14,7 +14,7 @@ class GetCandidateSummaryTest extends TestCase
     public function should_return_candidate_summary_with_assignment_and_validations(): void
     {
         // 1. Create Candidate
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
@@ -25,7 +25,7 @@ class GetCandidateSummaryTest extends TestCase
         $candidateId = $candidate->id;
 
         // 2. Create Evaluator
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
@@ -35,10 +35,10 @@ class GetCandidateSummaryTest extends TestCase
         $evaluatorId = $evaluator->id;
 
         // 3. Assign
-        $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateId]);
+        $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", ['candidate_id' => $candidateId]);
 
         // 4. Get Summary
-        $response = $this->getJson("/api/candidates/{$candidateId}/summary");
+        $response = $this->getJson("/api/v1/candidates/{$candidateId}/summary");
 
         $response->assertStatus(200)
             ->assertJsonStructure([
@@ -69,7 +69,7 @@ class GetCandidateSummaryTest extends TestCase
     public function should_return_summary_without_assignment_if_not_assigned(): void
     {
         // Create only candidate
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Ana García',
             'email' => 'ana@example.com',
             'years_of_experience' => 3,
@@ -79,7 +79,7 @@ class GetCandidateSummaryTest extends TestCase
         $this->assertNotNull($candidate);
         $candidateId = $candidate->id;
 
-        $response = $this->getJson("/api/candidates/{$candidateId}/summary");
+        $response = $this->getJson("/api/v1/candidates/{$candidateId}/summary");
 
         $response->assertStatus(200);
         $this->assertEquals('Unassigned', $response->json('data.assignment_info'));
@@ -90,7 +90,7 @@ class GetCandidateSummaryTest extends TestCase
     {
         $file = \Illuminate\Http\UploadedFile::fake()->create('cv.pdf', 50, 'application/pdf');
 
-        $this->post('/api/candidates', [
+        $this->post('/api/v1/candidates', [
             'name' => 'PDF Summ',
             'email' => 'pdf.summ@example.com',
             'years_of_experience' => 3,
@@ -99,14 +99,14 @@ class GetCandidateSummaryTest extends TestCase
 
         $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'pdf.summ@example.com')->firstOrFail();
 
-        $res = $this->getJson("/api/candidates/{$candidate->id}/summary")->assertStatus(200);
+        $res = $this->getJson("/api/v1/candidates/{$candidate->id}/summary")->assertStatus(200);
         $this->assertTrue($res->json('data.candidate_info.cv_pdf'));
         $this->assertNotEmpty($res->json('data.candidate_info.cv_download_url'));
     }
     #[Test]
     public function should_return_404_if_candidate_not_found(): void
     {
-        $response = $this->getJson("/api/candidates/999/summary");
+        $response = $this->getJson("/api/v1/candidates/999/summary");
 
         $response->assertStatus(404);
     }

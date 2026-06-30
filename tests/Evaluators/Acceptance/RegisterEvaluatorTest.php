@@ -19,7 +19,7 @@ class RegisterEvaluatorTest extends TestCase
             'specialty' => 'Backend',
         ];
 
-        $response = $this->postJson('/api/evaluators', $payload);
+        $response = $this->postJson('/api/v1/evaluators', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -39,7 +39,7 @@ class RegisterEvaluatorTest extends TestCase
     #[Test]
     public function should_reject_evaluator_without_required_fields(): void
     {
-        $response = $this->postJson('/api/evaluators', []);
+        $response = $this->postJson('/api/v1/evaluators', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'email', 'specialty']);
@@ -49,14 +49,14 @@ class RegisterEvaluatorTest extends TestCase
     public function should_reject_duplicate_email(): void
     {
         // First evaluator
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
         ]);
 
         // Attempt duplicate
-        $response = $this->postJson('/api/evaluators', [
+        $response = $this->postJson('/api/v1/evaluators', [
             'name' => 'Pedro Sánchez',
             'email' => 'maria@example.com', // Duplicate email
             'specialty' => 'Frontend',
@@ -75,7 +75,7 @@ class RegisterEvaluatorTest extends TestCase
             'specialty' => 'InvalidSpecialty', // Invalid
         ];
 
-        $response = $this->postJson('/api/evaluators', $payload);
+        $response = $this->postJson('/api/v1/evaluators', $payload);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['specialty']);
@@ -87,7 +87,7 @@ class RegisterEvaluatorTest extends TestCase
         $specialties = ['Backend', 'Frontend', 'Fullstack', 'DevOps', 'Mobile', 'QA', 'Data', 'Security'];
 
         foreach ($specialties as $index => $specialty) {
-            $response = $this->postJson('/api/evaluators', [
+            $response = $this->postJson('/api/v1/evaluators', [
                 'name' => "Evaluator {$index}",
                 'email' => "evaluator{$index}@example.com",
                 'specialty' => $specialty,
@@ -111,7 +111,7 @@ class RegisterEvaluatorTest extends TestCase
             'specialty' => 'Backend',
         ];
 
-        $response = $this->postJson('/api/evaluators', $payload);
+        $response = $this->postJson('/api/v1/evaluators', $payload);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email']);
@@ -126,7 +126,7 @@ class RegisterEvaluatorTest extends TestCase
             'specialty' => 'Backend',
         ];
 
-        $response = $this->postJson('/api/evaluators', $payload);
+        $response = $this->postJson('/api/v1/evaluators', $payload);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['name']);

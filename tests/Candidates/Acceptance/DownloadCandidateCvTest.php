@@ -20,7 +20,7 @@ class DownloadCandidateCvTest extends TestCase
         Storage::fake();
         $file = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
 
-        $this->post('/api/candidates', [
+        $this->post('/api/v1/candidates', [
             'name' => 'PDF Candidate',
             'email' => 'pdf.dl@example.com',
             'years_of_experience' => 4,
@@ -29,7 +29,7 @@ class DownloadCandidateCvTest extends TestCase
 
         $model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'pdf.dl@example.com')->firstOrFail();
 
-        $response = $this->get("/api/candidates/{$model->id}/cv");
+        $response = $this->get("/api/v1/candidates/{$model->id}/cv");
         $response->assertStatus(200);
     }
 
@@ -39,7 +39,7 @@ class DownloadCandidateCvTest extends TestCase
         Storage::fake();
         $file = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
 
-        $this->post('/api/candidates', [
+        $this->post('/api/v1/candidates', [
             'name' => 'A',
             'email' => 'a@example.com',
             'years_of_experience' => 3,
@@ -47,7 +47,7 @@ class DownloadCandidateCvTest extends TestCase
         ])->assertStatus(201);
         $candA = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'a@example.com')->firstOrFail();
 
-        $this->post('/api/candidates', [
+        $this->post('/api/v1/candidates', [
             'name' => 'B',
             'email' => 'b@example.com',
             'years_of_experience' => 3,
@@ -61,8 +61,8 @@ class DownloadCandidateCvTest extends TestCase
         ]);
         Sanctum::actingAs($user, ['*']);
 
-        $this->get("/api/candidates/{$candA->id}/cv")->assertStatus(200);
-        $this->get("/api/candidates/{$candB->id}/cv")->assertStatus(403);
+        $this->get("/api/v1/candidates/{$candA->id}/cv")->assertStatus(200);
+        $this->get("/api/v1/candidates/{$candB->id}/cv")->assertStatus(403);
     }
 }
 

@@ -47,7 +47,7 @@ class SensitiveDataExposureTest extends TestCase
         Sanctum::actingAs($admin, ['*']);
 
         /** @var array<string, mixed> $response */
-        $response = $this->getJson("/api/evaluators/{$evaluatorId}/candidates")
+        $response = $this->getJson("/api/v1/evaluators/{$evaluatorId}/candidates")
             ->assertStatus(200)
             ->json();
 

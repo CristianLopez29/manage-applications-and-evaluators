@@ -22,7 +22,7 @@ class SqlInjectionResilienceTest extends TestCase
             'candidate_email_contains' => "' OR 1=1 --",
         ];
 
-        $this->getJson('/api/evaluators/consolidated?'.http_build_query($payload))
+        $this->getJson('/api/v1/evaluators/consolidated?'.http_build_query($payload))
             ->assertStatus(200)
             ->assertJsonStructure([
                 'data',

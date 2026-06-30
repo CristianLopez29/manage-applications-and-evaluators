@@ -17,7 +17,7 @@ class GetEvaluatorCandidatesController
 
     /**
      * @OA\Get(
-     *     path="/api/evaluators/{evaluatorId}/candidates",
+     *     path="/api/v1/evaluators/{evaluatorId}/candidates",
      *     summary="Get candidates assigned to an evaluator",
      *     tags={"Evaluators"},
      *     @OA\Parameter(

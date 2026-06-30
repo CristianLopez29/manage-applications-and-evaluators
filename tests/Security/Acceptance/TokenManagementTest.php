@@ -29,7 +29,7 @@ class TokenManagementTest extends TestCase
         $this->assertNotSame($plainTextToken, $response['token']);
 
         $this->withHeader('Authorization', 'Bearer ' . $response['token'])
-            ->getJson('/api/evaluators/consolidated')
+            ->getJson('/api/v1/evaluators/consolidated')
             ->assertStatus(200);
     }
 

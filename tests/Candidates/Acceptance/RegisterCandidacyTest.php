@@ -24,7 +24,7 @@ class RegisterCandidacyTest extends TestCase
             'cv' => 'Desarrollador backend con 5 años de experiencia en Laravel...',
         ];
 
-        $response = $this->postJson('/api/candidates', $payload);
+        $response = $this->postJson('/api/v1/candidates', $payload);
 
         $response->assertStatus(201)
             ->assertJson([
@@ -44,7 +44,7 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_reject_candidacy_without_required_fields(): void
     {
-        $response = $this->postJson('/api/candidates', []);
+        $response = $this->postJson('/api/v1/candidates', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'email', 'years_of_experience', 'cv']);
@@ -60,7 +60,7 @@ class RegisterCandidacyTest extends TestCase
             'cv' => 'Mi CV',
         ];
 
-        $response = $this->postJson('/api/candidates', $payload);
+        $response = $this->postJson('/api/v1/candidates', $payload);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email']);
@@ -76,7 +76,7 @@ class RegisterCandidacyTest extends TestCase
             'cv' => 'Desarrollador junior',
         ];
 
-        $response = $this->postJson('/api/candidates', $payload);
+        $response = $this->postJson('/api/v1/candidates', $payload);
 
         // Domain validation (MinimumExperienceValidator) maps to 422 via global exception handler
         $response->assertStatus(422)
@@ -93,7 +93,7 @@ class RegisterCandidacyTest extends TestCase
             'cv' => '   ',
         ];
 
-        $response = $this->postJson('/api/candidates', $payload);
+        $response = $this->postJson('/api/v1/candidates', $payload);
 
         // Laravel validates 'required' before reaching the domain, returning 422
         $response->assertStatus(422)
@@ -110,7 +110,7 @@ class RegisterCandidacyTest extends TestCase
             'cv' => 'Desarrolladora con 2 años de experiencia',
         ];
 
-        $response = $this->postJson('/api/candidates', $payload);
+        $response = $this->postJson('/api/v1/candidates', $payload);
 
         $response->assertStatus(201);
 
@@ -124,7 +124,7 @@ class RegisterCandidacyTest extends TestCase
     public function should_update_existing_candidate_if_email_already_exists(): void
     {
         // First insertion
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Carlos Ruiz',
             'email' => 'carlos@example.com',
             'years_of_experience' => 3,
@@ -132,7 +132,7 @@ class RegisterCandidacyTest extends TestCase
         ]);
 
         // Second insertion with the same email
-        $response = $this->postJson('/api/candidates', [
+        $response = $this->postJson('/api/v1/candidates', [
             'name' => 'Carlos Ruiz Updated',
             'email' => 'carlos@example.com',
             'years_of_experience' => 5,
@@ -157,7 +157,7 @@ class RegisterCandidacyTest extends TestCase
         Storage::fake();
         $file = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
 
-        $response = $this->post('/api/candidates', [
+        $response = $this->post('/api/v1/candidates', [
             'name' => 'PDF Candidate',
             'email' => 'pdf.candidate@example.com',
             'years_of_experience' => 4,
@@ -194,7 +194,7 @@ class RegisterCandidacyTest extends TestCase
             'cv' => 'CV for role candidate',
         ];
 
-        $response = $this->postJson('/api/candidates', $payload);
+        $response = $this->postJson('/api/v1/candidates', $payload);
 
         $response->assertStatus(201)
             ->assertJson([

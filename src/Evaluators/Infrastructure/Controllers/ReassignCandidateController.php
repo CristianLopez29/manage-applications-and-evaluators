@@ -18,7 +18,7 @@ class ReassignCandidateController
 
     /**
      * @OA\Put(
-     *     path="/api/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}",
+     *     path="/api/v1/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}",
      *     summary="Reassign candidate to a new evaluator",
      *     tags={"Evaluators"},
      *     @OA\Parameter(
