@@ -1,8 +1,8 @@
 # Candidacy Management API
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
-[![PHP](https://img.shields.io/badge/PHP-8.2-blue.svg)](https://php.net)
-[![Tests](https://img.shields.io/badge/Tests-118%20passing-green.svg)](#testing)
+[![PHP](https://img.shields.io/badge/PHP-8.4-blue.svg)](https://php.net)
+[![Tests](https://img.shields.io/badge/Tests-126%20passing-green.svg)](#testing)
 [![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/manage-applications-and-evaluators)
 
 > Modular and scalable system for managing candidacies and evaluators, implemented with **Hexagonal Architecture**, **advanced design patterns**, and **software best practices**.
@@ -22,7 +22,7 @@
 - **Benefit:** I can replace Laravel with Symfony without touching business logic
 
 #### ✅ **Superior Testability**
-- 118 tests passing (comprehensive coverage)
+- 126 tests passing (comprehensive coverage)
 - Unit tests do not require the framework
 - Fakes and mocks are trivial to implement
 - **Benefit:** Fast and reliable tests
@@ -426,7 +426,7 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 - Readiness: `/api/readiness`
   - In production, requires `X-Health-Check-Token` header matching `HEALTHCHECK_TOKEN`
   - Performs database and cache checks and returns a JSON with `status`, `checks`, and `time`
-### 📦 Prepared Infrastructure
+### ✅ Additional Implemented Infrastructure
 #### 6. Monitoring (Sentry)
 
 **Status:** ✅ Implemented
@@ -440,35 +440,39 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 
 #### 3. Cache
 
-**Status:** 📦 Redis configured, implementation ready to activate
+**Status:** ✅ **Implemented** (active, event-driven invalidation)
+
+The consolidated listing is cached behind an Application port (`EvaluatorCachePort`)
+so the use case stays framework-free. The adapter (`LaravelEvaluatorCache`) uses
+tag-based caching for Redis and falls back to a tagless flush for other drivers.
 
 ```php
-// Implementation example (commented in code)
-Cache::remember("evaluators.consolidated.{$criteria->cacheKey()}", 300, function() {
-    return $this->repository->findAllWithCandidates($criteria);
-});
+// src/Evaluators/Application/UseCases/GetConsolidatedEvaluators.php
+$paginator = $this->cache->remember($key, $ttl, fn () => $this->repository->findAllWithCandidates($criteria));
 
-// Automatic invalidation
-Cache::tags(['evaluators'])->flush();
+// src/Evaluators/Infrastructure/Cache/LaravelEvaluatorCache.php
+Cache::tags(['evaluators'])->remember($key, $ttl, $closure);
+Cache::tags(['evaluators'])->flush(); // on CandidateAssigned / AssignmentStatusChanged
 ```
 
-**Expected benefits:** ~80% reduction in queries for repeated listings.
+Invalidation is event-driven via the `InvalidateEvaluatorCache` listener — no
+coupling in the use cases.
 
 #### 4. Concurrency (Pessimistic Locking)
 
-**Status:** 📦 Prepared for high concurrency
+**Status:** ✅ **Implemented**
+
+Assignment and reassignment lock the candidate's current assignment row
+(`SELECT ... FOR UPDATE`) inside a transaction to prevent race conditions.
 
 ```php
-// Suggested implementation for massive assignments
-DB::transaction(function() use ($evaluatorId, $candidateId) {
-    $assignment = CandidateAssignmentModel::lockForUpdate()
-        ->where('candidate_id', $candidateId)
-        ->first();
-    
-    if ($assignment) {
-        throw new CandidateAlreadyAssignedException();
-    }
-});
+// src/Evaluators/Infrastructure/Persistence/EloquentAssignmentRepository.php
+public function findByCandidateIdForUpdate(int $candidateId): ?CandidateAssignment
+{
+    // ...->lockForUpdate()->first();
+}
+
+// Used by AssignCandidateToEvaluator and ReassignCandidate use cases
 ```
 
 ### SQL Optimized for High Performance
@@ -673,6 +677,47 @@ Get complete candidacy summary with validations.
 
 ---
 
+#### `GET /api/candidates` · `GET /api/candidates/search`
+List / search candidates (admin only). Supports `search` filter and pagination.
+
+---
+
+#### `GET /api/candidates/{id}/cv`
+Download the candidate's uploaded CV file from the private disk.
+
+---
+
+#### `POST /api/candidates/{id}/analyze`
+Queue an **AI screening** of the candidate's CV. The `AnalyzeCandidateCvJob`
+calls the configured AI provider (**OpenAI** or **Gemini**, selected via
+`AI_PROVIDER`) and persists a structured evaluation.
+
+**Response:** `202 Accepted`
+```json
+{ "status": "processing", "message": "Analysis queued" }
+```
+
+---
+
+#### `GET /api/candidates/{id}/evaluation`
+Get the latest AI evaluation for a candidate.
+
+**Response:**
+```json
+{
+  "data": {
+    "candidate_id": 1,
+    "summary": "Full Stack professional with 5 years of experience...",
+    "skills": ["Laravel", "Vue.js", "MySQL"],
+    "years_experience": 5,
+    "seniority_level": "Senior",
+    "analyzed_at": "2026-06-30 17:38:10"
+  }
+}
+```
+
+---
+
 ### Evaluators
 
 #### `POST /api/evaluators`
@@ -838,8 +883,8 @@ The report is generated in the background and sent by email when ready.
 
 ### Coverage
 
-- **Total:** 118 tests passing
-- **Assertions:** 570
+- **Total:** 126 tests passing
+- **Assertions:** 623
 - **Feature:** Expanded integration coverage
   - Candidates endpoints
   - Evaluators endpoints (including status transitions, reassign, unassign)
@@ -891,7 +936,7 @@ docker compose exec laravel php artisan test --testsuite=Unit
 
 ### Core
 - **Laravel 12** - Base Framework
-- **PHP 8.2** - Language (typed properties, readonly, enums)
+- **PHP 8.4** - Language (typed properties, readonly, enums)
 - **MySQL 8.0** - Relational Database
 
 ### Architecture
@@ -900,10 +945,16 @@ docker compose exec laravel php artisan test --testsuite=Unit
 - **SOLID Principles** - Maintainable Code
 
 ### Libraries
+- `laravel/sanctum` - API token authentication
 - `maatwebsite/excel` - Excel Report Export
 - `darkaonline/l5-swagger` - OpenAPI Documentation
 - `sentry/sentry-laravel` - Error monitoring and alerting
+- `laravel/telescope` - Local debugging & insights
 - `phpunit/phpunit` - Testing Framework
+
+### AI Screening
+- **OpenAI** / **Google Gemini** adapters for CV analysis, selected at runtime via `AI_PROVIDER`
+- Asynchronous via `AnalyzeCandidateCvJob` (queue); persists a structured evaluation (summary, skills, years of experience, seniority level)
 
 ### DevOps
 - **Docker** (Laravel Sail) - Local Development
@@ -984,7 +1035,7 @@ sudo chmod -R 777 storage bootstrap/cache
 ✅ **Senior Architecture:** Hexagonal + DDD correctly implemented
 ✅ **Complex SQL:** GROUP_CONCAT, JOINs, multiple aggregations
 ✅ **Patterns:** Extensible Chain of Responsibility
-✅ **Testing:** 118 tests with 570 assertions covering critical cases
+✅ **Testing:** 126 tests with 623 assertions covering critical cases
 ✅ **Implemented Scalability:** Queues + Idempotency with `ShouldBeUnique`
 ✅ **Documentation:** Swagger + Complete README with diagrams
 
@@ -995,12 +1046,10 @@ sudo chmod -R 777 storage bootstrap/cache
 > ⚠️ **IMPORTANT**: The following improvements are **NOT implemented**. This is a list of possible future improvements that are **out of scope** for the technical test, but could be added in a real production environment.
 
 ### Performance
-- [ ] **Cache Layer**: Implement active caching with intelligent invalidation (Redis already configured but cache not active)
 - [ ] **Database Indexing**: Add composite indexes for complex queries
 - [ ] **Query Optimization**: Selective lazy loading to reduce memory
 
 ### Concurrency
-- [ ] **Pessimistic Locking**: For massive simultaneous assignments
 - [ ] **Optimistic Locking**: Version control in critical entities
 
 ### Features
@@ -1020,7 +1069,7 @@ sudo chmod -R 777 storage bootstrap/cache
 For questions about implementation, architectural decisions, or technical details:
 
 1. **Review source code**: The structure is self-documented
-2. **Consult tests**: 118 tests document expected behavior
+2. **Consult tests**: 126 tests document expected behavior
 3. **Swagger**: Interactive API documentation
 
 > The project architecture is designed to be **self-explanatory** through clean code, comprehensive tests, and integrated documentation.
@@ -1029,5 +1078,5 @@ For questions about implementation, architectural decisions, or technical detail
 
 <p align="center">
   <strong>Developed with Hexagonal Architecture and Design Patterns</strong><br>
-  Laravel 12 | PHP 8.2 | MySQL | Redis | Docker
+  Laravel 12 | PHP 8.4 | MySQL | Redis | Docker
 </p>
