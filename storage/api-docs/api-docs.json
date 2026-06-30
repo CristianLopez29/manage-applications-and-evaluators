@@ -189,7 +189,7 @@
                     "Candidates"
                 ],
                 "summary": "Queue AI analysis for candidate CV",
-                "operationId": "e42ec31e9bc4a1fb307c7da4c73697ee",
+                "operationId": "3ccd0ec1cf8c6c7df5a497372b1b6974",
                 "parameters": [
                     {
                         "name": "id",
@@ -216,7 +216,7 @@
                     "Candidates"
                 ],
                 "summary": "Download candidate CV PDF",
-                "operationId": "2310fd084d0bf2cf306a6c268fb7d7ae",
+                "operationId": "8f22c6f12658223e933a4157e1b1cd8f",
                 "parameters": [
                     {
                         "name": "id",
@@ -243,7 +243,7 @@
                     "Candidates"
                 ],
                 "summary": "Get latest AI evaluation for a candidate",
-                "operationId": "38473e996e8ae94821567131d1144049",
+                "operationId": "9308d873b9faf31f6b00f2246c768a0c",
                 "parameters": [
                     {
                         "name": "id",
@@ -273,7 +273,7 @@
                     "Candidates"
                 ],
                 "summary": "Get candidate summary",
-                "operationId": "33bf6d7b425e9b7b32bfe7e0427bacc6",
+                "operationId": "df30c35174e7709a3e53924404caaa2b",
                 "parameters": [
                     {
                         "name": "id",
@@ -377,7 +377,7 @@
                     "Candidates"
                 ],
                 "summary": "List candidates with filters",
-                "operationId": "2e8d8d265bd99a35b1fdec90138b857a",
+                "operationId": "d81a5f492c62e1b5bb5c9f8f5d331e2c",
                 "parameters": [
                     {
                         "name": "status",
@@ -459,7 +459,7 @@
                     "Candidates"
                 ],
                 "summary": "Register a new candidacy",
-                "operationId": "a1abcac86a6766de411a379655f62c8c",
+                "operationId": "8906552d577e8ad22821c9097d7e63ea",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -533,7 +533,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Candidacy registered successfully",
+                        "description": "Candidacy registered successfully and analysis queued",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -544,9 +544,17 @@
                                         },
                                         "data": {
                                             "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
                                                 "email": {
                                                     "type": "string",
                                                     "example": "juan@example.com"
+                                                },
+                                                "analysis_status": {
+                                                    "type": "string",
+                                                    "example": "processing"
                                                 }
                                             },
                                             "type": "object"
@@ -569,7 +577,7 @@
                     "Candidates"
                 ],
                 "summary": "Search candidates by email and filters",
-                "operationId": "d815381651de6b2157b1494bbb924e36",
+                "operationId": "71481e13d5776215aa5d7b9a06dbb671",
                 "parameters": [
                     {
                         "name": "email",
@@ -653,7 +661,7 @@
                     "Evaluators"
                 ],
                 "summary": "Assign a candidate to an evaluator",
-                "operationId": "92b20cb2aa3d548dca5ef3e48acd3e0e",
+                "operationId": "74331235d6571a2464b9037b7f979908",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -715,7 +723,7 @@
                     "Evaluators"
                 ],
                 "summary": "Mark assignment as completed",
-                "operationId": "a95efa3134156f3d51fcd6fa6307ad3a",
+                "operationId": "511e48773b3b35d9e0602ff6810e19de",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -750,7 +758,7 @@
                     "Evaluators"
                 ],
                 "summary": "Get consolidated list of evaluators and their candidates",
-                "operationId": "fc3fe8bdd46faca1140b1082c9f7bf2b",
+                "operationId": "7bb1017fcf1c3556bdc06bc3dbfe9243",
                 "parameters": [
                     {
                         "name": "page",
@@ -989,7 +997,7 @@
                     "Evaluators"
                 ],
                 "summary": "Get candidates assigned to an evaluator",
-                "operationId": "3ac824bd175536593b1c83b926671ab0",
+                "operationId": "aa5a466df6ab11eca0e62790977193c3",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -1057,7 +1065,7 @@
                     "Evaluators"
                 ],
                 "summary": "Reassign candidate to a new evaluator",
-                "operationId": "e0cb0de02120c4f3007a264027af655e",
+                "operationId": "5b747194b625e370a4ec1f346542fc27",
                 "parameters": [
                     {
                         "name": "newEvaluatorId",
@@ -1092,7 +1100,7 @@
                     "Evaluators"
                 ],
                 "summary": "Register a new evaluator",
-                "operationId": "8a9210f5336c8cb2bfb0508a3185fced",
+                "operationId": "e6dce00df1e87bdf550142f5ea236b35",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1165,7 +1173,7 @@
                     "Evaluators"
                 ],
                 "summary": "Reject an assignment",
-                "operationId": "6dfb527e1b0ce105761d67420b65d2d8",
+                "operationId": "77ebef74e2af5205fb16f7fd69329af5",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -1200,7 +1208,7 @@
                     "Evaluators"
                 ],
                 "summary": "Request an Excel report of evaluators",
-                "operationId": "d2f0712445d4a0f1a6b0da67477e17ae",
+                "operationId": "8f9a3ec49b1cb664614411c86b7fe5c5",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1250,7 +1258,7 @@
                     "Evaluators"
                 ],
                 "summary": "Move assignment to in_progress",
-                "operationId": "61f29f13e825227647a0c02c3779b3eb",
+                "operationId": "20f4551edeba6e3421ebfc0ff50058a6",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -1285,7 +1293,7 @@
                     "Evaluators"
                 ],
                 "summary": "Unassign a candidate from an evaluator",
-                "operationId": "021c03767345fcd2b8a3ba08411492e5",
+                "operationId": "b90cbceda7d3e249f6162c625803d4ef",
                 "parameters": [
                     {
                         "name": "evaluatorId",
