@@ -20,7 +20,7 @@ class RegisterEvaluatorController
 
     /**
      * @OA\Post(
-     *     path="/api/evaluators",
+     *     path="/api/v1/evaluators",
      *     summary="Register a new evaluator",
      *     tags={"Evaluators"},
      *     @OA\RequestBody(

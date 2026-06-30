@@ -16,7 +16,7 @@ class CompleteAssignmentController
 
     /**
      * @OA\Put(
-     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/complete",
+     *     path="/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/complete",
      *     summary="Mark assignment as completed",
      *     tags={"Evaluators"},
      *     @OA\Parameter(

@@ -14,7 +14,7 @@ class AssignCandidateTest extends TestCase
     public function should_assign_candidate_to_evaluator(): void
     {
         // Create a candidate
-        $candidateResponse = $this->postJson('/api/candidates', [
+        $candidateResponse = $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
@@ -23,7 +23,7 @@ class AssignCandidateTest extends TestCase
         ]);
 
         // Create an evaluator
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
@@ -38,7 +38,7 @@ class AssignCandidateTest extends TestCase
         $evaluatorId = $evaluator->id;
 
         // Assign candidate to evaluator
-        $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $response = $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidateId,
         ]);
 
@@ -62,7 +62,7 @@ class AssignCandidateTest extends TestCase
     public function should_reject_assignment_with_nonexistent_candidate(): void
     {
         // Create only an evaluator
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
@@ -72,7 +72,7 @@ class AssignCandidateTest extends TestCase
         $this->assertNotNull($evaluator);
         $evaluatorId = $evaluator->id;
 
-        $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $response = $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => 999, // Does not exist
         ]);
 
@@ -84,7 +84,7 @@ class AssignCandidateTest extends TestCase
     public function should_reject_assignment_with_nonexistent_evaluator(): void
     {
         // Create only a candidate
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
@@ -95,7 +95,7 @@ class AssignCandidateTest extends TestCase
         $this->assertNotNull($candidate);
         $candidateId = $candidate->id;
 
-        $response = $this->postJson("/api/evaluators/999/assign-candidate", [
+        $response = $this->postJson("/api/v1/evaluators/999/assign-candidate", [
             'candidate_id' => $candidateId,
         ]);
 
@@ -106,7 +106,7 @@ class AssignCandidateTest extends TestCase
     public function should_prevent_assigning_candidate_to_multiple_evaluators(): void
     {
         // Create a candidate
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
             'email' => 'juan@example.com',
             'years_of_experience' => 5,
@@ -115,13 +115,13 @@ class AssignCandidateTest extends TestCase
         ]);
 
         // Create two evaluators
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
         ]);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Pedro Sánchez',
             'email' => 'pedro@example.com',
             'specialty' => 'Frontend',
@@ -138,13 +138,13 @@ class AssignCandidateTest extends TestCase
         $evaluator2Id = $evaluator2->id;
 
         // First assignment
-        $response1 = $this->postJson("/api/evaluators/{$evaluator1Id}/assign-candidate", [
+        $response1 = $this->postJson("/api/v1/evaluators/{$evaluator1Id}/assign-candidate", [
             'candidate_id' => $candidateId,
         ]);
         $response1->assertStatus(200);
 
         // Second assignment (should fail)
-        $response2 = $this->postJson("/api/evaluators/{$evaluator2Id}/assign-candidate", [
+        $response2 = $this->postJson("/api/v1/evaluators/{$evaluator2Id}/assign-candidate", [
             'candidate_id' => $candidateId,
         ]);
         $response2->assertStatus(409); // Conflict
@@ -154,7 +154,7 @@ class AssignCandidateTest extends TestCase
     public function should_require_candidate_id_field(): void
     {
         // Create evaluator
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
             'email' => 'maria@example.com',
             'specialty' => 'Backend',
@@ -164,7 +164,7 @@ class AssignCandidateTest extends TestCase
         $this->assertNotNull($evaluator);
         $evaluatorId = $evaluator->id;
 
-        $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", []);
+        $response = $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['candidate_id']);
@@ -173,7 +173,7 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_reject_assignment_when_candidate_specialty_does_not_match_evaluator(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Frontend Candidate',
             'email' => 'frontend.candidate@example.com',
             'years_of_experience' => 3,
@@ -181,7 +181,7 @@ class AssignCandidateTest extends TestCase
             'primary_specialty' => 'Frontend',
         ]);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Backend Evaluator',
             'email' => 'backend.evaluator@example.com',
             'specialty' => 'Backend',
@@ -195,7 +195,7 @@ class AssignCandidateTest extends TestCase
         $this->assertNotNull($evaluator);
         $evaluatorId = $evaluator->id;
 
-        $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $response = $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidateId,
         ]);
 
@@ -207,7 +207,7 @@ class AssignCandidateTest extends TestCase
     {
         $specialty = 'Backend';
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Busy Evaluator',
             'email' => 'busy@example.com',
             'specialty' => $specialty,
@@ -218,7 +218,7 @@ class AssignCandidateTest extends TestCase
         $evaluatorId = $evaluator->id;
 
         for ($i = 1; $i <= 10; $i++) {
-            $this->postJson('/api/candidates', [
+            $this->postJson('/api/v1/candidates', [
                 'name' => "Candidate {$i}",
                 'email' => "candidate{$i}@example.com",
                 'years_of_experience' => 3,
@@ -229,14 +229,14 @@ class AssignCandidateTest extends TestCase
             $candidate = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', "candidate{$i}@example.com")->first();
             $this->assertNotNull($candidate);
 
-            $assignResponse = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+            $assignResponse = $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
                 'candidate_id' => $candidate->id,
             ]);
 
             $assignResponse->assertStatus(200);
         }
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Candidate 11',
             'email' => 'candidate11@example.com',
             'years_of_experience' => 3,
@@ -247,7 +247,7 @@ class AssignCandidateTest extends TestCase
         $candidate11 = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'candidate11@example.com')->first();
         $this->assertNotNull($candidate11);
 
-        $response = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $response = $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidate11->id,
         ]);
 

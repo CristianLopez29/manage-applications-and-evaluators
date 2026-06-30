@@ -20,7 +20,7 @@ class AssignCandidateController
 
     /**
      * @OA\Post(
-     *     path="/api/evaluators/{evaluatorId}/assign-candidate",
+     *     path="/api/v1/evaluators/{evaluatorId}/assign-candidate",
      *     summary="Assign a candidate to an evaluator",
      *     tags={"Evaluators"},
      *     @OA\Parameter(

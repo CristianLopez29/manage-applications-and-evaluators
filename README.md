@@ -436,7 +436,20 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 - Behavior: unhandled exceptions are captured and sent to Sentry via the stack channel
 - Optional: performance monitoring can be enabled via Sentry environment variables if needed
 
+#### 7. Structured Logging (correlation id)
 
+**Status:** ✅ **Implemented**
+
+- An `AddRequestContext` middleware binds a `request_id` (correlation id) and the authenticated `user_id` to the logging context of every authenticated API request.
+- The id is returned in the `X-Request-Id` response header — and honoured if the caller already sent one — enabling end-to-end tracing across clients, proxies and logs.
+- A ready-to-use `json` log channel (`LOG_CHANNEL=json`) emits one structured JSON line per record for ingestion into ELK / Datadog / Loki.
+
+#### 8. API Versioning
+
+**Status:** ✅ **Implemented**
+
+- Business resources are served under the `/api/v1` prefix (`/api/v1/candidates`, `/api/v1/evaluators`, …).
+- Cross-cutting infrastructure endpoints (`/api/login`, `/api/health`, `/api/readiness`) are intentionally kept unversioned, so the versioned contract covers only the business API and can evolve to `/api/v2` without disrupting auth or health probes.
 
 #### 3. Cache
 
@@ -633,7 +646,7 @@ The command `migrate:fresh --seed` creates:
 
 ### Candidates
 
-#### `POST /api/candidates`
+#### `POST /api/v1/candidates`
 Register new candidacy.
 
 **Body:**
@@ -650,7 +663,7 @@ Register new candidacy.
 
 ---
 
-#### `GET /api/candidates/{id}/summary`
+#### `GET /api/v1/candidates/{id}/summary`
 Get complete candidacy summary with validations.
 
 **Response:**
@@ -677,17 +690,17 @@ Get complete candidacy summary with validations.
 
 ---
 
-#### `GET /api/candidates` · `GET /api/candidates/search`
+#### `GET /api/v1/candidates` · `GET /api/v1/candidates/search`
 List / search candidates (admin only). Supports `search` filter and pagination.
 
 ---
 
-#### `GET /api/candidates/{id}/cv`
+#### `GET /api/v1/candidates/{id}/cv`
 Download the candidate's uploaded CV file from the private disk.
 
 ---
 
-#### `POST /api/candidates/{id}/analyze`
+#### `POST /api/v1/candidates/{id}/analyze`
 Queue an **AI screening** of the candidate's CV. The `AnalyzeCandidateCvJob`
 calls the configured AI provider (**OpenAI** or **Gemini**, selected via
 `AI_PROVIDER`) and persists a structured evaluation.
@@ -699,7 +712,7 @@ calls the configured AI provider (**OpenAI** or **Gemini**, selected via
 
 ---
 
-#### `GET /api/candidates/{id}/evaluation`
+#### `GET /api/v1/candidates/{id}/evaluation`
 Get the latest AI evaluation for a candidate.
 
 **Response:**
@@ -720,7 +733,7 @@ Get the latest AI evaluation for a candidate.
 
 ### Evaluators
 
-#### `POST /api/evaluators`
+#### `POST /api/v1/evaluators`
 Register new evaluator.
 
 **Body:**
@@ -736,7 +749,7 @@ Register new evaluator.
 
 ---
 
-#### `GET /api/evaluators/consolidated`
+#### `GET /api/v1/evaluators/consolidated`
 Consolidated list with complex SQL (GROUP_CONCAT, JOIN, AVG, COUNT).
 
 **Query Parameters:**
@@ -787,7 +800,7 @@ Consolidated list with complex SQL (GROUP_CONCAT, JOIN, AVG, COUNT).
 
 ---
 
-#### `POST /api/evaluators/{evaluatorId}/assign-candidate`
+#### `POST /api/v1/evaluators/{evaluatorId}/assign-candidate`
 Assign candidate to evaluator.
 
 **Body:**
@@ -801,42 +814,42 @@ Assign candidate to evaluator.
 
 ---
 
-#### `PUT /api/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress`
+#### `PUT /api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress`
 Move assignment status to `in_progress`. Triggers status-change email notifications.
 
 **Response:** `200 OK`
 
 ---
 
-#### `PUT /api/evaluators/{evaluatorId}/assignments/{candidateId}/complete`
+#### `PUT /api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/complete`
 Mark assignment as `completed`. Triggers status-change email notifications.
 
 **Response:** `200 OK`
 
 ---
 
-#### `PUT /api/evaluators/{evaluatorId}/assignments/{candidateId}/reject`
+#### `PUT /api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/reject`
 Mark assignment as `rejected`. Triggers status-change email notifications.
 
 **Response:** `200 OK`
 
 ---
 
-#### `DELETE /api/evaluators/{evaluatorId}/assignments/{candidateId}`
+#### `DELETE /api/v1/evaluators/{evaluatorId}/assignments/{candidateId}`
 Unassign a candidate from an evaluator.
 
 **Response:** `200 OK`
 
 ---
 
-#### `PUT /api/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}`
+#### `PUT /api/v1/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}`
 Reassign a candidate to a new evaluator. Sends assignment notifications.
 
 **Response:** `200 OK`
 
 ---
 
-#### `GET /api/evaluators/{evaluatorId}/candidates`
+#### `GET /api/v1/evaluators/{evaluatorId}/candidates`
 Get candidates assigned to an evaluator.
 
 **Response:**
@@ -863,7 +876,26 @@ Get candidates assigned to an evaluator.
 
 ---
 
-#### `POST /api/evaluators/report`
+#### `GET /api/v1/candidates/{candidateId}/assignment-history`
+Chronological status timeline of a candidate's assignments. Built from domain
+events (`CandidateAssigned`, `AssignmentStatusChanged`) recorded into an
+append-only `assignment_history` table, so the trail is preserved even if the
+candidate is later unassigned. Admin only.
+
+**Response:**
+```json
+{
+  "data": [
+    { "assignment_id": 7, "candidate_id": 1, "evaluator_id": 2, "from_status": null, "to_status": "pending", "occurred_at": "2026-06-30 10:30:00" },
+    { "assignment_id": 7, "candidate_id": 1, "evaluator_id": 2, "from_status": "pending", "to_status": "in_progress", "occurred_at": "2026-06-30 11:05:00" },
+    { "assignment_id": 7, "candidate_id": 1, "evaluator_id": 2, "from_status": "in_progress", "to_status": "completed", "occurred_at": "2026-06-30 14:20:00" }
+  ]
+}
+```
+
+---
+
+#### `POST /api/v1/evaluators/report`
 Generate Excel report (asynchronous with queue).
 
 **Body:**
@@ -1046,21 +1078,14 @@ sudo chmod -R 777 storage bootstrap/cache
 > ℹ️ **Note**: The following are potential future enhancements that are **not yet implemented**. They are intentionally outside the project's current scope, but are natural next steps for a larger production deployment.
 
 ### Performance
-- [ ] **Database Indexing**: Add composite indexes for complex queries
-- [ ] **Query Optimization**: Selective lazy loading to reduce memory
-
-### Concurrency
-- [ ] **Optimistic Locking**: Version control in critical entities
+- [ ] **Query Optimization**: selective eager/lazy loading to reduce memory on very large reports
 
 ### Features
-- [ ] **Excel Multi-Sheet Pagination**: Automatic pagination (50 evaluators/sheet) - *Currently generates a single sheet with all records*
-- [ ] **Event Sourcing**: Complete history of changes in assignments
-- [ ] **Webhooks**: Real-time notifications of changes
-- [ ] **API Versioning**: v1, v2 with deprecation strategy
+- [ ] **Excel Multi-Sheet Pagination**: split very large reports across sheets — *currently a single sheet with all records*
+- [ ] **Webhooks**: outbound, signed (HMAC) event delivery with retries for external integrations
 
 ### DevOps
-- [ ] **CI/CD Pipeline**: GitHub Actions for tests + automatic deploy
-- [ ] **Structured Logs**: JSON logging for Elasticsearch/Datadog
+- [ ] **Continuous Deployment**: automated deploy step on top of the existing CI (tests + PHPStan with MySQL/Redis services)
 
 ---
 

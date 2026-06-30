@@ -15,7 +15,7 @@ class PermissionsCascadeTest extends TestCase
     #[Test]
     public function evaluator_can_view_their_own_candidates_list(): void
     {
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Eval P',
             'email' => 'evalp@example.com',
             'specialty' => 'Backend',
@@ -31,14 +31,14 @@ class PermissionsCascadeTest extends TestCase
 
         Sanctum::actingAs($user, ['*']);
 
-        $this->getJson("/api/evaluators/{$evaluator->id}/candidates")
+        $this->getJson("/api/v1/evaluators/{$evaluator->id}/candidates")
             ->assertStatus(200);
     }
 
     #[Test]
     public function candidate_can_view_their_own_summary_but_not_others(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Cand A',
             'email' => 'canda@example.com',
             'years_of_experience' => 3,
@@ -46,7 +46,7 @@ class PermissionsCascadeTest extends TestCase
             'primary_specialty' => 'Backend',
         ])->assertStatus(201);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Cand B',
             'email' => 'candb@example.com',
             'years_of_experience' => 4,
@@ -64,7 +64,7 @@ class PermissionsCascadeTest extends TestCase
         ]);
         Sanctum::actingAs($user, ['*']);
 
-        $this->getJson("/api/candidates/{$candA->id}/summary")->assertStatus(200);
-        $this->getJson("/api/candidates/{$candB->id}/summary")->assertStatus(403);
+        $this->getJson("/api/v1/candidates/{$candA->id}/summary")->assertStatus(200);
+        $this->getJson("/api/v1/candidates/{$candB->id}/summary")->assertStatus(403);
     }
 }

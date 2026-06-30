@@ -16,7 +16,7 @@ class RejectAssignmentController
 
     /**
      * @OA\Put(
-     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/reject",
+     *     path="/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/reject",
      *     summary="Reject an assignment",
      *     tags={"Evaluators"},
      *     @OA\Parameter(

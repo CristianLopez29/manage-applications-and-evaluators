@@ -24,7 +24,7 @@ class AuditLogTest extends TestCase
         ];
 
         // Act
-        $this->postJson('/api/candidates', $payload)
+        $this->postJson('/api/v1/candidates', $payload)
             ->assertStatus(201);
 
         // Assert

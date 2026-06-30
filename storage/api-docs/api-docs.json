@@ -183,13 +183,13 @@
                 ]
             }
         },
-        "/api/candidates/{id}/analyze": {
+        "/api/v1/candidates/{id}/analyze": {
             "post": {
                 "tags": [
                     "Candidates"
                 ],
                 "summary": "Queue AI analysis for candidate CV",
-                "operationId": "3ccd0ec1cf8c6c7df5a497372b1b6974",
+                "operationId": "b23d5bc37ed354ca4419d5169f45b487",
                 "parameters": [
                     {
                         "name": "id",
@@ -210,13 +210,13 @@
                 }
             }
         },
-        "/api/candidates/{id}/cv": {
+        "/api/v1/candidates/{id}/cv": {
             "get": {
                 "tags": [
                     "Candidates"
                 ],
                 "summary": "Download candidate CV PDF",
-                "operationId": "8f22c6f12658223e933a4157e1b1cd8f",
+                "operationId": "71ce24df98f2fbd69c349afea1a6e989",
                 "parameters": [
                     {
                         "name": "id",
@@ -237,13 +237,13 @@
                 }
             }
         },
-        "/api/candidates/{id}/evaluation": {
+        "/api/v1/candidates/{id}/evaluation": {
             "get": {
                 "tags": [
                     "Candidates"
                 ],
                 "summary": "Get latest AI evaluation for a candidate",
-                "operationId": "9308d873b9faf31f6b00f2246c768a0c",
+                "operationId": "89f7a98be607b1fb9bc568414e0cc6b9",
                 "parameters": [
                     {
                         "name": "id",
@@ -267,13 +267,13 @@
                 }
             }
         },
-        "/api/candidates/{id}/summary": {
+        "/api/v1/candidates/{id}/summary": {
             "get": {
                 "tags": [
                     "Candidates"
                 ],
                 "summary": "Get candidate summary",
-                "operationId": "df30c35174e7709a3e53924404caaa2b",
+                "operationId": "652fff4552415c7f83372e327b979aef",
                 "parameters": [
                     {
                         "name": "id",
@@ -317,7 +317,7 @@
                                         },
                                         "cv_download_url": {
                                             "type": "string",
-                                            "example": "http://localhost/api/candidates/1/cv",
+                                            "example": "http://localhost/api/v1/candidates/1/cv",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -371,13 +371,13 @@
                 }
             }
         },
-        "/api/candidates": {
+        "/api/v1/candidates": {
             "get": {
                 "tags": [
                     "Candidates"
                 ],
                 "summary": "List candidates with filters",
-                "operationId": "d81a5f492c62e1b5bb5c9f8f5d331e2c",
+                "operationId": "a12bef552c1bd6d49a601ec8de4fcc8d",
                 "parameters": [
                     {
                         "name": "status",
@@ -459,7 +459,7 @@
                     "Candidates"
                 ],
                 "summary": "Register a new candidacy",
-                "operationId": "8906552d577e8ad22821c9097d7e63ea",
+                "operationId": "c67a40ae0401c41b6242cb4634e093e6",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -571,13 +571,13 @@
                 }
             }
         },
-        "/api/candidates/search": {
+        "/api/v1/candidates/search": {
             "get": {
                 "tags": [
                     "Candidates"
                 ],
                 "summary": "Search candidates by email and filters",
-                "operationId": "71481e13d5776215aa5d7b9a06dbb671",
+                "operationId": "a904dc2a357e124af2a06bb66d827cfc",
                 "parameters": [
                     {
                         "name": "email",
@@ -655,13 +655,13 @@
                 }
             }
         },
-        "/api/evaluators/{evaluatorId}/assign-candidate": {
+        "/api/v1/evaluators/{evaluatorId}/assign-candidate": {
             "post": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Assign a candidate to an evaluator",
-                "operationId": "74331235d6571a2464b9037b7f979908",
+                "operationId": "10d3dcaed0cad242ff37d5cb65943e3a",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -717,13 +717,13 @@
                 }
             }
         },
-        "/api/evaluators/{evaluatorId}/assignments/{candidateId}/complete": {
+        "/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/complete": {
             "put": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Mark assignment as completed",
-                "operationId": "511e48773b3b35d9e0602ff6810e19de",
+                "operationId": "ef0a819a4507fbad01f5be21902b1784",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -752,13 +752,37 @@
                 }
             }
         },
-        "/api/evaluators/consolidated": {
+        "/api/v1/candidates/{candidateId}/assignment-history": {
+            "get": {
+                "tags": [
+                    "Evaluators"
+                ],
+                "summary": "Chronological status timeline of a candidate's assignments",
+                "operationId": "fa9bed90270c5848d41e7bb28f22214b",
+                "parameters": [
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assignment history returned"
+                    }
+                }
+            }
+        },
+        "/api/v1/evaluators/consolidated": {
             "get": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Get consolidated list of evaluators and their candidates",
-                "operationId": "7bb1017fcf1c3556bdc06bc3dbfe9243",
+                "operationId": "de01c29d5692bfcb698f496f4265756a",
                 "parameters": [
                     {
                         "name": "page",
@@ -991,13 +1015,13 @@
                 }
             }
         },
-        "/api/evaluators/{evaluatorId}/candidates": {
+        "/api/v1/evaluators/{evaluatorId}/candidates": {
             "get": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Get candidates assigned to an evaluator",
-                "operationId": "aa5a466df6ab11eca0e62790977193c3",
+                "operationId": "b2921c66118ff390f23d3e42b0f03098",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -1059,13 +1083,13 @@
                 }
             }
         },
-        "/api/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}": {
+        "/api/v1/evaluators/{newEvaluatorId}/reassign-candidate/{candidateId}": {
             "put": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Reassign candidate to a new evaluator",
-                "operationId": "5b747194b625e370a4ec1f346542fc27",
+                "operationId": "37a419f32008c193c0206272909f9c00",
                 "parameters": [
                     {
                         "name": "newEvaluatorId",
@@ -1094,13 +1118,13 @@
                 }
             }
         },
-        "/api/evaluators": {
+        "/api/v1/evaluators": {
             "post": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Register a new evaluator",
-                "operationId": "e6dce00df1e87bdf550142f5ea236b35",
+                "operationId": "9f6593857b8d662ce368ea07ba79293c",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1167,13 +1191,13 @@
                 }
             }
         },
-        "/api/evaluators/{evaluatorId}/assignments/{candidateId}/reject": {
+        "/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/reject": {
             "put": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Reject an assignment",
-                "operationId": "77ebef74e2af5205fb16f7fd69329af5",
+                "operationId": "f7afb62c42c0f1f6319497b490d57c6a",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -1202,13 +1226,13 @@
                 }
             }
         },
-        "/api/evaluators/report": {
+        "/api/v1/evaluators/report": {
             "post": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Request an Excel report of evaluators",
-                "operationId": "8f9a3ec49b1cb664614411c86b7fe5c5",
+                "operationId": "5cebcca74764013c4e9fc7d9373ab79c",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1252,13 +1276,13 @@
                 }
             }
         },
-        "/api/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress": {
+        "/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress": {
             "put": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Move assignment to in_progress",
-                "operationId": "20f4551edeba6e3421ebfc0ff50058a6",
+                "operationId": "1a26eb4faf45b4c579dd039241941683",
                 "parameters": [
                     {
                         "name": "evaluatorId",
@@ -1287,13 +1311,13 @@
                 }
             }
         },
-        "/api/evaluators/{evaluatorId}/assignments/{candidateId}": {
+        "/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}": {
             "delete": {
                 "tags": [
                     "Evaluators"
                 ],
                 "summary": "Unassign a candidate from an evaluator",
-                "operationId": "b90cbceda7d3e249f6162c625803d4ef",
+                "operationId": "e336b761252378402b8e54b1f40974c4",
                 "parameters": [
                     {
                         "name": "evaluatorId",

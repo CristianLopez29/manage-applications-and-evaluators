@@ -16,7 +16,7 @@ class StartAssignmentProgressController
 
     /**
      * @OA\Put(
-     *     path="/api/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress",
+     *     path="/api/v1/evaluators/{evaluatorId}/assignments/{candidateId}/start-progress",
      *     summary="Move assignment to in_progress",
      *     tags={"Evaluators"},
      *     @OA\Parameter(

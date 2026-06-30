@@ -28,8 +28,8 @@ class AuthorizationTest extends TestCase
         ]);
         Sanctum::actingAs($user, ['*']);
 
-        $this->getJson("/api/evaluators/{$evaluator1Id}/candidates")->assertStatus(200);
-        $this->getJson("/api/evaluators/{$evaluator2Id}/candidates")->assertStatus(403);
+        $this->getJson("/api/v1/evaluators/{$evaluator1Id}/candidates")->assertStatus(200);
+        $this->getJson("/api/v1/evaluators/{$evaluator2Id}/candidates")->assertStatus(403);
     }
 
     #[Test]
@@ -48,8 +48,8 @@ class AuthorizationTest extends TestCase
         ]);
         Sanctum::actingAs($user, ['*']);
 
-        $this->getJson("/api/candidates/{$candidate1Id}/summary")->assertStatus(200);
-        $this->getJson("/api/candidates/{$candidate2Id}/summary")->assertStatus(403);
+        $this->getJson("/api/v1/candidates/{$candidate1Id}/summary")->assertStatus(200);
+        $this->getJson("/api/v1/candidates/{$candidate2Id}/summary")->assertStatus(403);
     }
 
     #[Test]
@@ -60,9 +60,9 @@ class AuthorizationTest extends TestCase
         ]);
         Sanctum::actingAs($user, ['*']);
 
-        $this->getJson('/api/candidates')->assertStatus(403);
-        $this->getJson('/api/evaluators/consolidated')->assertStatus(403);
-        $this->postJson('/api/evaluators', [])->assertStatus(403);
+        $this->getJson('/api/v1/candidates')->assertStatus(403);
+        $this->getJson('/api/v1/evaluators/consolidated')->assertStatus(403);
+        $this->postJson('/api/v1/evaluators', [])->assertStatus(403);
     }
 }
 

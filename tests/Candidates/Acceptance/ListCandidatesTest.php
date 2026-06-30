@@ -15,7 +15,7 @@ class ListCandidatesTest extends TestCase
     {
         $backendSpecialty = 'Backend';
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Assigned Candidate',
             'email' => 'assigned@example.com',
             'years_of_experience' => 5,
@@ -23,7 +23,7 @@ class ListCandidatesTest extends TestCase
             'primary_specialty' => $backendSpecialty,
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Unassigned Candidate',
             'email' => 'unassigned@example.com',
             'years_of_experience' => 3,
@@ -31,7 +31,7 @@ class ListCandidatesTest extends TestCase
             'primary_specialty' => $backendSpecialty,
         ]);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Backend Evaluator',
             'email' => 'evaluator@example.com',
             'specialty' => $backendSpecialty,
@@ -45,13 +45,13 @@ class ListCandidatesTest extends TestCase
         $this->assertNotNull($evaluator);
         $evaluatorId = $evaluator->id;
 
-        $assignResponse = $this->postJson("/api/evaluators/{$evaluatorId}/assign-candidate", [
+        $assignResponse = $this->postJson("/api/v1/evaluators/{$evaluatorId}/assign-candidate", [
             'candidate_id' => $candidateAssignedId,
         ]);
 
         $assignResponse->assertStatus(200);
 
-        $response = $this->getJson('/api/candidates?status=unassigned');
+        $response = $this->getJson('/api/v1/candidates?status=unassigned');
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -63,21 +63,21 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_filter_candidates_by_minimum_experience(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Junior',
             'email' => 'junior@example.com',
             'years_of_experience' => 1,
             'cv' => 'Junior CV',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Senior',
             'email' => 'senior@example.com',
             'years_of_experience' => 5,
             'cv' => 'Senior CV',
         ]);
 
-        $response = $this->getJson('/api/candidates?experience_min=2');
+        $response = $this->getJson('/api/v1/candidates?experience_min=2');
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -89,21 +89,21 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_search_candidates_by_partial_email(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Juan',
             'email' => 'juan@example.com',
             'years_of_experience' => 3,
             'cv' => 'CV Juan',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Ana',
             'email' => 'ana@example.com',
             'years_of_experience' => 4,
             'cv' => 'CV Ana',
         ]);
 
-        $response = $this->getJson('/api/candidates/search?email=juan@');
+        $response = $this->getJson('/api/v1/candidates/search?email=juan@');
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -115,21 +115,21 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_search_candidates_by_cv_content_using_email_query_param(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'CV Match',
             'email' => 'cv.match@example.com',
             'years_of_experience' => 5,
             'cv' => 'Expert in Laravel and microservices',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'No Match',
             'email' => 'no.match@example.com',
             'years_of_experience' => 5,
             'cv' => 'React developer',
         ]);
 
-        $response = $this->getJson('/api/candidates/search?email=microservices');
+        $response = $this->getJson('/api/v1/candidates/search?email=microservices');
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')
@@ -141,7 +141,7 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_filter_candidates_by_primary_specialty(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Backend Dev',
             'email' => 'backend@example.com',
             'years_of_experience' => 4,
@@ -149,7 +149,7 @@ class ListCandidatesTest extends TestCase
             'primary_specialty' => 'Backend',
         ]);
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Frontend Dev',
             'email' => 'frontend@example.com',
             'years_of_experience' => 4,
@@ -157,7 +157,7 @@ class ListCandidatesTest extends TestCase
             'primary_specialty' => 'Frontend',
         ]);
 
-        $response = $this->getJson('/api/candidates?specialty=Backend');
+        $response = $this->getJson('/api/v1/candidates?specialty=Backend');
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data')

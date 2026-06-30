@@ -13,7 +13,7 @@ class UnassignCandidateTest extends TestCase
     #[Test]
     public function should_unassign_candidate_from_evaluator(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Unassign Me',
             'email' => 'unassign@example.com',
             'years_of_experience' => 4,
@@ -21,7 +21,7 @@ class UnassignCandidateTest extends TestCase
             'primary_specialty' => 'Backend',
         ])->assertStatus(201);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Eval U',
             'email' => 'eval.u@example.com',
             'specialty' => 'Backend',
@@ -32,11 +32,11 @@ class UnassignCandidateTest extends TestCase
         $this->assertNotNull($candidate);
         $this->assertNotNull($evaluator);
 
-        $this->postJson("/api/evaluators/{$evaluator->id}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluator->id}/assign-candidate", [
             'candidate_id' => $candidate->id,
         ])->assertStatus(200);
 
-        $this->deleteJson("/api/evaluators/{$evaluator->id}/assignments/{$candidate->id}")
+        $this->deleteJson("/api/v1/evaluators/{$evaluator->id}/assignments/{$candidate->id}")
             ->assertStatus(200);
 
         $this->assertDatabaseMissing('candidate_assignments', [

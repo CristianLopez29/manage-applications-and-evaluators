@@ -18,7 +18,7 @@ class AuditLogTest extends TestCase
     {
         Event::fake();
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Audit Test',
             'email' => 'audit@example.com',
             'years_of_experience' => 5,
@@ -35,7 +35,7 @@ class AuditLogTest extends TestCase
     {
         Log::spy();
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Log Test',
             'email' => 'log@example.com',
             'years_of_experience' => 5,

@@ -17,7 +17,7 @@ class DownloadCandidateCvController
 
     /**
      * @OA\Get(
-     *     path="/api/candidates/{id}/cv",
+     *     path="/api/v1/candidates/{id}/cv",
      *     summary="Download candidate CV PDF",
      *     tags={"Candidates"},
      *     @OA\Parameter(

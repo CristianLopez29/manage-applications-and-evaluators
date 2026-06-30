@@ -15,7 +15,7 @@ class GetCandidateEvaluationController
 
     /**
      * @OA\Get(
-     *     path="/api/candidates/{id}/evaluation",
+     *     path="/api/v1/candidates/{id}/evaluation",
      *     summary="Get latest AI evaluation for a candidate",
      *     tags={"Candidates"},
      *     @OA\Parameter(

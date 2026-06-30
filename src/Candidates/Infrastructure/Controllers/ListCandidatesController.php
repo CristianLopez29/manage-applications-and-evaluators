@@ -17,7 +17,7 @@ class ListCandidatesController
 
     /**
      * @OA\Get(
-     *     path="/api/candidates",
+     *     path="/api/v1/candidates",
      *     summary="List candidates with filters",
      *     tags={"Candidates"},
      *     @OA\Parameter(
@@ -62,7 +62,7 @@ class ListCandidatesController
      * )
      *
      * @OA\Get(
-     *     path="/api/candidates/search",
+     *     path="/api/v1/candidates/search",
      *     summary="Search candidates by email and filters",
      *     tags={"Candidates"},
      *     @OA\Parameter(

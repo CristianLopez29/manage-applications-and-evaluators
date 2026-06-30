@@ -17,7 +17,7 @@ class RequestEvaluatorsReportTest extends TestCase
     {
         Queue::fake();
 
-        $response = $this->postJson('/api/evaluators/report', [
+        $response = $this->postJson('/api/v1/evaluators/report', [
             'email' => 'admin@example.com'
         ]);
 
@@ -35,7 +35,7 @@ class RequestEvaluatorsReportTest extends TestCase
     #[Test]
     public function should_validate_email_is_required(): void
     {
-        $response = $this->postJson('/api/evaluators/report', []);
+        $response = $this->postJson('/api/v1/evaluators/report', []);
 
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['email']);

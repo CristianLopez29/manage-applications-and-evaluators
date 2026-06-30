@@ -17,7 +17,7 @@ class AnalyzeCandidateAiTest extends TestCase
     {
         Queue::fake();
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'AI Candidate',
             'email' => 'ai.candidate@example.com',
             'years_of_experience' => 5,
@@ -26,7 +26,7 @@ class AnalyzeCandidateAiTest extends TestCase
 
         $model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'ai.candidate@example.com')->firstOrFail();
 
-        $this->postJson("/api/candidates/{$model->id}/analyze")
+        $this->postJson("/api/v1/candidates/{$model->id}/analyze")
             ->assertStatus(202)
             ->assertJson([
                 'status' => 'processing',
@@ -41,7 +41,7 @@ class AnalyzeCandidateAiTest extends TestCase
     #[Test]
     public function should_get_evaluation_pending_then_available(): void
     {
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'Eval Candidate',
             'email' => 'eval.candidate@example.com',
             'years_of_experience' => 3,
@@ -50,7 +50,7 @@ class AnalyzeCandidateAiTest extends TestCase
 
         $model = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'eval.candidate@example.com')->firstOrFail();
 
-        $this->getJson("/api/candidates/{$model->id}/evaluation")
+        $this->getJson("/api/v1/candidates/{$model->id}/evaluation")
             ->assertStatus(202)
             ->assertJson([
                 'status' => 'processing',
@@ -66,7 +66,7 @@ class AnalyzeCandidateAiTest extends TestCase
             'created_at' => now()->toDateTimeString(),
         ]);
 
-        $resp = $this->getJson("/api/candidates/{$model->id}/evaluation")
+        $resp = $this->getJson("/api/v1/candidates/{$model->id}/evaluation")
             ->assertStatus(200);
 
         /** @var array{data: array<string, mixed>} $json */

@@ -17,7 +17,7 @@ class ReassignCandidateTest extends TestCase
     {
         Notification::fake();
 
-        $this->postJson('/api/candidates', [
+        $this->postJson('/api/v1/candidates', [
             'name' => 'John Doe',
             'email' => 'john.doe@example.com',
             'years_of_experience' => 5,
@@ -25,13 +25,13 @@ class ReassignCandidateTest extends TestCase
             'primary_specialty' => 'Backend',
         ])->assertStatus(201);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Evaluator A',
             'email' => 'eva@example.com',
             'specialty' => 'Backend',
         ])->assertStatus(201);
 
-        $this->postJson('/api/evaluators', [
+        $this->postJson('/api/v1/evaluators', [
             'name' => 'Evaluator B',
             'email' => 'evb@example.com',
             'specialty' => 'Backend',
@@ -49,11 +49,11 @@ class ReassignCandidateTest extends TestCase
         $this->assertNotNull($evaluatorB);
         $evaluatorBId = $evaluatorB->id;
 
-        $this->postJson("/api/evaluators/{$evaluatorAId}/assign-candidate", [
+        $this->postJson("/api/v1/evaluators/{$evaluatorAId}/assign-candidate", [
             'candidate_id' => $candidateId,
         ])->assertStatus(200);
 
-        $this->putJson("/api/evaluators/{$evaluatorBId}/reassign-candidate/{$candidateId}")
+        $this->putJson("/api/v1/evaluators/{$evaluatorBId}/reassign-candidate/{$candidateId}")
             ->assertStatus(200)
             ->assertJsonFragment([
                 'candidate_id' => $candidateId,
