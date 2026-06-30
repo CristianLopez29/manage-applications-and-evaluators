@@ -148,7 +148,7 @@ cp .env.example .env
 - **MySQL**: `127.0.0.1:3306` (only if you need to connect with external tools like TablePlus/DBeaver)
   - User: `sail`
   - Password: `password`
-  - Database: `desafio_backend`
+  - Database: `laravel`
   - **Note**: From the Laravel application use `DB_HOST=mysql` (inside Docker)
 - **Redis**: `127.0.0.1:6379` (inside Docker use `REDIS_HOST=redis`)
 
@@ -746,7 +746,7 @@ Consolidated list with complex SQL (GROUP_CONCAT, JOIN, AVG, COUNT).
 - `sort_by`: Sort by (`name`, `email`, `created_at`, `average_experience`, `specialty`, `total_assigned_candidates`, `concatenated_candidate_emails`)
 - `sort_direction`: `asc` or `desc` (default: `desc`)
 
-**Default Order:** The list is ordered by `average_experience` (average years of experience of candidates per evaluator) in descending order. This satisfies the "order by years of experience" requirement in an aggregated and optimized way at the SQL level. If you need another sort criterion, you can specify it via `sort_by`.
+**Default Order:** The list is ordered by `average_experience` (average years of experience of candidates per evaluator) in descending order, computed as an aggregation at the SQL level so evaluators are ranked by the seniority of their candidate pool. If you need another sort criterion, you can specify it via `sort_by`.
 
 **Optional Filters (any column in the list):**
 - `specialty`: Filter by evaluator specialty (like).
@@ -1043,7 +1043,7 @@ sudo chmod -R 777 storage bootstrap/cache
 
 ## 🗺️ Roadmap (Optional Improvements)
 
-> ⚠️ **IMPORTANT**: The following improvements are **NOT implemented**. This is a list of possible future improvements that are **out of scope** for the technical test, but could be added in a real production environment.
+> ℹ️ **Note**: The following are potential future enhancements that are **not yet implemented**. They are intentionally outside the project's current scope, but are natural next steps for a larger production deployment.
 
 ### Performance
 - [ ] **Database Indexing**: Add composite indexes for complex queries
