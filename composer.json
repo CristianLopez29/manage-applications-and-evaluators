@@ -1,11 +1,13 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "cristianlopez29/manage-applications-and-evaluators",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Candidacy Management API — candidates and evaluators with Hexagonal Architecture and DDD.",
     "keywords": [
         "laravel",
-        "framework"
+        "hexagonal-architecture",
+        "ddd",
+        "api"
     ],
     "license": "MIT",
     "require": {
