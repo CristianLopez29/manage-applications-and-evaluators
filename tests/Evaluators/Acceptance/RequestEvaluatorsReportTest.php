@@ -15,6 +15,8 @@ class RequestEvaluatorsReportTest extends TestCase
     #[Test]
     public function should_dispatch_job_to_generate_report(): void
     {
+        $this->actingAsAdmin();
+
         Queue::fake();
 
         $response = $this->postJson('/api/v1/evaluators/report', [
@@ -35,6 +37,8 @@ class RequestEvaluatorsReportTest extends TestCase
     #[Test]
     public function should_validate_email_is_required(): void
     {
+        $this->actingAsAdmin();
+
         $response = $this->postJson('/api/v1/evaluators/report', []);
 
         $response->assertStatus(422)

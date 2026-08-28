@@ -17,6 +17,8 @@ class AssignmentHistoryTest extends TestCase
     #[Test]
     public function should_record_the_full_status_timeline_of_an_assignment(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'History Candidate',
             'email' => 'history.candidate@example.com',
@@ -70,6 +72,8 @@ class AssignmentHistoryTest extends TestCase
     #[Test]
     public function should_return_an_empty_timeline_for_a_candidate_without_assignments(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Lonely Candidate',
             'email' => 'lonely.candidate@example.com',

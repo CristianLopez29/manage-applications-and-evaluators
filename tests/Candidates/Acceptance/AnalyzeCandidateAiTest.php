@@ -15,6 +15,8 @@ class AnalyzeCandidateAiTest extends TestCase
     #[Test]
     public function should_dispatch_analysis_job(): void
     {
+        $this->actingAsAdmin();
+
         Queue::fake();
 
         $this->postJson('/api/v1/candidates', [
@@ -41,6 +43,8 @@ class AnalyzeCandidateAiTest extends TestCase
     #[Test]
     public function should_get_evaluation_pending_then_available(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Eval Candidate',
             'email' => 'eval.candidate@example.com',

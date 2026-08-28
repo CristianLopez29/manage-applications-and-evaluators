@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use PHPUnit\Framework\Attributes\Test;
+use Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators;
 use Src\Evaluators\Infrastructure\Jobs\GenerateEvaluatorsReportJob;
 use Src\Evaluators\Infrastructure\Notifications\ReportReadyNotification;
 use Tests\TestCase;
@@ -23,7 +24,7 @@ class GenerateEvaluatorsReportJobTest extends TestCase
         Excel::fake();
 
         (new GenerateEvaluatorsReportJob('admin@example.com', 'xlsx'))->handle(
-            app(\Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators::class)
+            app(GetConsolidatedEvaluators::class)
         );
 
         Excel::matchByRegex();
@@ -39,7 +40,7 @@ class GenerateEvaluatorsReportJobTest extends TestCase
         Excel::fake();
 
         (new GenerateEvaluatorsReportJob('admin@example.com', 'csv'))->handle(
-            app(\Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators::class)
+            app(GetConsolidatedEvaluators::class)
         );
 
         Excel::matchByRegex();
@@ -50,14 +51,10 @@ class GenerateEvaluatorsReportJobTest extends TestCase
     #[Test]
     public function job_resolves_from_container_without_binding_exception(): void
     {
-        // If GetConsolidatedEvaluators is not bound, this will throw BindingResolutionException
-        $this->assertTrue(
-            app()->bound(\Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators::class)
-                || class_exists(\Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators::class)
-        );
+        // The job type-hints this use case in handle(); resolving it here fails with a
+        // BindingResolutionException the moment one of its ports loses its binding.
+        $useCase = app(GetConsolidatedEvaluators::class);
 
-        $this->expectNotToPerformAssertions();
-        // Ensure the use case can be resolved (its dependencies are bound)
-        app(\Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators::class);
+        $this->assertInstanceOf(GetConsolidatedEvaluators::class, $useCase);
     }
 }

@@ -13,6 +13,8 @@ class GetCandidateSummaryTest extends TestCase
     #[Test]
     public function should_return_candidate_summary_with_assignment_and_validations(): void
     {
+        $this->actingAsAdmin();
+
         // 1. Create Candidate
         $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
@@ -68,6 +70,8 @@ class GetCandidateSummaryTest extends TestCase
     #[Test]
     public function should_return_summary_without_assignment_if_not_assigned(): void
     {
+        $this->actingAsAdmin();
+
         // Create only candidate
         $this->postJson('/api/v1/candidates', [
             'name' => 'Ana García',
@@ -88,6 +92,8 @@ class GetCandidateSummaryTest extends TestCase
     #[Test]
     public function should_include_pdf_flag_and_download_url_when_pdf_is_present(): void
     {
+        $this->actingAsAdmin();
+
         $file = \Illuminate\Http\UploadedFile::fake()->create('cv.pdf', 50, 'application/pdf');
 
         $this->post('/api/v1/candidates', [
@@ -106,6 +112,8 @@ class GetCandidateSummaryTest extends TestCase
     #[Test]
     public function should_return_404_if_candidate_not_found(): void
     {
+        $this->actingAsAdmin();
+
         $response = $this->getJson("/api/v1/candidates/999/summary");
 
         $response->assertStatus(404);

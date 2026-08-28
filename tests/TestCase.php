@@ -8,14 +8,21 @@ use Laravel\Sanctum\Sanctum;
 
 abstract class TestCase extends BaseTestCase
 {
-    protected function setUp(): void
+    /**
+     * Authenticate the current test as an admin.
+     *
+     * Deliberately explicit: authenticating in setUp() would give every test an
+     * ambient admin, which makes a 401 impossible to assert and lets an
+     * authorization test pass for the wrong reason.
+     */
+    protected function actingAsAdmin(): User
     {
-        parent::setUp();
-
-        $user = User::factory()->create([
+        $admin = User::factory()->create([
             'role' => 'admin',
         ]);
 
-        Sanctum::actingAs($user, ['*']);
+        Sanctum::actingAs($admin, ['*']);
+
+        return $admin;
     }
 }

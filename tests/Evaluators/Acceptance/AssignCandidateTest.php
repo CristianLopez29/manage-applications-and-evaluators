@@ -13,6 +13,8 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_assign_candidate_to_evaluator(): void
     {
+        $this->actingAsAdmin();
+
         // Create a candidate
         $candidateResponse = $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
@@ -61,6 +63,8 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_reject_assignment_with_nonexistent_candidate(): void
     {
+        $this->actingAsAdmin();
+
         // Create only an evaluator
         $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
@@ -83,6 +87,8 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_reject_assignment_with_nonexistent_evaluator(): void
     {
+        $this->actingAsAdmin();
+
         // Create only a candidate
         $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
@@ -105,6 +111,8 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_prevent_assigning_candidate_to_multiple_evaluators(): void
     {
+        $this->actingAsAdmin();
+
         // Create a candidate
         $this->postJson('/api/v1/candidates', [
             'name' => 'Juan Pérez',
@@ -153,6 +161,8 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_require_candidate_id_field(): void
     {
+        $this->actingAsAdmin();
+
         // Create evaluator
         $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
@@ -173,6 +183,8 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_reject_assignment_when_candidate_specialty_does_not_match_evaluator(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Frontend Candidate',
             'email' => 'frontend.candidate@example.com',
@@ -205,6 +217,8 @@ class AssignCandidateTest extends TestCase
     #[Test]
     public function should_reject_assignment_when_evaluator_reaches_max_concurrent_candidates(): void
     {
+        $this->actingAsAdmin();
+
         $specialty = 'Backend';
 
         $this->postJson('/api/v1/evaluators', [

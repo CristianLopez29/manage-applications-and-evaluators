@@ -17,6 +17,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_register_a_valid_candidacy(): void
     {
+        $this->actingAsAdmin();
+
         $payload = [
             'name' => 'Juan Pérez',
             'email' => 'juan.perez@example.com',
@@ -44,6 +46,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_reject_candidacy_without_required_fields(): void
     {
+        $this->actingAsAdmin();
+
         $response = $this->postJson('/api/v1/candidates', []);
 
         $response->assertStatus(422)
@@ -53,6 +57,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_reject_candidacy_with_invalid_email(): void
     {
+        $this->actingAsAdmin();
+
         $payload = [
             'name' => 'Juan Pérez',
             'email' => 'email-invalido',
@@ -69,6 +75,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_reject_candidacy_with_less_than_two_years_experience(): void
     {
+        $this->actingAsAdmin();
+
         $payload = [
             'name' => 'Pedro López',
             'email' => 'pedro@example.com',
@@ -86,6 +94,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_reject_candidacy_with_empty_cv(): void
     {
+        $this->actingAsAdmin();
+
         $payload = [
             'name' => 'Ana García',
             'email' => 'ana@example.com',
@@ -103,6 +113,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_allow_registering_candidacy_with_exactly_two_years(): void
     {
+        $this->actingAsAdmin();
+
         $payload = [
             'name' => 'María González',
             'email' => 'maria@example.com',
@@ -123,6 +135,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_update_existing_candidate_if_email_already_exists(): void
     {
+        $this->actingAsAdmin();
+
         // First insertion
         $this->postJson('/api/v1/candidates', [
             'name' => 'Carlos Ruiz',
@@ -154,6 +168,8 @@ class RegisterCandidacyTest extends TestCase
     #[Test]
     public function should_register_candidacy_with_pdf_instead_of_text(): void
     {
+        $this->actingAsAdmin();
+
         Storage::fake();
         $file = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
 

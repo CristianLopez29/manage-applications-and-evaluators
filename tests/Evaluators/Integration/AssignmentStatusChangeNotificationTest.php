@@ -15,6 +15,8 @@ class AssignmentStatusChangeNotificationTest extends TestCase
     #[Test]
     public function should_send_notifications_on_status_change_to_in_progress_and_completed(): void
     {
+        $this->actingAsAdmin();
+
         Notification::fake();
 
         $this->postJson('/api/v1/candidates', [

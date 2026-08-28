@@ -20,6 +20,8 @@ class AssignmentAuditLogTest extends TestCase
     #[Test]
     public function it_logs_candidate_assignment_to_database(): void
     {
+        $this->actingAsAdmin();
+
         // Arrange
         // 1. Create Candidate directly in DB (to avoid triggering registration log)
         $candidateId = \Illuminate\Support\Facades\DB::table('candidates')->insertGetId([
