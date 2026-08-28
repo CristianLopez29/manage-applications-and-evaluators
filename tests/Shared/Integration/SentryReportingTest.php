@@ -24,6 +24,7 @@ class SentryReportingTest extends TestCase
     {
         $this->captured = [];
 
+        /** @var HubInterface&\Mockery\MockInterface $hub */
         $hub = \Mockery::mock(HubInterface::class);
         $hub->shouldReceive('captureException')
             ->andReturnUsing(function (\Throwable $e): null {
