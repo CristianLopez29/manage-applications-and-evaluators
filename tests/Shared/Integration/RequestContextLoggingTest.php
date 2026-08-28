@@ -20,6 +20,8 @@ class RequestContextLoggingTest extends TestCase
     #[Test]
     public function should_return_a_correlation_id_header_on_api_responses(): void
     {
+        $this->actingAsAdmin();
+
         $response = $this->getJson('/api/v1/evaluators/consolidated');
 
         $response->assertStatus(200);

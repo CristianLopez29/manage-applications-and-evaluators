@@ -13,6 +13,8 @@ class ConsolidatedQueryCountTest extends TestCase
     #[Test]
     public function consolidated_list_does_not_produce_n_plus_1_queries(): void
     {
+        $this->actingAsAdmin();
+
         // Create 5 evaluators with 2 candidates each
         for ($i = 1; $i <= 5; $i++) {
             $this->postJson('/api/v1/evaluators', [

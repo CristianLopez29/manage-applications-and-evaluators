@@ -24,10 +24,19 @@
     <source>
         <include>
             <directory>app</directory>
+            <directory>src</directory>
         </include>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <!--
+            Pinned on purpose. The consolidated evaluators query is raw MySQL
+            (GROUP_CONCAT ... ORDER BY ... SEPARATOR) and the assignment lock is a real
+            SELECT ... FOR UPDATE, so SQLite would either fail to parse the query or
+            silently skip the locking this suite is meant to cover. Without this line the
+            engine is whatever .env happens to say.
+        -->
+        <env name="DB_CONNECTION" value="mysql"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

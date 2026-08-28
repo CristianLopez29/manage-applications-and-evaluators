@@ -15,6 +15,8 @@ class PermissionsCascadeTest extends TestCase
     #[Test]
     public function evaluator_can_view_their_own_candidates_list(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', [
             'name' => 'Eval P',
             'email' => 'evalp@example.com',
@@ -38,6 +40,8 @@ class PermissionsCascadeTest extends TestCase
     #[Test]
     public function candidate_can_view_their_own_summary_but_not_others(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Cand A',
             'email' => 'canda@example.com',

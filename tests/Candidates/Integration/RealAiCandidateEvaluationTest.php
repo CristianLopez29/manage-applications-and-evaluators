@@ -14,18 +14,22 @@ class RealAiCandidateEvaluationTest extends TestCase
     #[Test]
     public function integration_ai_parsing_with_gemini_for_real_candidate(): void
     {
+        // Opt-in on purpose: this test calls the real Gemini API, so it costs money and
+        // depends on a third party being up. Enable it with RUN_AI_INTEGRATION_TESTS=true
+        // plus a GEMINI_API_KEY. Both guards run before any setup, so a skipped run is free.
         $runExternal = config('app.run_ai_integration_tests');
         if (!$runExternal) {
-            $this->markTestSkipped('External AI integration tests are disabled by default.');
+            $this->markTestSkipped('Set RUN_AI_INTEGRATION_TESTS=true to run the external AI integration test.');
         }
-
-        config()->set('queue.default', 'sync');
 
         $apiKey = env('GEMINI_API_KEY');
         if (!is_string($apiKey) || $apiKey === '') {
-            $this->markTestSkipped('Gemini API key not configured');
+            $this->markTestSkipped('GEMINI_API_KEY is not configured.');
         }
 
+        $this->actingAsAdmin();
+
+        config()->set('queue.default', 'sync');
         putenv('AI_PROVIDER=gemini');
 
         $email = 'real.ai.candidate@example.com';

@@ -13,6 +13,8 @@ class GetEvaluatorCandidatesTest extends TestCase
     #[Test]
     public function should_return_all_assigned_candidates(): void
     {
+        $this->actingAsAdmin();
+
         // Create evaluator
         $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
@@ -84,6 +86,8 @@ class GetEvaluatorCandidatesTest extends TestCase
     #[Test]
     public function should_return_empty_for_evaluator_without_candidates(): void
     {
+        $this->actingAsAdmin();
+
         // Create evaluator without candidates
         $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
@@ -110,6 +114,8 @@ class GetEvaluatorCandidatesTest extends TestCase
     #[Test]
     public function should_return_404_for_nonexistent_evaluator(): void
     {
+        $this->actingAsAdmin();
+
         $response = $this->getJson("/api/v1/evaluators/999/candidates");
 
         $response->assertStatus(404);
@@ -118,6 +124,8 @@ class GetEvaluatorCandidatesTest extends TestCase
     #[Test]
     public function should_include_assignment_status_in_response(): void
     {
+        $this->actingAsAdmin();
+
         // Create evaluator and candidate
         $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
@@ -159,6 +167,8 @@ class GetEvaluatorCandidatesTest extends TestCase
     #[Test]
     public function should_only_return_candidates_for_specific_evaluator(): void
     {
+        $this->actingAsAdmin();
+
         // Create two evaluators
         $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',

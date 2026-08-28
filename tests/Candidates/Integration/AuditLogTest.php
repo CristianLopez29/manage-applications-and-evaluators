@@ -16,6 +16,8 @@ class AuditLogTest extends TestCase
     #[Test]
     public function should_dispatch_domain_event_when_candidate_is_registered(): void
     {
+        $this->actingAsAdmin();
+
         Event::fake();
 
         $this->postJson('/api/v1/candidates', [
@@ -33,6 +35,8 @@ class AuditLogTest extends TestCase
     #[Test]
     public function should_log_action_when_event_is_dispatched(): void
     {
+        $this->actingAsAdmin();
+
         Log::spy();
 
         $this->postJson('/api/v1/candidates', [

@@ -15,6 +15,8 @@ class AssignmentNotificationTest extends TestCase
     #[Test]
     public function should_send_notifications_when_candidate_is_assigned(): void
     {
+        $this->actingAsAdmin();
+
         Notification::fake();
 
         $this->postJson('/api/v1/candidates', [

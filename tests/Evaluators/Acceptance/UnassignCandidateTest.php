@@ -13,6 +13,8 @@ class UnassignCandidateTest extends TestCase
     #[Test]
     public function should_unassign_candidate_from_evaluator(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Unassign Me',
             'email' => 'unassign@example.com',

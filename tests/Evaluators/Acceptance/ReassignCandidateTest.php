@@ -15,6 +15,8 @@ class ReassignCandidateTest extends TestCase
     #[Test]
     public function should_reassign_candidate_to_new_evaluator_and_send_notifications(): void
     {
+        $this->actingAsAdmin();
+
         Notification::fake();
 
         $this->postJson('/api/v1/candidates', [

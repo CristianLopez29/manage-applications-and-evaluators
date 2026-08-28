@@ -15,6 +15,8 @@ class AuditLogTest extends TestCase
     #[Test]
     public function it_logs_candidate_registration_to_database(): void
     {
+        $this->actingAsAdmin();
+
         // Arrange
         $payload = [
             'name' => 'Audit Test Candidate',

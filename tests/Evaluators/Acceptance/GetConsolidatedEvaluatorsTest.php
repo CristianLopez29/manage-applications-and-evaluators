@@ -13,6 +13,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_consolidated_list_of_evaluators_and_candidates(): void
     {
+        $this->actingAsAdmin();
+
         // 1. Create evaluators
         $this->postJson('/api/v1/evaluators', [
             'name' => 'María González',
@@ -112,6 +114,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_empty_candidates_list_for_evaluator_without_assignments(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', [
             'name' => 'Only Evaluator',
             'email' => 'solo@example.com',
@@ -132,6 +136,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_empty_list_when_no_evaluators_exist(): void
     {
+        $this->actingAsAdmin();
+
         $response = $this->getJson('/api/v1/evaluators/consolidated');
 
         $response->assertStatus(200)
@@ -146,6 +152,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_not_expose_sensitive_data_in_consolidated_list(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', [
             'name' => 'Secure Evaluator',
             'email' => 'seguro@example.com',
@@ -177,6 +185,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_evaluators_by_name(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Alice', 'email' => 'alice@test.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Bob', 'email' => 'bob@test.com', 'specialty' => 'Frontend'])->assertStatus(201);
 
@@ -192,6 +202,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_concatenated_emails_from_sql_group_concat(): void
     {
+        $this->actingAsAdmin();
+
         // Create evaluator
         $evaluatorResponse = $this->postJson('/api/v1/evaluators', [
             'name' => 'SQL Tester',
@@ -270,6 +282,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_specialty_backend_only(): void
     {
+        $this->actingAsAdmin();
+
         // Evaluators
         $this->postJson('/api/v1/evaluators', ['name' => 'Backend Eva', 'email' => 'beva@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Frontend Eve', 'email' => 'feve@example.com', 'specialty' => 'Frontend'])->assertStatus(201);
@@ -310,6 +324,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_min_average_experience(): void
     {
+        $this->actingAsAdmin();
+
         // Evaluators
         $this->postJson('/api/v1/evaluators', ['name' => 'Low Avg', 'email' => 'low@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'High Avg', 'email' => 'high@example.com', 'specialty' => 'Backend'])->assertStatus(201);
@@ -363,6 +379,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_min_total_assigned(): void
     {
+        $this->actingAsAdmin();
+
         // Evaluators
         $this->postJson('/api/v1/evaluators', ['name' => 'One', 'email' => 'one@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Two', 'email' => 'two@example.com', 'specialty' => 'Backend'])->assertStatus(201);
@@ -409,6 +427,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_candidate_email_contains(): void
     {
+        $this->actingAsAdmin();
+
         // Evaluators
         $this->postJson('/api/v1/evaluators', ['name' => 'Alpha', 'email' => 'alpha@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Beta', 'email' => 'beta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
@@ -449,6 +469,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_max_average_experience(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Low', 'email' => 'lowavg@example.com', 'specialty' => 'Backend']);
         $this->postJson('/api/v1/evaluators', ['name' => 'High', 'email' => 'highavg@example.com', 'specialty' => 'Backend']);
 
@@ -486,6 +508,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_average_experience_range(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Low', 'email' => 'lowr@example.com', 'specialty' => 'Backend']);
         $this->postJson('/api/v1/evaluators', ['name' => 'Mid', 'email' => 'midr@example.com', 'specialty' => 'Backend']);
         $this->postJson('/api/v1/evaluators', ['name' => 'High', 'email' => 'highr@example.com', 'specialty' => 'Backend']);
@@ -535,6 +559,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_max_total_assigned(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'One', 'email' => 'one2@example.com', 'specialty' => 'Backend']);
         $this->postJson('/api/v1/evaluators', ['name' => 'Two', 'email' => 'two2@example.com', 'specialty' => 'Backend']);
 
@@ -578,6 +604,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_total_assigned_desc(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Less', 'email' => 'less@example.com', 'specialty' => 'Backend']);
         $this->postJson('/api/v1/evaluators', ['name' => 'More', 'email' => 'more@example.com', 'specialty' => 'Backend']);
 
@@ -614,6 +642,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_concatenated_candidate_emails_asc(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Alice A', 'email' => 'a@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Bob B', 'email' => 'b@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
@@ -645,6 +675,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_exclude_evaluators_without_assignments_when_min_average_experience_is_set(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'NoAssign', 'email' => 'noassign@example.com', 'specialty' => 'Backend']);
         $response = $this->getJson('/api/v1/evaluators/consolidated?min_average_experience=1');
         $response->assertStatus(200);
@@ -657,6 +689,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_paginate_with_filters(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Eval 1', 'email' => 'e1@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Eval 2', 'email' => 'e2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Eval 3', 'email' => 'e3@example.com', 'specialty' => 'Backend'])->assertStatus(201);
@@ -700,6 +734,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_apply_combined_filters(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Evaluator 1', 'email' => 'comb1@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Evaluator 2', 'email' => 'comb2@example.com', 'specialty' => 'Frontend'])->assertStatus(201);
 
@@ -733,6 +769,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_treat_specialty_filter_case_insensitively(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Case', 'email' => 'case@example.com', 'specialty' => 'Backend']);
         $response = $this->getJson('/api/v1/evaluators/consolidated?specialty=backend');
         $response->assertStatus(200);
@@ -745,6 +783,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_created_at_asc(): void
     {
+        $this->actingAsAdmin();
+
         // Create evaluators directly with custom timestamps
         \Illuminate\Support\Facades\DB::table('evaluators')->insert([
             ['name' => 'Older', 'email' => 'older@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(10), 'updated_at' => now()->subDays(10)],
@@ -760,6 +800,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_name_asc(): void
     {
+        $this->actingAsAdmin();
+
         \Illuminate\Support\Facades\DB::table('evaluators')->insert([
             ['name' => 'Zoe', 'email' => 'zoe@example.com', 'specialty' => 'Backend', 'created_at' => now(), 'updated_at' => now()],
             ['name' => 'Anna', 'email' => 'anna@example.com', 'specialty' => 'Backend', 'created_at' => now(), 'updated_at' => now()],
@@ -774,6 +816,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_created_from(): void
     {
+        $this->actingAsAdmin();
+
         \Illuminate\Support\Facades\DB::table('evaluators')->insert([
             ['name' => 'Old 10d', 'email' => 'old10@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(10), 'updated_at' => now()->subDays(10)],
             ['name' => 'Old 5d', 'email' => 'old5@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(5), 'updated_at' => now()->subDays(5)],
@@ -794,6 +838,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_created_to(): void
     {
+        $this->actingAsAdmin();
+
         \Illuminate\Support\Facades\DB::table('evaluators')->insert([
             ['name' => 'Old 12d', 'email' => 'old12@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(12), 'updated_at' => now()->subDays(12)],
             ['name' => 'Old 3d', 'email' => 'old3@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(3), 'updated_at' => now()->subDays(3)],
@@ -814,6 +860,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_filter_by_created_range(): void
     {
+        $this->actingAsAdmin();
+
         \Illuminate\Support\Facades\DB::table('evaluators')->insert([
             ['name' => 'Old 8d', 'email' => 'old8@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(8), 'updated_at' => now()->subDays(8)],
             ['name' => 'Mid 4d', 'email' => 'mid4@example.com', 'specialty' => 'Backend', 'created_at' => now()->subDays(4), 'updated_at' => now()->subDays(4)],
@@ -835,6 +883,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_fallback_to_default_sort_when_unknown_sort_by(): void
     {
+        $this->actingAsAdmin();
+
         // Setup evaluators with different avg experience
         $this->postJson('/api/v1/evaluators', ['name' => 'LowAvg', 'email' => 'lowavg2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'HighAvg', 'email' => 'highavg2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
@@ -867,6 +917,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_return_only_unassigned_when_max_total_assigned_zero(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Unassigned', 'email' => 'unassigned@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Assigned', 'email' => 'assigned@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
@@ -891,6 +943,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_email_asc(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Alpha Sort', 'email' => 'alpha.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Beta Sort', 'email' => 'beta.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
@@ -906,6 +960,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_by_email_desc(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Alpha Sort', 'email' => 'alpha.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Beta Sort', 'email' => 'beta.sort@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
@@ -921,6 +977,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_total_assigned_asc(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Less TA', 'email' => 'less.ta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'More TA', 'email' => 'more.ta@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 
@@ -957,6 +1015,8 @@ class GetConsolidatedEvaluatorsTest extends TestCase
     #[Test]
     public function should_sort_name_desc(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/evaluators', ['name' => 'Anna', 'email' => 'anna.sort2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
         $this->postJson('/api/v1/evaluators', ['name' => 'Zoe', 'email' => 'zoe.sort2@example.com', 'specialty' => 'Backend'])->assertStatus(201);
 

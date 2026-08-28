@@ -13,6 +13,8 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_filter_unassigned_candidates(): void
     {
+        $this->actingAsAdmin();
+
         $backendSpecialty = 'Backend';
 
         $this->postJson('/api/v1/candidates', [
@@ -63,6 +65,8 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_filter_candidates_by_minimum_experience(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Junior',
             'email' => 'junior@example.com',
@@ -89,6 +93,8 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_search_candidates_by_partial_email(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Juan',
             'email' => 'juan@example.com',
@@ -115,6 +121,8 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_search_candidates_by_cv_content_using_email_query_param(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'CV Match',
             'email' => 'cv.match@example.com',
@@ -141,6 +149,8 @@ class ListCandidatesTest extends TestCase
     #[Test]
     public function should_filter_candidates_by_primary_specialty(): void
     {
+        $this->actingAsAdmin();
+
         $this->postJson('/api/v1/candidates', [
             'name' => 'Backend Dev',
             'email' => 'backend@example.com',

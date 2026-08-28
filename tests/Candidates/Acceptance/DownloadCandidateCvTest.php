@@ -17,6 +17,8 @@ class DownloadCandidateCvTest extends TestCase
     #[Test]
     public function admin_can_download_candidate_pdf(): void
     {
+        $this->actingAsAdmin();
+
         Storage::fake();
         $file = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
 
@@ -36,6 +38,8 @@ class DownloadCandidateCvTest extends TestCase
     #[Test]
     public function candidate_can_download_own_pdf_but_not_others(): void
     {
+        $this->actingAsAdmin();
+
         Storage::fake();
         $file = UploadedFile::fake()->create('cv.pdf', 100, 'application/pdf');
 
