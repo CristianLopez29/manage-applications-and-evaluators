@@ -2,72 +2,42 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
+use Src\Shared\Application\Ports\TransactionManager;
+use Src\Shared\Domain\Audit\AuditLogger;
+use Src\Shared\Domain\DomainEventPublisher;
+use Src\Shared\Infrastructure\Audit\EloquentAuditLogger;
+use Src\Shared\Infrastructure\LaravelDomainEventPublisher;
+use Src\Shared\Infrastructure\LaravelTransactionManager;
 
+/**
+ * Shared kernel wiring only.
+ *
+ * Domain event listeners belong to the module that owns the event and are
+ * registered in that module's Bindings::boot(); splitting them across two
+ * providers is how a listener ends up registered twice or debugged in the
+ * wrong file.
+ */
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        $this->app->bind(
-            \Src\Shared\Domain\Audit\AuditLogger::class,
-            \Src\Shared\Infrastructure\Audit\EloquentAuditLogger::class
-        );
+        $this->app->bind(AuditLogger::class, EloquentAuditLogger::class);
 
-        $this->app->bind(
-            \Src\Shared\Domain\DomainEventPublisher::class,
-            \Src\Shared\Infrastructure\LaravelDomainEventPublisher::class
-        );
+        $this->app->bind(DomainEventPublisher::class, LaravelDomainEventPublisher::class);
 
-        $this->app->bind(
-            \Src\Shared\Application\Ports\TransactionManager::class,
-            \Src\Shared\Infrastructure\LaravelTransactionManager::class
-        );
+        $this->app->bind(TransactionManager::class, LaravelTransactionManager::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        \Illuminate\Support\Facades\Event::listen(
-            \Src\Candidates\Domain\Events\CandidateRegistered::class,
-            \Src\Candidates\Infrastructure\Listeners\LogCandidateAction::class
-        );
-
-        \Illuminate\Support\Facades\Event::listen(
-            \Src\Evaluators\Domain\Events\CandidateAssigned::class,
-            \Src\Evaluators\Infrastructure\Listeners\LogCandidateAssignment::class
-        );
-
-        \Illuminate\Support\Facades\Event::listen(
-            \Src\Evaluators\Domain\Events\CandidateAssigned::class,
-            \Src\Evaluators\Infrastructure\Listeners\SendAssignmentNotifications::class
-        );
-
-        \Illuminate\Support\Facades\Event::listen(
-            \Src\Evaluators\Domain\Events\AssignmentStatusChanged::class,
-            \Src\Evaluators\Infrastructure\Listeners\SendAssignmentStatusChangeNotifications::class
-        );
-
-        \Illuminate\Support\Facades\Event::listen(
-            \Src\Evaluators\Domain\Events\CandidateAssigned::class,
-            [\Src\Evaluators\Infrastructure\Listeners\RecordAssignmentHistory::class, 'handleAssigned']
-        );
-
-        \Illuminate\Support\Facades\Event::listen(
-            \Src\Evaluators\Domain\Events\AssignmentStatusChanged::class,
-            [\Src\Evaluators\Infrastructure\Listeners\RecordAssignmentHistory::class, 'handleStatusChanged']
-        );
-
         RateLimiter::for('login', function (Request $request) {
             $input = $request->input('email');
             $email = is_string($input) ? $input : '';
+
             return [
                 Limit::perMinute(5)->by($email.$request->ip()),
                 Limit::perMinute(30)->by($request->ip()),
