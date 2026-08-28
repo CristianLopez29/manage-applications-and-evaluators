@@ -4,13 +4,13 @@
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg)](phpstan.neon)
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.4-blue.svg)](https://php.net)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-The **CI** badge is live: it reflects the last run of
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) on `main`, which runs
-three blocking jobs — PHPStan at level 9, `composer audit`, and the PHPUnit
-suite against MySQL and Redis. The PHPStan badge states the level configured in
-[`phpstan.neon`](phpstan.neon); the CI badge is what proves it passes.
+The **CI** badge comes from GitHub Actions: it reflects the last run of
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) on `main`, which blocks on
+three jobs — PHPStan at level 9, `composer audit`, and the PHPUnit suite against
+MySQL and Redis. A hardcoded "N tests passing" badge would only ever be accurate
+on the day someone edited it, so the count is not written out here.
 
 > Modular and scalable system for managing candidacies and evaluators, implemented with **Hexagonal Architecture**, **advanced design patterns**, and **software best practices**.
 
@@ -29,7 +29,7 @@ suite against MySQL and Redis. The PHPStan badge states the level configured in
 - **Benefit:** I can replace Laravel with Symfony without touching business logic
 
 #### ✅ **Superior Testability**
-- Unit, integration and acceptance layers (live count on the CI badge above)
+- 136 tests passing across unit, integration and acceptance layers
 - Unit tests do not require the framework
 - Fakes and mocks are trivial to implement
 - **Benefit:** Fast and reliable tests
@@ -51,8 +51,10 @@ suite against MySQL and Redis. The PHPStan badge states the level configured in
 **DDD** principles were applied to model the domain:
 
 - **Entities:** `Candidate`, `Evaluator`, `CandidateAssignment`
-- **Value Objects:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
-- **Domain Events:** `CandidateRegistered` for audit logging
+- **Value Objects:** `Email`, `CV`, `YearsOfExperience`, `EvaluatorName`
+- **Enums:** `Specialty`, `AssignmentStatus`
+- **Domain Events:** `CandidateRegistered`, `CandidateAnalysisCompleted`, `CandidateAssigned`,
+  `AssignmentStatusChanged` — consumed by listeners for audit, notifications, history and cache invalidation
 - **Repositories:** Interfaces in Domain, implementations in Infrastructure
 - **DTOs:** Data transfer between layers without exposing entities
 
@@ -65,61 +67,71 @@ suite against MySQL and Redis. The PHPStan badge states the level configured in
 ```
 src/
 ├── Candidates/              # Candidacy Module
+│   ├── Bindings.php         # DI bindings + module routes (ServiceProvider)
 │   ├── Domain/              # Pure business logic (no Laravel)
 │   │   ├── Candidate.php    # Domain Entity
 │   │   ├── ValueObjects/    # Email, CV, YearsOfExperience
 │   │   ├── Validators/      # Chain of Responsibility
 │   │   ├── Repositories/    # Interfaces (contracts)
-│   │   ├── Events/          # Domain Events
+│   │   ├── Services/        # AiScreeningService port
+│   │   ├── Events/          # CandidateRegistered, CandidateAnalysisCompleted
 │   │   └── Exceptions/      # Domain Exceptions
-│   ├── Application/         # Use Cases
-│   │   ├── UseCases/        # RegisterCandidacy, GetCandidateSummary (no UseCase suffix)
-│   │   ├── DTOs/            # Data Transfer Objects
-│   │   └── Transformers/
+│   ├── Application/
+│   │   ├── UseCases/        # RegisterCandidacy, GetCandidateSummary, ListCandidates…
+│   │   ├── DTOs/            # Request/Response objects
+│   │   └── Transformers/    # Domain → DTO mapping
 │   └── Infrastructure/      # Technical implementations
 │       ├── Persistence/     # Eloquent Models & Repositories
-│       ├── Controllers/     # Single-action __invoke controllers
+│       ├── Controllers/     # Single-action HTTP controllers
 │       ├── Ai/              # OpenAI / Gemini screening adapters
 │       ├── Jobs/            # AnalyzeCandidateCvJob
 │       └── Listeners/       # Event Listeners
 │
 ├── Evaluators/              # Evaluators Module
+│   ├── Bindings.php
 │   ├── Domain/              # Pure business logic
 │   │   ├── Evaluator.php
 │   │   ├── CandidateAssignment.php
-│   │   ├── ValueObjects/    # Specialty, AssignmentStatus
+│   │   ├── ValueObjects/    # EvaluatorName
+│   │   ├── Enums/           # Specialty, AssignmentStatus
 │   │   ├── Repositories/    # Interfaces
+│   │   ├── Events/          # CandidateAssigned, AssignmentStatusChanged
 │   │   └── Criteria/        # Query criteria objects
-│   ├── Application/         # Use Cases
-│   │   ├── UseCases/        # AssignCandidateToEvaluator, GetConsolidatedEvaluators
+│   ├── Application/
+│   │   ├── UseCases/        # AssignCandidateToEvaluator, GetConsolidatedEvaluators…
 │   │   ├── DTOs/
 │   │   ├── Ports/           # EvaluatorCachePort
 │   │   └── Transformers/
 │   └── Infrastructure/
 │       ├── Persistence/
 │       ├── Controllers/
+│       ├── Cache/           # LaravelEvaluatorCache (tag-based)
 │       ├── Jobs/            # GenerateEvaluatorsReportJob, ProcessOverdueAssignmentsJob
-│       ├── Cache/           # LaravelEvaluatorCache
 │       ├── Export/          # Excel exporters
+│       ├── Listeners/       # Audit, notifications, history, cache invalidation
 │       └── Notifications/   # Email notifications
 │
-└── Shared/                  # Code shared between modules
-    ├── Domain/
-    └── Infrastructure/
+└── Shared/                  # Shared kernel
+    ├── Domain/              # AggregateRoot, DomainEvent, DomainEventPublisher, AuditLogger
+    ├── Application/Ports/   # TransactionManager
+    └── Infrastructure/      # Laravel adapters for the ports above
 ```
-
-Each module also has a `Bindings.php` at its root (a `ServiceProvider`): `register()` maps ports to
-adapters, `boot()` declares the module's `/api/v1` routes. Both are registered in `bootstrap/providers.php`.
 
 ### Conventions
 
 - **Domain:** No external dependencies. Pure PHP.
 - **Application:** Orchestrates the domain. Must not contain business logic.
 - **Infrastructure:** Everything related to Laravel, databases, external APIs.
+- **Use Cases** expose a single `execute()`; **controllers** are single-action `__invoke`.
+- Each module's `Bindings.php` registers its ports → adapters *and* its routes, so a module is
+  self-contained: `routes/api.php` only holds cross-cutting endpoints (auth, health, reports).
 
 ---
 
 ## ⚡ Quick Start
+
+Everything runs through `make`, which wraps `docker compose`. Laravel Sail's `vendor/bin/sail` script is
+intentionally not used: it needs a POSIX shell and misbehaves on Windows.
 
 ```bash
 # 1. Clone and install dependencies
@@ -131,38 +143,36 @@ docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "$(pwd):/var/www/html" \
     -w /var/www/html \
-    laravelsail/php83-composer:latest \
+    laravelsail/php84-composer:latest \
     composer install --ignore-platform-reqs
 
 # 3. Setup environment
 cp .env.example .env
 
 # 4. Start services (MySQL, Redis, Mailpit)
-docker compose up -d
+make up
 
 # 5. Initialize database and storage
 docker compose exec -T laravel php artisan key:generate
-docker compose exec -T laravel php artisan storage:link
-docker compose exec -T laravel php artisan migrate:fresh --seed
+make storage-link
+make fresh
 
 # 6. Generate Swagger docs
-docker compose exec -T laravel php artisan l5-swagger:generate
+make swagger
 
 # 7. Run tests
-docker compose exec -T laravel php artisan test
+make test
 ```
 
-> **`docker compose` rather than `./vendor/bin/sail`.** Sail is a bash script that needs a POSIX shell
-> and misbehaves on Windows hosts. `exec -T` is deliberate: without it, `exec` aborts with
-> *"the input device is not a TTY"* when driven from PowerShell.
-
-> **Ports.** `compose.yaml` maps the app to `APP_PORT` (default `80`). Set `APP_PORT=8080` in `.env`
-> if something else already owns port 80 on your machine — the examples below assume `8080`.
+`make help` lists every target; `make urls` prints the URLs below.
 
 **🌐 Services Available:**
 - **API**: http://localhost:8080
 - **Swagger**: http://localhost:8080/api/documentation
 - **Mailpit** (emails): http://localhost:8025
+
+> **Ports.** `APP_PORT` defaults to `8080` and `VITE_PORT` to `5174` so the stack coexists with other
+> local Docker projects on ports 80/5173. Override per call: `make up APP_PORT=80`.
 
 **🐳 Database Connections (from host machine):**
 - **MySQL**: `127.0.0.1:3306` (only if you need to connect with external tools like TablePlus/DBeaver)
@@ -172,10 +182,11 @@ docker compose exec -T laravel php artisan test
   - **Note**: From the Laravel application use `DB_HOST=mysql` (inside Docker)
 - **Redis**: `127.0.0.1:6379` (inside Docker use `REDIS_HOST=redis`)
 
-**⚡ Start Queue Worker** (required for Excel reports *and* AI screening):
+**⚡ Start Queue Worker** (for Excel reports and AI screening):
 ```bash
-# Ensure QUEUE_CONNECTION=redis in .env
-docker compose exec -T laravel php artisan queue:work
+# Required for processing background jobs; without it those endpoints
+# answer 202 and nothing ever completes. Ensure QUEUE_CONNECTION=redis in .env
+make queue
 ```
 
 ---
@@ -196,6 +207,9 @@ docker compose exec -T laravel php artisan queue:work
 - [🧪 Testing](#-testing)
 - [📦 Technologies](#-technologies)
 - [🚢 Deployment](#-deployment)
+- [🛠️ Troubleshooting](#️-troubleshooting)
+- [🗺️ Roadmap](#️-roadmap-optional-improvements)
+- [📄 License](#-license)
 
 ---
 
@@ -334,7 +348,7 @@ readonly class Email {
 ### 2. Repository Pattern
 - **Location:** Interfaces in `Domain/Repositories/`, implementations in `Infrastructure/Persistence/`
 - **Usage:** Persistence abstraction
-- **Test:** `tests/{Candidates,Evaluators}/Integration/` against the real database
+- **Test:** `tests/{Module}/Integration/` against the real database
 
 ### 3. Data Transfer Object (DTO)
 - **Location:** `Application/DTOs/`
@@ -343,17 +357,22 @@ readonly class Email {
 
 ### 4. Value Object
 - **Location:** `Domain/ValueObjects/`
-- **Examples:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
+- **Examples:** `Email`, `CV`, `YearsOfExperience`, `EvaluatorName`
 - **Usage:** Encapsulate validation and type safety
 
 ### 5. Domain Events
-- **Location:** `src/Candidates/Domain/Events/`
-- **Event:** `CandidateRegistered`
-- **Listener:** `LogCandidateAction`
-- **Usage:** Decoupled audit logging
+- **Location:** `src/{Module}/Domain/Events/`
+- **Events:** `CandidateRegistered`, `CandidateAssigned`, `AssignmentStatusChanged`
+- **Listeners:** `LogCandidateAction`, `SendAssignmentNotifications`, `RecordAssignmentHistory`,
+  `InvalidateEvaluatorCache` — all registered in the owning module's `Bindings::boot()`
+- **Usage:** Decoupled audit logging, notifications, history and cache invalidation
 
-### 6. Strategy Pattern (implicit)
-- In validators: each validator is a validation strategy
+### 6. Ports & Adapters beyond persistence
+- **`AiScreeningService`** (Domain) → `OpenAiScreeningAdapter` / `GeminiScreeningAdapter`, selected at
+  runtime by `AI_PROVIDER` — the Strategy pattern applied to an external service
+- **`EvaluatorCachePort`** (Application) → `LaravelEvaluatorCache`, so the use case never sees `Cache::`
+- **`TransactionManager`** / **`DomainEventPublisher`** (Shared) → keep `DB::` and the `Event` facade
+  out of the Application layer
 
 ---
 
@@ -384,7 +403,7 @@ class GenerateEvaluatorsReportJob implements ShouldQueue
 
 **How to run:**
 ```bash
-docker compose exec -T laravel php artisan queue:work
+make queue
 ```
 
 #### 2. Idempotency
@@ -428,20 +447,13 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 
 **Status:** ✅ Implemented
 
-Applied at the **application** layer, so the limits understand who the caller
-is. A `limit_req` zone in Nginx (see [DEPLOY.md](DEPLOY.md)) sits in front of it
-as a flood guard only.
-
 - Login (`POST /api/login`): `throttle:login`
   - 5 requests per minute per (email+IP)
   - 30 requests per minute per IP
   - Defined in AppServiceProvider → `RateLimiter::for('login', ...)`
-- Authenticated business API: `throttle:api`
-  - `API_RATE_LIMIT_PER_MINUTE` requests per minute (default 60), keyed by
-    **token owner** when authenticated and by IP when anonymous
-  - Keyed by user rather than IP on purpose: behind the reverse proxy every
-    request shares one address, so an IP-keyed bucket would let a single client
-    spend everybody's quota
+- Authenticated group: `throttle:60,1`
+  - 60 requests per minute per IP for protected routes
+  - Configured in API routes
 - When limits are exceeded:
   - HTTP 429 (Too Many Requests) with `Retry-After` header
   - Enforced by Laravel's throttle middleware
@@ -452,52 +464,28 @@ as a flood guard only.
 
 - Liveness: `/up` provided by the framework health route
   - Defined during bootstrap
-- Liveness: `/api/health` — returns `status` and `time`
 - Readiness: `/api/readiness`
-  - Checks the database and the cache, returning `status`, `checks` and `time`
-  - **`200` when both are reachable, `503` when either is down**, so an external
-    monitor (UptimeRobot and friends) can actually alert on it
-- Outside `local` and `testing`, both probes require an `X-Health-Check-Token`
-  header matching `HEALTHCHECK_TOKEN`, compared with `hash_equals`. They **fail
-  closed**: with no token configured the probes stay locked rather than
-  publishing the dependency report.
+  - In production, requires `X-Health-Check-Token` header matching `HEALTHCHECK_TOKEN`
+  - Performs database and cache checks and returns a JSON with `status`, `checks`, and `time`
+
 ### ✅ Additional Implemented Infrastructure
+
 #### 6. Monitoring (Sentry)
 
 **Status:** ✅ Implemented
 
 - Package: `sentry/sentry-laravel`
-- Configuration: set `SENTRY_LARAVEL_DSN` to enable reporting; leave it empty to
-  disable it entirely
-- Wiring: `Integration::handles($exceptions)` in
-  [`bootstrap/app.php`](bootstrap/app.php). The package removes its own error
-  listeners by design and reports nothing until the application opts in there —
-  covered by `tests/Shared/Integration/SentryReportingTest.php`
-- Domain exceptions are excluded from reporting: they are mapped to 4xx business
-  responses, and alerting on them would bury genuine 5xx incidents
-- Optional: tracing via `SENTRY_TRACES_SAMPLE_RATE`
+- Configuration: set `SENTRY_LARAVEL_DSN` in environment to enable error reporting
+- Behavior: unhandled exceptions are captured and sent to Sentry via the stack channel
+- Optional: performance monitoring can be enabled via Sentry environment variables if needed
 
 #### 7. Structured Logging (correlation id)
 
 **Status:** ✅ **Implemented**
 
-- An `AddRequestContext` middleware binds a `request_id` (correlation id) and the
-  authenticated `user_id` to the logging context of every API request. It runs
-  **before** `auth:sanctum`, so rejected requests (401, 429) are traced too.
-- The id is returned in the `X-Request-Id` response header — and honoured if the
-  caller already sent one — enabling end-to-end tracing across clients, proxies
-  and logs.
-- **Application and access logs are separate:**
-
-| Channel | Writes to | Contents |
-|---------|-----------|----------|
-| `json_daily` | `storage/logs/app.json.log-<date>` | Application log, one JSON object per line, rotated (`LOG_DAILY_DAYS`, default 14) |
-| `access` | `storage/logs/access.json.log-<date>` | One line per request: method, path, status, duration, `request_id`, IP, user (`LOG_ACCESS_DAYS`, default 7) |
-| `production` | both of the above + `stderr` | What `LOG_CHANNEL` should be set to on the server |
-
-- The access line carries the same `request_id` the response header returns, so a
-  user's report is traceable from header to application log. The reverse proxy's
-  own access log cannot do that: it never sees the id.
+- An `AddRequestContext` middleware binds a `request_id` (correlation id) and the authenticated `user_id` to the logging context of every authenticated API request.
+- The id is returned in the `X-Request-Id` response header — and honoured if the caller already sent one — enabling end-to-end tracing across clients, proxies and logs.
+- A ready-to-use `json` log channel (`LOG_CHANNEL=json`) emits one structured JSON line per record for ingestion into ELK / Datadog / Loki.
 
 #### 8. API Versioning
 
@@ -506,7 +494,7 @@ as a flood guard only.
 - Business resources are served under the `/api/v1` prefix (`/api/v1/candidates`, `/api/v1/evaluators`, …).
 - Cross-cutting infrastructure endpoints (`/api/login`, `/api/health`, `/api/readiness`) are intentionally kept unversioned, so the versioned contract covers only the business API and can evolve to `/api/v2` without disrupting auth or health probes.
 
-#### 3. Cache
+#### 9. Cache
 
 **Status:** ✅ **Implemented** (active, event-driven invalidation)
 
@@ -526,7 +514,7 @@ Cache::tags(['evaluators'])->flush(); // on CandidateAssigned / AssignmentStatus
 Invalidation is event-driven via the `InvalidateEvaluatorCache` listener — no
 coupling in the use cases.
 
-#### 4. Concurrency (Pessimistic Locking)
+#### 10. Concurrency (Pessimistic Locking)
 
 **Status:** ✅ **Implemented**
 
@@ -608,7 +596,7 @@ ORDER BY avg_experience DESC
 - Docker Desktop installed
 - Git
 
-### Installation with Docker (Laravel Sail)
+### Installation with Docker
 
 ```bash
 # 1. Clone repository
@@ -620,34 +608,95 @@ docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "$(pwd -W):/var/www/html" \
     -w //var/www/html \
-    laravelsail/php83-composer:latest \
+    laravelsail/php84-composer:latest \
     composer install --ignore-platform-reqs
 
 # 3. Copy environment file
 cp .env.example .env
 
 # 4. Start services (MySQL, Redis, Mailpit)
-docker compose up -d
+make up
 
 # 5. Generate application key
 docker compose exec -T laravel php artisan key:generate
 
 # 6. Run migrations and seeders
-docker compose exec -T laravel php artisan migrate:fresh --seed
+make fresh
 
 # 7. Generate Swagger documentation
-docker compose exec -T laravel php artisan l5-swagger:generate
+make swagger
 ```
+
+### Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make up` / `make down` / `make restart` | Start / stop the stack |
+| `make status` / `make logs` / `make bash` | Container state, app logs, shell into the container |
+| `make test` | Full test suite |
+| `make test-f filter=AssignCandidateTest` | One test class or method |
+| `make test-suite suite=Evaluators` | One suite (`Candidates`, `Evaluators`, `Auth`, `Security`, `Shared`) |
+| `make analyse` | PHPStan level 9 |
+| `make quality` | Both CI gates: `analyse` + `test` |
+| `make migrate` / `make seed` / `make fresh` | Schema and demo data |
+| `make queue` / `make schedule` | Queue worker / scheduler |
+| `make swagger` / `make storage-link` / `make clean` | OpenAPI docs, storage symlink, cache clear |
+| `make urls` | Service URLs and the seeded login |
 
 ### Services Available
 
 | Service | URL | Description |
 |----------|-----|-------------|
 | **API** | http://localhost:8080 | Main REST API |
-| **Swagger UI** | http://localhost:8080/api/documentation | Interactive documentation — see below |
+| **Swagger** | http://localhost:8080/api/documentation | Interactive documentation |
+| **Telescope** | http://localhost:8080/telescope | Local debugging (`TELESCOPE_ENABLED=true`) |
 | **Mailpit** | http://localhost:8025 | Email viewer (for notifications) |
 | **MySQL** | localhost:3306 | Database (user: `sail`, pass: `password`) |
 | **Redis** | localhost:6379 | Cache and queues |
+
+### Run Queue Worker (Important)
+
+To process report generation and AI screening jobs:
+
+```bash
+make queue
+```
+
+> **Note:** In production use Supervisor to keep the worker running.
+
+### Run Tests
+
+```bash
+# All tests
+make test
+
+# One suite (Candidates, Evaluators, Auth, Security, Shared)
+make test-suite suite=Evaluators
+
+# Specific test class or method
+make test-f filter=GetConsolidatedEvaluatorsTest
+```
+
+The suite runs against the **MySQL container**, not SQLite: the consolidated query is raw MySQL
+(`GROUP_CONCAT ... SEPARATOR`) and the assignment lock is a real `SELECT ... FOR UPDATE`, so `make up`
+must have run first. `phpunit.xml` pins `DB_CONNECTION=mysql` to keep the engine from drifting with `.env`.
+
+### Code Quality & Static Analysis
+
+This project adheres to strict type safety standards (**PHPStan Level 9**).
+
+```bash
+make analyse
+```
+
+### Test Data (Seeders)
+
+`make fresh` (`migrate:fresh --seed`) creates:
+
+- 20 candidates with different experience levels
+- 5 evaluators (`Backend`, `Frontend`, `Fullstack`, `DevOps`, `Mobile`)
+- ~15-20 assignments with varied statuses
+- An admin user to log in with: `test@example.com` / `password`
 
 ---
 
@@ -655,10 +704,10 @@ docker compose exec -T laravel php artisan l5-swagger:generate
 
 ### Interactive documentation
 
-OpenAPI annotations live on the controllers and are compiled by `l5-swagger`.
+OpenAPI annotations live on the controllers and are compiled by `l5-swagger`:
 
 ```bash
-docker compose exec -T laravel php artisan l5-swagger:generate
+make swagger
 ```
 
 Then open **http://localhost:8080/api/documentation**.
@@ -669,7 +718,7 @@ else it is wrapped in `auth:sanctum` + `role:admin`
 you need an admin bearer token to open it. Set `L5_SWAGGER_PROTECT=false` if you
 deliberately want the docs public.
 
-Since Swagger UI cannot log in for you, get a token first and paste it into the
+Swagger UI cannot log in for you: get a token first and paste it into the
 **Authorize** dialog as `Bearer <token>`.
 
 ### From the command line
@@ -678,7 +727,7 @@ Since Swagger UI cannot log in for you, get a token first and paste it into the
 # 1. Log in (seeded admin)
 TOKEN=$(curl -s -X POST http://localhost:8080/api/login   -H 'Content-Type: application/json' -H 'Accept: application/json'   -d '{"email":"test@example.com","password":"password"}'   | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 
-# 2. Call a business endpoint
+# 2. A business endpoint
 curl -s http://localhost:8080/api/v1/candidates   -H "Authorization: Bearer $TOKEN" -H 'Accept: application/json'
 
 # 3. The consolidated evaluators view
@@ -694,40 +743,7 @@ application and access logs.
 
 > **Queue-backed endpoints.** `POST /api/v1/candidates/{id}/analyze` and
 > `POST /api/v1/evaluators/report` answer `202` and finish the work in a job.
-> Without a queue worker running they never complete.
-
-### Run Queue Worker (Important)
-
-Required for the AI screening job and the Excel report:
-
-```bash
-docker compose exec -T laravel php artisan queue:work
-```
-
-> **Note:** In production use a systemd unit (see [DEPLOY.md](DEPLOY.md)) or Supervisor to keep the
-> worker running. `queue:work` holds code in memory, so restart it on every deploy.
-
-### Run Scheduler
-
-`ProcessOverdueAssignmentsJob` runs every 15 minutes:
-
-```bash
-docker compose exec -T laravel php artisan schedule:work
-```
-
-### Test Data (Seeders)
-
-`migrate:fresh --seed` creates:
-
-- 1 admin user — `test@example.com` / `password`
-- 20 candidates with different experience levels
-- 5 evaluators (`Backend`, `Frontend`, `Fullstack`, `DevOps`, `Mobile`)
-- assignments with varied statuses
-
-> **Never run the seeder in production**: it creates a known admin with a known password.
-> [DEPLOY.md](DEPLOY.md) has the one-liner for creating a real admin instead.
-
-Test and static-analysis commands are in the [Testing](#-testing) section.
+> Without `make queue` running they never complete.
 
 ---
 
@@ -778,12 +794,12 @@ no writes in flight.
 Artifacts from this exact run are committed next to the scenario:
 [`summary.txt`](load-tests/results/summary.txt),
 [`summary.json`](load-tests/results/summary.json) and an HTML report at
-[`report.html`](load-tests/results/report.html).
+[`report.html`](load-tests/results/report.html). Reproduce with `make load-test`.
 
 ### Reading the numbers honestly
 
-- **No 5xx, no failed requests, all 771 checks passed.** That is the claim this
-  run supports, and the `server_errors_5xx: count==0` threshold is what enforces it.
+- **No 5xx, no failed requests, all checks passed.** That is the claim this run
+  supports, and the `server_errors_5xx: count==0` threshold is what enforces it.
 - **The consolidated read is ~275 ms p95 uncontended and ~4.2 s p95 while writes
   are in flight.** That gap is not the query: every assignment invalidates the
   consolidated cache and holds row locks, so under a write-heavy load each read
@@ -806,35 +822,32 @@ Reproduction steps, options and thresholds are in
 ### Candidates
 
 #### `POST /api/v1/candidates`
-Register new candidacy.
+Register new candidacy. Accepts the CV as text (`cv`) **or** as an uploaded PDF (`cv_file`,
+`multipart/form-data`); at least one of the two is required.
 
-**Body:** (`cv` is the CV text; send `cv_file` as a PDF upload instead if you prefer)
+**Body:**
 ```json
 {
   "name": "John Doe",
   "email": "john@example.com",
   "years_of_experience": 5,
-  "primary_specialty": "Backend",
-  "cv": "Full Stack Developer with 5 years..."
+  "cv": "Full Stack Developer with 5 years...",
+  "primary_specialty": "Backend"
 }
 ```
 
-`cv` is required unless a `cv_file` (PDF, max 5 MB) is uploaded as multipart.
+**Response:** `201 Created` — the body reports whether the AI screening was queued
+(`"analysis_status": "processing"` or `"failed_to_queue"`).
 
-**Response:** `201 Created`
-```json
-{
-  "message": "Candidacy registered successfully",
-  "data": { "id": 1, "email": "john@example.com", "analysis_status": "processing" }
-}
-```
+Registering with an existing email updates that candidate instead of creating a duplicate.
 
 ---
 
 #### `GET /api/v1/candidates/{id}/summary`
 Get complete candidacy summary with validations.
 
-**Response:** the CV is returned as a truncated `cv_preview`, never in full — the complete
+**Response:**
+The CV comes back as a truncated `cv_preview`, never in full: the complete
 document is only available through the authenticated download endpoint.
 
 ```json
@@ -921,8 +934,8 @@ Register new evaluator.
 }
 ```
 
-**Valid Specialties** (`Src\Evaluators\Domain\Enums\Specialty`, case-sensitive):
-`Backend`, `Frontend`, `Fullstack`, `DevOps`, `Mobile`, `QA`, `Data`, `Security`
+**Valid Specialties** (case-sensitive, from the `Specialty` enum): `Backend`, `Frontend`, `Fullstack`,
+`DevOps`, `Mobile`, `QA`, `Data`, `Security`
 
 ---
 
@@ -978,7 +991,8 @@ Consolidated list with complex SQL (GROUP_CONCAT, JOIN, AVG, COUNT).
 ---
 
 #### `POST /api/v1/evaluators/{evaluatorId}/assign-candidate`
-Assign candidate to evaluator.
+Assign candidate to evaluator. The candidate's specialty must match the evaluator's, and the evaluator
+must be below `Evaluator::MAX_CONCURRENT_CANDIDATES`.
 
 **Body:**
 ```json
@@ -987,11 +1001,8 @@ Assign candidate to evaluator.
 }
 ```
 
-**Response:** `200 OK`
-
-- `404` if the evaluator does not exist
-- `409` if the candidate is already assigned, or the evaluator is at capacity
-  (`Evaluator::MAX_CONCURRENT_CANDIDATES`, 10)
+**Response:** `200 OK` · `404` if the evaluator does not exist · `409` if the candidate is already
+assigned, the evaluator is at capacity, or the specialties do not match
 
 ---
 
@@ -1094,56 +1105,72 @@ The report is generated in the background and sent by email when ready.
 
 ## 🧪 Testing
 
-The live count is on the **CI badge** at the top of this file rather than
-written out here, so it cannot go stale.
+### Coverage
 
-### Layout
+- **Total:** 136 passing, 668 assertions (plus 1 opt-in test skipped by default, see below)
+- **Layers:** Unit (domain objects, no DB) · Integration (listeners, jobs, notifications, query counts
+  against the real DB) · Acceptance (full HTTP round trip through the kernel)
+- **Covered:** candidate and evaluator endpoints, status transitions, reassign/unassign, audit logging,
+  email notifications (assignment, status change, overdue/escalation), permissions cascade
+  (admin/evaluator/candidate), authentication, rate limiting and SQL-injection resilience
 
 ```
 tests/
-├── Auth/Acceptance/          # Authorization, permissions cascade
-├── Candidates/
-│   ├── Unit/                 # Value Objects, Chain-of-Responsibility validators
-│   ├── Integration/          # Audit log, real-AI evaluation (opt-in)
-│   └── Acceptance/           # HTTP: register, list, summary, CV download, AI analysis
-├── Evaluators/
-│   ├── Unit/                 # Evaluator, assignment, enums, overdue job
-│   ├── Integration/          # Listeners, notifications, history, query counts
-│   └── Acceptance/           # HTTP: register, assign, reassign, unassign, consolidated
-├── Security/Acceptance/      # Unauthenticated access, role gates, throttling, SQLi,
-│                             # query-parameter validation, security headers, health probes
-├── Shared/
-│   ├── Unit/                 # TestSuiteCoverageTest (phpunit.xml guard)
-│   └── Integration/          # Audit log, request-context and access logging, Sentry wiring
-└── TestCase.php              # Base case — no ambient auth, exposes actingAsAdmin()
+├── Auth/Acceptance/          # Role gates and permission cascade
+├── Candidates/{Unit,Integration,Acceptance}/
+├── Evaluators/{Unit,Integration,Acceptance}/
+├── Security/Acceptance/      # Unauthenticated access, throttling, SQLi, data exposure, tokens
+├── Shared/{Unit,Integration}/
+└── TestCase.php
 ```
 
-**Authentication is explicit.** `TestCase` does not log anyone in: a test that
-needs an admin calls `actingAsAdmin()`. Authenticating in `setUp()` would make a
-401 impossible to assert and let an authorization test pass for the wrong
-reason — which is exactly why
-`tests/Security/Acceptance/UnauthenticatedAccessTest.php` can exist.
+Each top-level directory is a `<testsuite>` in `phpunit.xml`;
+`tests/Shared/Unit/TestSuiteCoverageTest.php` fails if a directory is missing from that list, so a new
+test folder cannot silently go unexecuted.
 
-**`phpunit.xml` lists its suites one by one**, so a new top-level directory under
-`tests/` would silently never run. `tests/Shared/Unit/TestSuiteCoverageTest.php`
-fails until the matching `<testsuite>` is added.
+**Authentication in tests is explicit.** `TestCase` logs nobody in; a test that needs an admin calls
+`$this->actingAsAdmin()`. That is what makes `tests/Security/Acceptance/UnauthenticatedAccessTest.php`
+possible — with an ambient login in `setUp()`, a 401 cannot be asserted at all.
+
+### Featured Tests
+
+**Chain of Responsibility:**
+```php
+tests/Candidates/Unit/
+├── MinimumExperienceValidatorTest.php
+├── RequiredCVValidatorTest.php
+└── ValidEmailValidatorTest.php
+```
+
+**Complex Endpoints:**
+```php
+tests/Evaluators/Acceptance/GetConsolidatedEvaluatorsTest.php
+└── 30 tests covering GROUP_CONCAT output, every sort column, filters and pagination
+```
+
+**Real Integration:**
+```php
+tests/Candidates/Acceptance/RegisterCandidacyTest.php
+└── should_register_a_valid_candidacy
+    // Inserts in DB, verifies domain events, audit log
+```
 
 ### Run Tests
 
 ```bash
 # All
-docker compose exec -T laravel php artisan test
+make test
 
-# One suite or one class
-docker compose exec -T laravel php artisan test --testsuite=Evaluators
-docker compose exec -T laravel php artisan test --filter=AssignCandidateTest
+# One suite (Candidates, Evaluators, Auth, Security, Shared)
+make test-suite suite=Security
 
-# Static analysis (PHPStan level 9, zero errors tolerated)
-docker compose exec -T laravel php ./vendor/bin/phpstan analyse
-
-# Dependency audit
-docker compose exec -T laravel composer audit --abandoned=report
+# One class or method
+make test-f filter=GetConsolidatedEvaluatorsTest
 ```
+
+**Opt-in AI test.** `tests/Candidates/Integration/RealAiCandidateEvaluationTest.php` calls the real
+Gemini API, so it is skipped unless you set `RUN_AI_INTEGRATION_TESTS=true` and a valid `GEMINI_API_KEY`.
+Everything else runs offline.
 
 ---
 
@@ -1164,7 +1191,7 @@ docker compose exec -T laravel composer audit --abandoned=report
 - `maatwebsite/excel` - Excel Report Export
 - `darkaonline/l5-swagger` - OpenAPI Documentation
 - `sentry/sentry-laravel` - Error monitoring and alerting
-- `laravel/telescope` - Local debugging (**dev dependency**; not installed by `--no-dev`)
+- `laravel/telescope` - Local debugging & insights
 - `phpunit/phpunit` - Testing Framework
 
 ### AI Screening
@@ -1172,74 +1199,70 @@ docker compose exec -T laravel composer audit --abandoned=report
 - Asynchronous via `AnalyzeCandidateCvJob` (queue); persists a structured evaluation (summary, skills, years of experience, seniority level)
 
 ### DevOps
-- **Docker** (Laravel Sail) - Local Development
+- **Docker Compose** (Sail runtime image) - Local Development, driven by `make`
 - **Redis** - Cache and Queues
 - **Mailpit** - Email Testing
+- **GitHub Actions** - CI: PHPStan level 9 + PHPUnit against MySQL 8 and Redis 7
 
 ---
 
 ## 🛠️ Troubleshooting
 
-### Tests fail with database connection error
+### Tests fail with a database connection error
+
+The suite talks to the MySQL container, so the stack must be running:
 
 ```bash
-# Clear config and restart
-docker compose exec -T laravel php artisan config:clear
-docker compose exec -T laravel php artisan migrate:fresh --seed
-docker compose exec -T laravel php artisan test
+make status      # is the mysql service up?
+make up
+make clean       # clears cached config
+make fresh
+make test
+```
+
+### Port 80 or 5173 is already taken
+
+The Makefile already defaults to `APP_PORT=8080` / `VITE_PORT=5174`. To pick different ones:
+
+```bash
+make up APP_PORT=9000 VITE_PORT=5180
 ```
 
 ### Queue worker does not process jobs
 
 ```bash
-# Restart the worker
+# Restart the worker, then start it again
 docker compose exec -T laravel php artisan queue:restart
+make queue
 
-# In another terminal, start the worker
-docker compose exec -T laravel php artisan queue:work
-
-# Verify that the job was dispatched
+# Inspect failures
 docker compose exec -T laravel php artisan queue:failed
 ```
 
 ### "Class not found" error after creating new classes
 
 ```bash
-# Regenerate autoload
 docker compose exec -T laravel composer dump-autoload
 ```
 
 ### Emails are not sent (reports)
 
 ```bash
-# Verify Mailpit is running
-docker compose ps
-
-# Access Mailpit UI
-open http://localhost:8025
-
-# Check job logs
-docker compose exec -T laravel php artisan queue:work --verbose
+make status                  # is the mailpit service up?
+# then open http://localhost:8025 — Mailpit captures mail, it never delivers it
 ```
 
 ### Swagger is not generated correctly
 
 ```bash
-# Clear cache and regenerate
-docker compose exec -T laravel php artisan config:clear
-docker compose exec -T laravel php artisan route:clear
-docker compose exec -T laravel php artisan l5-swagger:generate
+make clean
+make swagger
 ```
 
-### Permission error in storage/
+### `the input device is not a TTY` on Windows
 
-```bash
-# Give permissions (Linux/Mac)
-docker compose exec -T laravel php artisan storage:link
-sudo chmod -R 777 storage bootstrap/cache
-
-# Windows: Run as Administrator or adjust permissions in properties
-```
+Use the make targets: they all run `docker compose exec -T`. A bare `docker compose exec` without `-T`
+fails from PowerShell.
 
 ---
 
@@ -1250,7 +1273,7 @@ sudo chmod -R 777 storage bootstrap/cache
 ✅ **Senior Architecture:** Hexagonal + DDD correctly implemented
 ✅ **Complex SQL:** GROUP_CONCAT, JOINs, multiple aggregations
 ✅ **Patterns:** Extensible Chain of Responsibility
-✅ **Testing:** unit, integration and acceptance layers, with explicit authentication
+✅ **Testing:** 136 tests with 668 assertions covering critical cases
 ✅ **Implemented Scalability:** Queues + Idempotency with `ShouldBeUnique`
 ✅ **Documentation:** Swagger + Complete README with diagrams
 
@@ -1264,24 +1287,24 @@ runs them) and [`compose.prod.yaml`](compose.prod.yaml) with its own MySQL,
 Redis, queue worker and scheduler.
 
 **No service publishes a host port.** A shared [Traefik](deploy/traefik/)
-instance terminates TLS for every app on the box and reaches this one over a
+instance terminates TLS for every app on the box and reaches this one over an
 `edge` Docker network; the database and cache stay on a private `internal`
-network. That is not just tidiness: Docker writes published ports straight into
+network. That is not tidiness: Docker writes published ports straight into
 iptables ahead of `ufw`, so a published port is reachable from the internet even
-when the firewall says otherwise.
+when the firewall reports it denied.
 
-Full instructions — host setup, the shared proxy, verification curls, redeploys,
+Full instructions — host setup, the shared proxy, verification, redeploys,
 backups and the gotchas of running several apps on one box — are in
 **[DEPLOY.md](DEPLOY.md)**. Start from
 [`.env.production.example`](.env.production.example) rather than `.env.example`.
 
 ### Environment variables
 
-Beyond the standard Laravel set, this project reads:
+Beyond the standard Laravel set:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `HEALTHCHECK_TOKEN` | — | **Required outside local/testing.** Shared secret for `/api/health` and `/api/readiness`; the probes fail closed without it. Generate with `openssl rand -hex 32` |
+| `HEALTHCHECK_TOKEN` | — | **Required outside local/testing.** Shared secret for `/api/health` and `/api/readiness`; the probes fail closed without it. `openssl rand -hex 32` |
 | `API_RATE_LIMIT_PER_MINUTE` | `60` | Requests per minute on the authenticated API, keyed by token owner. Raise only for load testing |
 | `CORS_ALLOWED_ORIGINS` | *(empty)* | Comma-separated browser origins. Empty means no browser client; server-to-server callers are unaffected |
 | `SENTRY_LARAVEL_DSN` | *(empty)* | Enables error reporting. Empty disables it entirely |
@@ -1291,23 +1314,22 @@ Beyond the standard Laravel set, this project reads:
 | `LOG_ACCESS_DAYS` | `7` | Retention for the access log |
 | `OVERDUE_ESCALATION_DAYS` | `3` | Days overdue before the scheduler escalates to admins |
 | `AI_PROVIDER` | `openai` | `openai` or `gemini`; selects the screening adapter |
-| `APP_DOMAIN` | — | Hostname Traefik routes to this app (production Docker stack only) |
-| `DB_ROOT_PASSWORD` | — | Used only to initialise the MySQL container; the app never uses it |
+| `APP_DOMAIN` | — | Hostname Traefik routes to this app (production stack only) |
+| `DB_ROOT_PASSWORD` | — | Initialises the MySQL container; the app never uses it |
 
 > All of these are read through `config()`, never `env()` at runtime. Once
-> `php artisan config:cache` runs in production, `.env` is no longer read and an
+> `php artisan config:cache` runs in production `.env` is no longer read, and an
 > `env()` call outside `config/` silently returns its default.
 
-Three standard Laravel variables also need the real domain, not just the deploy host:
-`APP_URL` (it builds the `cv_download_url` returned by `/summary` and the links in notification
-emails), `L5_SWAGGER_CONST_HOST` (otherwise Swagger's "Try it out" fires at localhost) and
-`MAIL_FROM_ADDRESS`.
+Three standard Laravel variables also need the real domain, not just the deploy
+host: `APP_URL` (it builds the `cv_download_url` returned by `/summary` and the
+links in notification emails), `L5_SWAGGER_CONST_HOST` (otherwise Swagger's
+"Try it out" fires at localhost) and `MAIL_FROM_ADDRESS`.
 
-**On CORS.** It is a browser protection, not an API access control: `curl`, Postman and
-server-to-server callers ignore it entirely, so leaving `CORS_ALLOWED_ORIGINS` empty costs nothing
-and blocks nothing. Set it only when a browser front-end on a *different* origin needs to read
-responses. A browser client using cookies instead of Bearer tokens is a different setup again — it
-would additionally need `supports_credentials` and `SANCTUM_STATEFUL_DOMAINS`.
+**On CORS.** It is a browser protection, not an API access control: `curl`,
+Postman and server-to-server callers ignore it entirely, so leaving
+`CORS_ALLOWED_ORIGINS` empty costs nothing and blocks nothing. Set it only when
+a browser front-end on a *different* origin needs to read responses.
 
 ---
 
@@ -1332,10 +1354,20 @@ would additionally need `supports_credentials` and `SANCTUM_STATEFUL_DOMAINS`.
 For questions about implementation, architectural decisions, or technical details:
 
 1. **Review source code**: The structure is self-documented
-2. **Consult tests**: the suite documents expected behaviour
+2. **Consult tests**: 136 tests document expected behavior
 3. **Swagger**: Interactive API documentation
 
 > The project architecture is designed to be **self-explanatory** through clean code, comprehensive tests, and integrated documentation.
+
+---
+
+## 📄 License
+
+Copyright © 2025–2026 Cristian López.
+
+This project is licensed under the **MIT License** — see [LICENSE](./LICENSE) for the full text. In
+short: use it, modify it and ship it in anything you like, commercial or not, as long as the copyright
+notice travels with it. No warranty.
 
 ---
 
