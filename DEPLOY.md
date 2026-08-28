@@ -170,7 +170,75 @@ which is what Nginx on the same host sends. Without that, every request would
 look like it came from the proxy and the per-IP rate limits would collapse into
 one shared bucket.
 
-## 7. Queue worker and scheduler
+⚠️ **Behind Cloudflare or any external proxy**, the forwarded request arrives from a *public* address
+that is not in those ranges, so the app falls back to treating the CDN edge as the client: rate limits
+collapse again and the access log records the edge IP. Add the provider's published ranges to
+`trustProxies(at: [...])` in `bootstrap/app.php`. Never use `at: '*'` on a host that is also reachable
+directly — that lets anyone spoof their IP with a forged `X-Forwarded-For`.
+
+⚠️ **HSTS is sent with `includeSubDomains`** and a two-year max-age. If you have (or later add) a
+subdomain that is not served over HTTPS, browsers that have seen this header will refuse to reach it.
+Drop `includeSubDomains` in `SecurityHeaders` if that is a problem, and only consider `preload` once
+you are certain — preload lists are slow to leave.
+
+Add a catch-all server block so requests with an unknown `Host` header (scanners, or someone pointing
+their own domain at your IP) are dropped rather than served your app:
+
+```nginx
+server {
+    listen 80 default_server;
+    listen 443 ssl default_server;
+    server_name _;
+    ssl_certificate     /etc/letsencrypt/live/<your-domain>/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/<your-domain>/privkey.pem;
+    return 444;
+}
+```
+
+## 7. Network exposure
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw enable
+sudo ufw status verbose
+```
+
+Verify from **outside** the box that only 22/80/443 answer:
+
+```bash
+# from another machine
+nmap -Pn -p 22,80,443,3306,6379,8025 <your-server-ip>
+```
+
+`3306`, `6379` and `8025` must all be `closed` or `filtered`.
+
+### If you deploy with Docker Compose instead of the native install above
+
+⚠️ **`ufw` does not protect published container ports.** Docker writes its rules straight into the
+`DOCKER` iptables chain, which is evaluated before ufw's, so a container publishing `3306:3306` is
+reachable from the internet even while `ufw status` claims the port is denied. `compose.yaml` in this
+repo publishes MySQL (3306), Redis (6379) and Mailpit (8025) for local development.
+
+Bind those to loopback before starting the stack:
+
+```yaml
+# compose.override.yaml on the server
+services:
+  mysql:
+    ports: ['127.0.0.1:3306:3306']
+  redis:
+    ports: ['127.0.0.1:6379:6379']
+  mailpit:
+    ports: []          # Mailpit captures mail and never sends it — do not run it in production
+```
+
+Then re-run the `nmap` check above. An exposed Redis with no `requirepass` is compromised within
+minutes of being reachable.
+
+## 8. Queue worker and scheduler
 
 Queue-backed endpoints (`POST /api/v1/candidates/{id}/analyze`,
 `POST /api/v1/evaluators/report`) return `202` and never complete without a
@@ -204,7 +272,7 @@ sudo crontab -u www-data -e
 # * * * * * cd /var/www/candidacy && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-## 8. Verify the deploy
+## 9. Verify the deploy
 
 ```bash
 TOKEN=<HEALTHCHECK_TOKEN>
@@ -231,7 +299,7 @@ curl -s https://<your-domain>/api/v1/candidates \
 Swagger UI is at `https://<your-domain>/api/documentation` and requires an
 admin bearer token whenever `APP_ENV` is not `local`.
 
-## 9. Redeploying
+## 10. Redeploying
 
 ```bash
 cd /var/www/candidacy
