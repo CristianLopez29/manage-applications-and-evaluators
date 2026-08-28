@@ -4,12 +4,20 @@ namespace Src\Candidates\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Src\Candidates\Application\DTOs\CandidateListItemResponse;
 use Src\Candidates\Application\UseCases\ListCandidates;
+use Src\Evaluators\Domain\Enums\AssignmentStatus;
 use Symfony\Component\HttpFoundation\Response;
 
 class ListCandidatesController
 {
+    /**
+     * "unassigned" is not an AssignmentStatus: it means the candidate has no
+     * active assignment at all, which the use case resolves separately.
+     */
+    private const UNASSIGNED_FILTER = 'unassigned';
+
     public function __construct(
         private readonly ListCandidates $useCase
     ) {
@@ -108,18 +116,43 @@ class ListCandidatesController
      */
     public function __invoke(Request $request): JsonResponse
     {
-        $status = $request->query('status');
-        $minExperience = $request->query('experience_min') ? (int)$request->query('experience_min') : null;
-        $emailContains = $request->query('email');
-        $primarySpecialty = $request->query('specialty');
+        $filters = $request->validate([
+            'status' => ['nullable', 'string', Rule::in($this->allowedStatusFilters())],
+            'experience_min' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'email' => ['nullable', 'string', 'max:255'],
+            'specialty' => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $minExperience = $filters['experience_min'] ?? null;
 
         $result = $this->useCase->execute(
-            $status,
-            $minExperience,
-            $emailContains,
-            $primarySpecialty
+            $this->stringOrNull($filters, 'status'),
+            is_numeric($minExperience) ? (int) $minExperience : null,
+            $this->stringOrNull($filters, 'email'),
+            $this->stringOrNull($filters, 'specialty')
         );
 
         return new JsonResponse(['data' => array_values($result)], Response::HTTP_OK);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function allowedStatusFilters(): array
+    {
+        return [
+            self::UNASSIGNED_FILTER,
+            ...array_column(AssignmentStatus::cases(), 'value'),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function stringOrNull(array $filters, string $key): ?string
+    {
+        $value = $filters[$key] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
     }
 }

@@ -8,11 +8,20 @@ use Src\Evaluators\Application\UseCases\GetConsolidatedEvaluators;
 use Src\Evaluators\Application\DTOs\EvaluatorWithCandidatesDTO;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Src\Evaluators\Domain\Criteria\ConsolidatedListCriteria;
 use Symfony\Component\HttpFoundation\Response;
 
 class GetConsolidatedEvaluatorsController
 {
+    private const DEFAULT_PER_PAGE = 15;
+
+    /**
+     * An uncapped per_page let a single request scan the whole join and, since
+     * per_page is part of the cache key, mint unbounded distinct cache entries.
+     */
+    private const MAX_PER_PAGE = 100;
+
     public function __construct(
         private readonly GetConsolidatedEvaluators $useCase
     ) {
@@ -156,55 +165,36 @@ class GetConsolidatedEvaluatorsController
      */
     public function __invoke(Request $request): JsonResponse
     {
-        $createdFrom = null;
-        $createdTo = null;
-        if ($request->filled('created_from')) {
-            try {
-                $val = $request->input('created_from');
-                if (is_string($val)) {
-                    $createdFrom = new \DateTimeImmutable($val);
-                }
-            } catch (\Exception $e) {
-                $createdFrom = null;
-            }
-        }
-        if ($request->filled('created_to')) {
-            try {
-                $val = $request->input('created_to');
-                if (is_string($val)) {
-                    $createdTo = new \DateTimeImmutable($val);
-                }
-            } catch (\Exception $e) {
-                $createdTo = null;
-            }
-        }
-
-        $search = $request->input('search');
-        $specialty = $request->input('specialty');
-        $candidateEmailContains = $request->input('candidate_email_contains');
-        $sortBy = $request->input('sort_by', 'average_experience');
-        $sortDirection = $request->input('sort_direction', 'desc');
-        $page = $request->input('page', 1);
-        $perPage = $request->input('per_page', 15);
-        $minAverageExperience = $request->input('min_average_experience');
-        $maxAverageExperience = $request->input('max_average_experience');
-        $minTotalAssigned = $request->input('min_total_assigned');
-        $maxTotalAssigned = $request->input('max_total_assigned');
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'specialty' => ['nullable', 'string', 'max:100'],
+            'candidate_email_contains' => ['nullable', 'string', 'max:255'],
+            'sort_by' => ['nullable', 'string', 'max:60'],
+            'sort_direction' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:' . self::MAX_PER_PAGE],
+            'min_average_experience' => ['nullable', 'numeric'],
+            'max_average_experience' => ['nullable', 'numeric'],
+            'min_total_assigned' => ['nullable', 'integer', 'min:0'],
+            'max_total_assigned' => ['nullable', 'integer', 'min:0'],
+            'created_from' => ['nullable', 'date'],
+            'created_to' => ['nullable', 'date'],
+        ]);
 
         $criteria = new ConsolidatedListCriteria(
-            search: is_string($search) ? $search : null,
-            sortBy: is_string($sortBy) ? $sortBy : 'average_experience',
-            sortDirection: is_string($sortDirection) ? $sortDirection : 'desc',
-            page: is_numeric($page) ? (int) $page : 1,
-            perPage: is_numeric($perPage) ? (int) $perPage : 15,
-            specialtyFilter: is_string($specialty) ? $specialty : null,
-            minAverageExperience: is_numeric($minAverageExperience) ? (float) $minAverageExperience : null,
-            maxAverageExperience: is_numeric($maxAverageExperience) ? (float) $maxAverageExperience : null,
-            minTotalAssigned: is_numeric($minTotalAssigned) ? (int) $minTotalAssigned : null,
-            maxTotalAssigned: is_numeric($maxTotalAssigned) ? (int) $maxTotalAssigned : null,
-            candidateEmailContains: is_string($candidateEmailContains) ? $candidateEmailContains : null,
-            createdFrom: $createdFrom,
-            createdTo: $createdTo
+            search: $this->stringOrNull($filters, 'search'),
+            sortBy: $this->stringOrNull($filters, 'sort_by') ?? 'average_experience',
+            sortDirection: $this->stringOrNull($filters, 'sort_direction') ?? 'desc',
+            page: $this->intOr($filters, 'page', 1),
+            perPage: $this->intOr($filters, 'per_page', self::DEFAULT_PER_PAGE),
+            specialtyFilter: $this->stringOrNull($filters, 'specialty'),
+            minAverageExperience: $this->floatOrNull($filters, 'min_average_experience'),
+            maxAverageExperience: $this->floatOrNull($filters, 'max_average_experience'),
+            minTotalAssigned: $this->intOrNull($filters, 'min_total_assigned'),
+            maxTotalAssigned: $this->intOrNull($filters, 'max_total_assigned'),
+            candidateEmailContains: $this->stringOrNull($filters, 'candidate_email_contains'),
+            createdFrom: $this->dateOrNull($filters, 'created_from'),
+            createdTo: $this->dateOrNull($filters, 'created_to')
         );
 
         $paginator = $this->useCase->execute($criteria);
@@ -218,5 +208,53 @@ class GetConsolidatedEvaluatorsController
                 'total' => $paginator->total(),
             ]
         ], Response::HTTP_OK);
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function stringOrNull(array $filters, string $key): ?string
+    {
+        $value = $filters[$key] ?? null;
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function intOrNull(array $filters, string $key): ?int
+    {
+        $value = $filters[$key] ?? null;
+
+        return is_numeric($value) ? (int) $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function intOr(array $filters, string $key, int $fallback): int
+    {
+        return $this->intOrNull($filters, $key) ?? $fallback;
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function floatOrNull(array $filters, string $key): ?float
+    {
+        $value = $filters[$key] ?? null;
+
+        return is_numeric($value) ? (float) $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function dateOrNull(array $filters, string $key): ?\DateTimeImmutable
+    {
+        $value = $this->stringOrNull($filters, $key);
+
+        return $value === null ? null : new \DateTimeImmutable($value);
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Middleware\EnsureRole;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Sentry\Laravel\Integration;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -49,6 +50,17 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        // sentry-laravel deliberately removes its own error listeners and
+        // expects the application to opt in here. Without this call the SDK
+        // boots, reads the DSN and reports nothing at all.
+        Integration::handles($exceptions);
+
+        // Domain exceptions are business outcomes mapped to 4xx below, not
+        // incidents: reporting them would bury real 5xx under validation noise.
+        $exceptions->dontReport([
+            \DomainException::class,
+        ]);
+
         // Map all DomainExceptions to HTTP 422 Unprocessable Entity
         $exceptions->render(function (\DomainException $e, Request $request) {
             if ($request->expectsJson()) {
