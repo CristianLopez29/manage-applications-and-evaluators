@@ -2,7 +2,6 @@
 
 namespace Src\Evaluators;
 
-use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +24,10 @@ use Src\Evaluators\Infrastructure\Controllers\RequestEvaluatorsReportController;
 use Src\Evaluators\Infrastructure\Controllers\StartAssignmentProgressController;
 use Src\Evaluators\Infrastructure\Controllers\UnassignCandidateController;
 use Src\Evaluators\Infrastructure\Listeners\InvalidateEvaluatorCache;
+use Src\Evaluators\Infrastructure\Listeners\LogCandidateAssignment;
+use Src\Evaluators\Infrastructure\Listeners\RecordAssignmentHistory;
+use Src\Evaluators\Infrastructure\Listeners\SendAssignmentNotifications;
+use Src\Evaluators\Infrastructure\Listeners\SendAssignmentStatusChangeNotifications;
 use Src\Evaluators\Infrastructure\Persistence\EloquentAssignmentHistoryRepository;
 use Src\Evaluators\Infrastructure\Persistence\EloquentAssignmentRepository;
 use Src\Evaluators\Infrastructure\Persistence\EloquentEvaluatorRepository;
@@ -54,9 +57,15 @@ class Bindings extends ServiceProvider
         );
     }
 
-    public function boot(Router $router): void
+    public function boot(): void
     {
+        Event::listen(CandidateAssigned::class, LogCandidateAssignment::class);
+        Event::listen(CandidateAssigned::class, SendAssignmentNotifications::class);
+        Event::listen(CandidateAssigned::class, [RecordAssignmentHistory::class, 'handleAssigned']);
         Event::listen(CandidateAssigned::class, InvalidateEvaluatorCache::class);
+
+        Event::listen(AssignmentStatusChanged::class, SendAssignmentStatusChangeNotifications::class);
+        Event::listen(AssignmentStatusChanged::class, [RecordAssignmentHistory::class, 'handleStatusChanged']);
         Event::listen(AssignmentStatusChanged::class, InvalidateEvaluatorCache::class);
 
         Route::prefix('api/v1')->middleware(['auth:sanctum', 'throttle:60,1', 'request.context'])->group(function () {

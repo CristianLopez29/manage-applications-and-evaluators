@@ -2,9 +2,10 @@
 
 namespace Src\Candidates;
 
-use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Src\Candidates\Domain\Events\CandidateRegistered;
 use Src\Candidates\Domain\Repositories\CandidateEvaluationRepository;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Candidates\Domain\Services\AiScreeningService;
@@ -16,6 +17,7 @@ use Src\Candidates\Infrastructure\Controllers\GetCandidateEvaluationController;
 use Src\Candidates\Infrastructure\Controllers\GetCandidateSummaryController;
 use Src\Candidates\Infrastructure\Controllers\ListCandidatesController;
 use Src\Candidates\Infrastructure\Controllers\RegisterCandidacyController;
+use Src\Candidates\Infrastructure\Listeners\LogCandidateAction;
 use Src\Candidates\Infrastructure\Persistence\EloquentCandidateEvaluationRepository;
 use Src\Candidates\Infrastructure\Persistence\EloquentCandidateRepository;
 
@@ -44,8 +46,10 @@ class Bindings extends ServiceProvider
         });
     }
 
-    public function boot(Router $router): void
+    public function boot(): void
     {
+        Event::listen(CandidateRegistered::class, LogCandidateAction::class);
+
         Route::prefix('api/v1')->middleware(['auth:sanctum', 'throttle:60,1', 'request.context'])->group(function () {
             Route::post('/candidates', RegisterCandidacyController::class)->middleware('role:admin,candidate');
             Route::get('/candidates', ListCandidatesController::class)->middleware('role:admin');
