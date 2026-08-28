@@ -12,6 +12,13 @@ class SecurityHeadersTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAsAdmin();
+    }
+
     #[Test]
     public function should_send_the_baseline_hardening_headers(): void
     {

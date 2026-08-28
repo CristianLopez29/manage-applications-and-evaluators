@@ -17,6 +17,13 @@ class QueryParameterValidationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAsAdmin();
+    }
+
     #[Test]
     public function should_reject_an_array_where_a_status_string_is_expected(): void
     {
