@@ -21,9 +21,10 @@ APP := $(DC) exec -T laravel
 .PHONY: help
 help:
 	@echo "Stack:    up down restart status logs bash"
-	@echo "Quality:  test test-f filter=X test-suite suite=X analyse quality"
+	@echo "Quality:  test test-f filter=X test-suite suite=X analyse audit quality"
 	@echo "Data:     migrate seed migrate-seed fresh"
 	@echo "Runtime:  queue schedule swagger storage-link clean"
+	@echo "Perf:     load-test"
 	@echo "Info:     urls"
 
 # --- Stack ------------------------------------------------------------------
@@ -75,9 +76,16 @@ test-suite:
 analyse:
 	$(APP) ./vendor/bin/phpstan analyse --memory-limit=2G
 
+# --abandoned=report lists abandoned packages without failing on them:
+# doctrine/annotations is abandoned upstream and pulled in transitively, so the
+# bare command would always exit non-zero. Real advisories still fail.
+.PHONY: audit
+audit:
+	$(APP) composer audit --abandoned=report
+
 # Everything CI blocks on, in CI order.
 .PHONY: quality
-quality: analyse test
+quality: analyse audit test
 
 # --- Data -------------------------------------------------------------------
 
@@ -121,6 +129,23 @@ storage-link:
 .PHONY: clean
 clean:
 	$(APP) php artisan optimize:clear
+
+# --- Performance ------------------------------------------------------------
+
+# Local only — never point this at the VPS. Raises the API rate limit for the
+# duration of the run, otherwise the scenario measures the limiter rather than
+# the application, and puts it back afterwards. Do not run a queue worker at the
+# same time: every registration queues a real AI screening call.
+#
+# MSYS_NO_PATHCONV stops Git Bash from mangling the volume path on Windows.
+.PHONY: load-test
+load-test:
+	@echo "API_RATE_LIMIT_PER_MINUTE=1000000" >> .env
+	@$(APP) php artisan config:clear >/dev/null
+	-MSYS_NO_PATHCONV=1 docker run --rm 		--network $$(basename $$(pwd) | tr -d '.')_sail 		-v "$$(pwd)/load-tests:/scripts" -w /scripts 		-e BASE_URL=http://laravel 		grafana/k6 run /scripts/candidacy-flow.js
+	@sed -i '/^API_RATE_LIMIT_PER_MINUTE=1000000$$/d' .env
+	@$(APP) php artisan config:clear >/dev/null
+	@echo "Rate limit restored. Artifacts in load-tests/results/"
 
 # --- Info -------------------------------------------------------------------
 
