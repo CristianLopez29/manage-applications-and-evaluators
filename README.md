@@ -2,7 +2,9 @@
 
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.4-blue.svg)](https://php.net)
-[![Tests](https://img.shields.io/badge/Tests-126%20passing-green.svg)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-136%20passing-green.svg)](#-testing)
+[![PHPStan](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg)](#code-quality--static-analysis)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](#-license)
 [![GitHub](https://img.shields.io/badge/Repository-GitHub-blue.svg)](https://github.com/CristianLopez29/manage-applications-and-evaluators)
 
 > Modular and scalable system for managing candidacies and evaluators, implemented with **Hexagonal Architecture**, **advanced design patterns**, and **software best practices**.
@@ -22,7 +24,7 @@
 - **Benefit:** I can replace Laravel with Symfony without touching business logic
 
 #### ✅ **Superior Testability**
-- 126 tests passing (comprehensive coverage)
+- 136 tests passing across unit, integration and acceptance layers
 - Unit tests do not require the framework
 - Fakes and mocks are trivial to implement
 - **Benefit:** Fast and reliable tests
@@ -44,8 +46,10 @@
 **DDD** principles were applied to model the domain:
 
 - **Entities:** `Candidate`, `Evaluator`, `CandidateAssignment`
-- **Value Objects:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
-- **Domain Events:** `CandidateRegistered` for audit logging
+- **Value Objects:** `Email`, `CV`, `YearsOfExperience`, `EvaluatorName`
+- **Enums:** `Specialty`, `AssignmentStatus`
+- **Domain Events:** `CandidateRegistered`, `CandidateAnalysisCompleted`, `CandidateAssigned`,
+  `AssignmentStatusChanged` — consumed by listeners for audit, notifications, history and cache invalidation
 - **Repositories:** Interfaces in Domain, implementations in Infrastructure
 - **DTOs:** Data transfer between layers without exposing entities
 
@@ -58,44 +62,54 @@
 ```
 src/
 ├── Candidates/              # Candidacy Module
+│   ├── Bindings.php         # DI bindings + module routes (ServiceProvider)
 │   ├── Domain/              # Pure business logic (no Laravel)
 │   │   ├── Candidate.php    # Domain Entity
 │   │   ├── ValueObjects/    # Email, CV, YearsOfExperience
 │   │   ├── Validators/      # Chain of Responsibility
 │   │   ├── Repositories/    # Interfaces (contracts)
-│   │   ├── Events/          # Domain Events
+│   │   ├── Services/        # AiScreeningService port
+│   │   ├── Events/          # CandidateRegistered, CandidateAnalysisCompleted
 │   │   └── Exceptions/      # Domain Exceptions
-│   ├── Application/         # Use Cases
-│   │   ├── RegisterCandidacyUseCase.php
-│   │   ├── GetCandidateSummaryUseCase.php
-│   │   └── DTO/             # Data Transfer Objects
+│   ├── Application/
+│   │   ├── UseCases/        # RegisterCandidacy, GetCandidateSummary, ListCandidates…
+│   │   ├── DTOs/            # Request/Response objects
+│   │   └── Transformers/    # Domain → DTO mapping
 │   └── Infrastructure/      # Technical implementations
 │       ├── Persistence/     # Eloquent Models & Repositories
-│       ├── Http/            # Controllers
-│       ├── Listeners/       # Event Listeners
-│       └── Providers/       # Service Providers
+│       ├── Controllers/     # Single-action HTTP controllers
+│       ├── Ai/              # OpenAI / Gemini screening adapters
+│       ├── Jobs/            # AnalyzeCandidateCvJob
+│       └── Listeners/       # Event Listeners
 │
 ├── Evaluators/              # Evaluators Module
+│   ├── Bindings.php
 │   ├── Domain/              # Pure business logic
 │   │   ├── Evaluator.php
 │   │   ├── CandidateAssignment.php
-│   │   ├── ValueObjects/    # Specialty, AssignmentStatus
+│   │   ├── ValueObjects/    # EvaluatorName
+│   │   ├── Enums/           # Specialty, AssignmentStatus
 │   │   ├── Repositories/    # Interfaces
+│   │   ├── Events/          # CandidateAssigned, AssignmentStatusChanged
 │   │   └── Criteria/        # Query criteria objects
-│   ├── Application/         # Use Cases
-│   │   ├── AssignCandidateUseCase.php
-│   │   ├── GetConsolidatedEvaluatorsUseCase.php
-│   │   └── DTO/
+│   ├── Application/
+│   │   ├── UseCases/        # AssignCandidateToEvaluator, GetConsolidatedEvaluators…
+│   │   ├── DTOs/
+│   │   ├── Ports/           # EvaluatorCachePort
+│   │   └── Transformers/
 │   └── Infrastructure/
 │       ├── Persistence/
-│       ├── Http/
-│       ├── Jobs/            # GenerateEvaluatorsReportJob
+│       ├── Controllers/
+│       ├── Cache/           # LaravelEvaluatorCache (tag-based)
+│       ├── Jobs/            # GenerateEvaluatorsReportJob, ProcessOverdueAssignmentsJob
 │       ├── Export/          # Excel exporters
+│       ├── Listeners/       # Audit, notifications, history, cache invalidation
 │       └── Notifications/   # Email notifications
 │
-└── Shared/                  # Code shared between modules
-    ├── Domain/
-    └── Infrastructure/
+└── Shared/                  # Shared kernel
+    ├── Domain/              # AggregateRoot, DomainEvent, DomainEventPublisher, AuditLogger
+    ├── Application/Ports/   # TransactionManager
+    └── Infrastructure/      # Laravel adapters for the ports above
 ```
 
 ### Conventions
@@ -103,10 +117,16 @@ src/
 - **Domain:** No external dependencies. Pure PHP.
 - **Application:** Orchestrates the domain. Must not contain business logic.
 - **Infrastructure:** Everything related to Laravel, databases, external APIs.
+- **Use Cases** expose a single `execute()`; **controllers** are single-action `__invoke`.
+- Each module's `Bindings.php` registers its ports → adapters *and* its routes, so a module is
+  self-contained: `routes/api.php` only holds cross-cutting endpoints (auth, health, reports).
 
 ---
 
 ## ⚡ Quick Start
+
+Everything runs through `make`, which wraps `docker compose`. Laravel Sail's `vendor/bin/sail` script is
+intentionally not used: it needs a POSIX shell and misbehaves on Windows.
 
 ```bash
 # 1. Clone and install dependencies
@@ -118,31 +138,36 @@ docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "$(pwd):/var/www/html" \
     -w /var/www/html \
-    laravelsail/php83-composer:latest \
+    laravelsail/php84-composer:latest \
     composer install --ignore-platform-reqs
 
 # 3. Setup environment
 cp .env.example .env
 
 # 4. Start services (MySQL, Redis, Mailpit)
-./vendor/bin/sail up -d
+make up
 
 # 5. Initialize database and storage
-./vendor/bin/sail artisan key:generate
-./vendor/bin/sail artisan storage:link
-./vendor/bin/sail artisan migrate:fresh --seed
+docker compose exec -T laravel php artisan key:generate
+make storage-link
+make fresh
 
 # 6. Generate Swagger docs
-./vendor/bin/sail artisan l5-swagger:generate
+make swagger
 
 # 7. Run tests
-./vendor/bin/sail artisan test
+make test
 ```
 
+`make help` lists every target; `make urls` prints the URLs below.
+
 **🌐 Services Available:**
-- **API**: http://localhost
-- **Swagger**: http://localhost/api/documentation
+- **API**: http://localhost:8080
+- **Swagger**: http://localhost:8080/api/documentation
 - **Mailpit** (emails): http://localhost:8025
+
+> **Ports.** `APP_PORT` defaults to `8080` and `VITE_PORT` to `5174` so the stack coexists with other
+> local Docker projects on ports 80/5173. Override per call: `make up APP_PORT=80`.
 
 **🐳 Database Connections (from host machine):**
 - **MySQL**: `127.0.0.1:3306` (only if you need to connect with external tools like TablePlus/DBeaver)
@@ -152,11 +177,11 @@ cp .env.example .env
   - **Note**: From the Laravel application use `DB_HOST=mysql` (inside Docker)
 - **Redis**: `127.0.0.1:6379` (inside Docker use `REDIS_HOST=redis`)
 
-**⚡ Start Queue Worker** (for Excel reports):
+**⚡ Start Queue Worker** (for Excel reports and AI screening):
 ```bash
-# Required for processing background jobs (Excel generation)
-# Ensure QUEUE_CONNECTION=redis in .env
-./vendor/bin/sail artisan queue:work
+# Required for processing background jobs; without it those endpoints
+# answer 202 and nothing ever completes. Ensure QUEUE_CONNECTION=redis in .env
+make queue
 ```
 
 ---
@@ -174,6 +199,9 @@ cp .env.example .env
 - [📡 API Endpoints](#-api-endpoints)
 - [🧪 Testing](#-testing)
 - [📦 Technologies](#-technologies)
+- [🛠️ Troubleshooting](#️-troubleshooting)
+- [🗺️ Roadmap](#️-roadmap-optional-improvements)
+- [📄 License](#-license)
 
 ---
 
@@ -307,31 +335,36 @@ readonly class Email {
 ### 1. Chain of Responsibility
 - **Location:** `src/Candidates/Domain/Validators/`
 - **Usage:** Extensible candidacy validation
-- **Test:** `tests/Unit/Candidates/Domain/Validators/`
+- **Test:** `tests/Candidates/Unit/`
 
 ### 2. Repository Pattern
 - **Location:** Interfaces in `Domain/Repositories/`, implementations in `Infrastructure/Persistence/`
 - **Usage:** Persistence abstraction
-- **Test:** `tests/Feature/` with real database
+- **Test:** `tests/{Module}/Integration/` against the real database
 
 ### 3. Data Transfer Object (DTO)
-- **Location:** `Application/DTO/`
+- **Location:** `Application/DTOs/`
 - **Example:** `EvaluatorWithCandidatesDTO`, `CandidateSummaryDTO`
 - **Usage:** Transfer data between layers without exposing entities
 
 ### 4. Value Object
 - **Location:** `Domain/ValueObjects/`
-- **Examples:** `Email`, `CV`, `YearsOfExperience`, `Specialty`, `AssignmentStatus`
+- **Examples:** `Email`, `CV`, `YearsOfExperience`, `EvaluatorName`
 - **Usage:** Encapsulate validation and type safety
 
 ### 5. Domain Events
-- **Location:** `src/Candidates/Domain/Events/`
-- **Event:** `CandidateRegistered`
-- **Listener:** `LogCandidateAction`
-- **Usage:** Decoupled audit logging
+- **Location:** `src/{Module}/Domain/Events/`
+- **Events:** `CandidateRegistered`, `CandidateAssigned`, `AssignmentStatusChanged`
+- **Listeners:** `LogCandidateAction`, `SendAssignmentNotifications`, `RecordAssignmentHistory`,
+  `InvalidateEvaluatorCache` — all registered in the owning module's `Bindings::boot()`
+- **Usage:** Decoupled audit logging, notifications, history and cache invalidation
 
-### 6. Strategy Pattern (implicit)
-- In validators: each validator is a validation strategy
+### 6. Ports & Adapters beyond persistence
+- **`AiScreeningService`** (Domain) → `OpenAiScreeningAdapter` / `GeminiScreeningAdapter`, selected at
+  runtime by `AI_PROVIDER` — the Strategy pattern applied to an external service
+- **`EvaluatorCachePort`** (Application) → `LaravelEvaluatorCache`, so the use case never sees `Cache::`
+- **`TransactionManager`** / **`DomainEventPublisher`** (Shared) → keep `DB::` and the `Event` facade
+  out of the Application layer
 
 ---
 
@@ -362,7 +395,7 @@ class GenerateEvaluatorsReportJob implements ShouldQueue
 
 **How to run:**
 ```bash
-./vendor/bin/sail artisan queue:work
+make queue
 ```
 
 #### 2. Idempotency
@@ -426,7 +459,9 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 - Readiness: `/api/readiness`
   - In production, requires `X-Health-Check-Token` header matching `HEALTHCHECK_TOKEN`
   - Performs database and cache checks and returns a JSON with `status`, `checks`, and `time`
+
 ### ✅ Additional Implemented Infrastructure
+
 #### 6. Monitoring (Sentry)
 
 **Status:** ✅ Implemented
@@ -451,7 +486,7 @@ class GenerateEvaluatorsReportJob implements ShouldQueue, ShouldBeUnique
 - Business resources are served under the `/api/v1` prefix (`/api/v1/candidates`, `/api/v1/evaluators`, …).
 - Cross-cutting infrastructure endpoints (`/api/login`, `/api/health`, `/api/readiness`) are intentionally kept unversioned, so the versioned contract covers only the business API and can evolve to `/api/v2` without disrupting auth or health probes.
 
-#### 3. Cache
+#### 9. Cache
 
 **Status:** ✅ **Implemented** (active, event-driven invalidation)
 
@@ -471,7 +506,7 @@ Cache::tags(['evaluators'])->flush(); // on CandidateAssigned / AssignmentStatus
 Invalidation is event-driven via the `InvalidateEvaluatorCache` listener — no
 coupling in the use cases.
 
-#### 4. Concurrency (Pessimistic Locking)
+#### 10. Concurrency (Pessimistic Locking)
 
 **Status:** ✅ **Implemented**
 
@@ -553,7 +588,7 @@ ORDER BY avg_experience DESC
 - Docker Desktop installed
 - Git
 
-### Installation with Docker (Laravel Sail)
+### Installation with Docker
 
 ```bash
 # 1. Clone repository
@@ -565,41 +600,58 @@ docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "$(pwd -W):/var/www/html" \
     -w //var/www/html \
-    laravelsail/php83-composer:latest \
+    laravelsail/php84-composer:latest \
     composer install --ignore-platform-reqs
 
 # 3. Copy environment file
 cp .env.example .env
 
 # 4. Start services (MySQL, Redis, Mailpit)
-./vendor/bin/sail up -d
+make up
 
 # 5. Generate application key
-./vendor/bin/sail artisan key:generate
+docker compose exec -T laravel php artisan key:generate
 
 # 6. Run migrations and seeders
-./vendor/bin/sail artisan migrate:fresh --seed
+make fresh
 
 # 7. Generate Swagger documentation
-./vendor/bin/sail artisan l5-swagger:generate
+make swagger
 ```
+
+### Make Targets
+
+| Target | Description |
+|--------|-------------|
+| `make up` / `make down` / `make restart` | Start / stop the stack |
+| `make status` / `make logs` / `make bash` | Container state, app logs, shell into the container |
+| `make test` | Full test suite |
+| `make test-f filter=AssignCandidateTest` | One test class or method |
+| `make test-suite suite=Evaluators` | One suite (`Candidates`, `Evaluators`, `Auth`, `Security`, `Shared`) |
+| `make analyse` | PHPStan level 9 |
+| `make quality` | Both CI gates: `analyse` + `test` |
+| `make migrate` / `make seed` / `make fresh` | Schema and demo data |
+| `make queue` / `make schedule` | Queue worker / scheduler |
+| `make swagger` / `make storage-link` / `make clean` | OpenAPI docs, storage symlink, cache clear |
+| `make urls` | Service URLs and the seeded login |
 
 ### Services Available
 
 | Service | URL | Description |
 |----------|-----|-------------|
-| **API** | http://localhost | Main REST API |
-| **Swagger** | http://localhost/api/documentation | Interactive documentation |
+| **API** | http://localhost:8080 | Main REST API |
+| **Swagger** | http://localhost:8080/api/documentation | Interactive documentation |
+| **Telescope** | http://localhost:8080/telescope | Local debugging (`TELESCOPE_ENABLED=true`) |
 | **Mailpit** | http://localhost:8025 | Email viewer (for notifications) |
 | **MySQL** | localhost:3306 | Database (user: `sail`, pass: `password`) |
 | **Redis** | localhost:6379 | Cache and queues |
 
 ### Run Queue Worker (Important)
 
-To process report generation jobs:
+To process report generation and AI screening jobs:
 
 ```bash
-./vendor/bin/sail artisan queue:work
+make queue
 ```
 
 > **Note:** In production use Supervisor to keep the worker running.
@@ -608,37 +660,35 @@ To process report generation jobs:
 
 ```bash
 # All tests
-./vendor/bin/sail artisan test
+make test
 
-# With coverage
-./vendor/bin/sail artisan test --coverage
+# One suite (Candidates, Evaluators, Auth, Security, Shared)
+make test-suite suite=Evaluators
 
-# Only unit
-./vendor/bin/sail artisan test --testsuite Unit
-
-# Only feature
-./vendor/bin/sail artisan test --testsuite Feature
-
-# Specific test
-./vendor/bin/sail artisan test --filter GetConsolidatedEvaluatorsTest
+# Specific test class or method
+make test-f filter=GetConsolidatedEvaluatorsTest
 ```
+
+The suite runs against the **MySQL container**, not SQLite: the consolidated query is raw MySQL
+(`GROUP_CONCAT ... SEPARATOR`) and the assignment lock is a real `SELECT ... FOR UPDATE`, so `make up`
+must have run first. `phpunit.xml` pins `DB_CONNECTION=mysql` to keep the engine from drifting with `.env`.
 
 ### Code Quality & Static Analysis
 
 This project adheres to strict type safety standards (**PHPStan Level 9**).
 
 ```bash
-# Run PHPStan Analysis via Sail
-./vendor/bin/sail php ./vendor/bin/phpstan analyse
+make analyse
 ```
 
 ### Test Data (Seeders)
 
-The command `migrate:fresh --seed` creates:
+`make fresh` (`migrate:fresh --seed`) creates:
 
 - 20 candidates with different experience levels
-- 5 evaluators (backend, frontend, fullstack, devops, mobile)
+- 5 evaluators (`Backend`, `Frontend`, `Fullstack`, `DevOps`, `Mobile`)
 - ~15-20 assignments with varied statuses
+- An admin user to log in with: `test@example.com` / `password`
 
 ---
 
@@ -647,7 +697,8 @@ The command `migrate:fresh --seed` creates:
 ### Candidates
 
 #### `POST /api/v1/candidates`
-Register new candidacy.
+Register new candidacy. Accepts the CV as text (`cv`) **or** as an uploaded PDF (`cv_file`,
+`multipart/form-data`); at least one of the two is required.
 
 **Body:**
 ```json
@@ -655,11 +706,15 @@ Register new candidacy.
   "name": "John Doe",
   "email": "john@example.com",
   "years_of_experience": 5,
-  "cv_content": "Full Stack Developer with 5 years..."
+  "cv": "Full Stack Developer with 5 years...",
+  "primary_specialty": "Backend"
 }
 ```
 
-**Response:** `201 Created`
+**Response:** `201 Created` — the body reports whether the AI screening was queued
+(`"analysis_status": "processing"` or `"failed_to_queue"`).
+
+Registering with an existing email updates that candidate instead of creating a duplicate.
 
 ---
 
@@ -741,11 +796,12 @@ Register new evaluator.
 {
   "name": "Mary Gonzalez",
   "email": "mary@example.com",
-  "specialty": "backend"
+  "specialty": "Backend"
 }
 ```
 
-**Valid Specialties:** `backend`, `frontend`, `fullstack`, `devops`, `mobile`
+**Valid Specialties** (case-sensitive, from the `Specialty` enum): `Backend`, `Frontend`, `Fullstack`,
+`DevOps`, `Mobile`, `QA`, `Data`, `Security`
 
 ---
 
@@ -801,7 +857,8 @@ Consolidated list with complex SQL (GROUP_CONCAT, JOIN, AVG, COUNT).
 ---
 
 #### `POST /api/v1/evaluators/{evaluatorId}/assign-candidate`
-Assign candidate to evaluator.
+Assign candidate to evaluator. The candidate's specialty must match the evaluator's, and the evaluator
+must be below `Evaluator::MAX_CONCURRENT_CANDIDATES`.
 
 **Body:**
 ```json
@@ -810,7 +867,8 @@ Assign candidate to evaluator.
 }
 ```
 
-**Response:** `201 Created`
+**Response:** `200 OK` · `404` if the evaluator does not exist · `409` if the candidate is already
+assigned, the evaluator is at capacity, or the specialties do not match
 
 ---
 
@@ -915,35 +973,50 @@ The report is generated in the background and sent by email when ready.
 
 ### Coverage
 
-- **Total:** 126 tests passing
-- **Assertions:** 623
-- **Feature:** Expanded integration coverage
-  - Candidates endpoints
-  - Evaluators endpoints (including status transitions, reassign, unassign)
-  - Audit logging
-  - Email notifications (assignment, status change, overdue/escalation)
-  - Permissions cascade (admin/evaluator/candidate)
+- **Total:** 136 passing, 668 assertions (plus 1 opt-in test skipped by default, see below)
+- **Layers:** Unit (domain objects, no DB) · Integration (listeners, jobs, notifications, query counts
+  against the real DB) · Acceptance (full HTTP round trip through the kernel)
+- **Covered:** candidate and evaluator endpoints, status transitions, reassign/unassign, audit logging,
+  email notifications (assignment, status change, overdue/escalation), permissions cascade
+  (admin/evaluator/candidate), authentication, rate limiting and SQL-injection resilience
+
+```
+tests/
+├── Auth/Acceptance/          # Role gates and permission cascade
+├── Candidates/{Unit,Integration,Acceptance}/
+├── Evaluators/{Unit,Integration,Acceptance}/
+├── Security/Acceptance/      # Unauthenticated access, throttling, SQLi, data exposure, tokens
+├── Shared/{Unit,Integration}/
+└── TestCase.php
+```
+
+Each top-level directory is a `<testsuite>` in `phpunit.xml`;
+`tests/Shared/Unit/TestSuiteCoverageTest.php` fails if a directory is missing from that list, so a new
+test folder cannot silently go unexecuted.
+
+**Authentication in tests is explicit.** `TestCase` logs nobody in; a test that needs an admin calls
+`$this->actingAsAdmin()`. That is what makes `tests/Security/Acceptance/UnauthenticatedAccessTest.php`
+possible — with an ambient login in `setUp()`, a 401 cannot be asserted at all.
 
 ### Featured Tests
 
 **Chain of Responsibility:**
 ```php
-tests/Unit/Candidates/Domain/Validators/
-├── MinimumExperienceValidatorTest.php (4 tests)
-├── RequiredCVValidatorTest.php (2 tests)
-└── ValidEmailValidatorTest.php (2 tests)
+tests/Candidates/Unit/
+├── MinimumExperienceValidatorTest.php
+├── RequiredCVValidatorTest.php
+└── ValidEmailValidatorTest.php
 ```
 
 **Complex Endpoints:**
 ```php
-tests/Feature/Evaluators/GetConsolidatedEvaluatorsTest.php
-└── should_return_consolidated_list_of_evaluators_and_candidates
-    // Verifies SQL with GROUP_CONCAT, filters, pagination
+tests/Evaluators/Acceptance/GetConsolidatedEvaluatorsTest.php
+└── 30 tests covering GROUP_CONCAT output, every sort column, filters and pagination
 ```
 
 **Real Integration:**
 ```php
-tests/Feature/Candidates/RegisterCandidacyTest.php
+tests/Candidates/Acceptance/RegisterCandidacyTest.php
 └── should_register_a_valid_candidacy
     // Inserts in DB, verifies domain events, audit log
 ```
@@ -951,16 +1024,19 @@ tests/Feature/Candidates/RegisterCandidacyTest.php
 ### Run Tests
 
 ```bash
-# All (Docker Compose)
-docker compose exec laravel php artisan test
+# All
+make test
 
-# Alternative with Sail
-./vendor/bin/sail artisan test
+# One suite (Candidates, Evaluators, Auth, Security, Shared)
+make test-suite suite=Security
 
-# Specific
-docker compose exec laravel php artisan test --filter=Validator
-docker compose exec laravel php artisan test --testsuite=Unit
+# One class or method
+make test-f filter=GetConsolidatedEvaluatorsTest
 ```
+
+**Opt-in AI test.** `tests/Candidates/Integration/RealAiCandidateEvaluationTest.php` calls the real
+Gemini API, so it is skipped unless you set `RUN_AI_INTEGRATION_TESTS=true` and a valid `GEMINI_API_KEY`.
+Everything else runs offline.
 
 ---
 
@@ -989,85 +1065,81 @@ docker compose exec laravel php artisan test --testsuite=Unit
 - Asynchronous via `AnalyzeCandidateCvJob` (queue); persists a structured evaluation (summary, skills, years of experience, seniority level)
 
 ### DevOps
-- **Docker** (Laravel Sail) - Local Development
+- **Docker Compose** (Sail runtime image) - Local Development, driven by `make`
 - **Redis** - Cache and Queues
 - **Mailpit** - Email Testing
+- **GitHub Actions** - CI: PHPStan level 9 + PHPUnit against MySQL 8 and Redis 7
 
 ---
 
-## � Troubleshooting
+## 🛠️ Troubleshooting
 
-### Tests fail with database connection error
+### Tests fail with a database connection error
+
+The suite talks to the MySQL container, so the stack must be running:
 
 ```bash
-# Clear config and restart
-./vendor/bin/sail artisan config:clear
-./vendor/bin/sail artisan migrate:fresh --seed
-./vendor/bin/sail artisan test
+make status      # is the mysql service up?
+make up
+make clean       # clears cached config
+make fresh
+make test
+```
+
+### Port 80 or 5173 is already taken
+
+The Makefile already defaults to `APP_PORT=8080` / `VITE_PORT=5174`. To pick different ones:
+
+```bash
+make up APP_PORT=9000 VITE_PORT=5180
 ```
 
 ### Queue worker does not process jobs
 
 ```bash
-# Restart the worker
-./vendor/bin/sail artisan queue:restart
+# Restart the worker, then start it again
+docker compose exec -T laravel php artisan queue:restart
+make queue
 
-# In another terminal, start the worker
-./vendor/bin/sail artisan queue:work
-
-# Verify that the job was dispatched
-./vendor/bin/sail artisan queue:failed
+# Inspect failures
+docker compose exec -T laravel php artisan queue:failed
 ```
 
 ### "Class not found" error after creating new classes
 
 ```bash
-# Regenerate autoload
-./vendor/bin/sail composer dump-autoload
+docker compose exec -T laravel composer dump-autoload
 ```
 
 ### Emails are not sent (reports)
 
 ```bash
-# Verify Mailpit is running
-docker compose ps
-
-# Access Mailpit UI
-open http://localhost:8025
-
-# Check job logs
-./vendor/bin/sail artisan queue:work --verbose
+make status                  # is the mailpit service up?
+# then open http://localhost:8025 — Mailpit captures mail, it never delivers it
 ```
 
 ### Swagger is not generated correctly
 
 ```bash
-# Clear cache and regenerate
-./vendor/bin/sail artisan config:clear
-./vendor/bin/sail artisan route:clear
-./vendor/bin/sail artisan l5-swagger:generate
+make clean
+make swagger
 ```
 
-### Permission error in storage/
+### `the input device is not a TTY` on Windows
 
-```bash
-# Give permissions (Linux/Mac)
-./vendor/bin/sail artisan storage:link
-sudo chmod -R 777 storage bootstrap/cache
-
-# Windows: Run as Administrator or adjust permissions in properties
-```
+Use the make targets: they all run `docker compose exec -T`. A bare `docker compose exec` without `-T`
+fails from PowerShell.
 
 ---
 
-## �📝 Final Notes
+## 📝 Final Notes
 
 ### 🌟 Strong Points
 
 ✅ **Senior Architecture:** Hexagonal + DDD correctly implemented
 ✅ **Complex SQL:** GROUP_CONCAT, JOINs, multiple aggregations
 ✅ **Patterns:** Extensible Chain of Responsibility
-✅ **Testing:** 126 tests with 623 assertions covering critical cases
+✅ **Testing:** 136 tests with 668 assertions covering critical cases
 ✅ **Implemented Scalability:** Queues + Idempotency with `ShouldBeUnique`
 ✅ **Documentation:** Swagger + Complete README with diagrams
 
@@ -1094,10 +1166,20 @@ sudo chmod -R 777 storage bootstrap/cache
 For questions about implementation, architectural decisions, or technical details:
 
 1. **Review source code**: The structure is self-documented
-2. **Consult tests**: 126 tests document expected behavior
+2. **Consult tests**: 136 tests document expected behavior
 3. **Swagger**: Interactive API documentation
 
 > The project architecture is designed to be **self-explanatory** through clean code, comprehensive tests, and integrated documentation.
+
+---
+
+## 📄 License
+
+Copyright © 2025–2026 Cristian López.
+
+This project is licensed under the **MIT License** — see [LICENSE](./LICENSE) for the full text. In
+short: use it, modify it and ship it in anything you like, commercial or not, as long as the copyright
+notice travels with it. No warranty.
 
 ---
 
