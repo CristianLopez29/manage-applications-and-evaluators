@@ -2,6 +2,7 @@
 
 use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\NullHandler;
+use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
@@ -115,6 +116,49 @@ return [
             ],
             'formatter' => JsonFormatter::class,
             'processors' => [PsrLogMessageProcessor::class],
+        ],
+
+        /*
+         * Structured application log for a VPS: one JSON object per line, in a
+         * dated file that Monolog rotates itself. The plain 'json' channel above
+         * only writes to stdout, which goes nowhere under php-fpm.
+         */
+        'json_daily' => [
+            'driver' => 'monolog',
+            'level' => env('LOG_LEVEL', 'info'),
+            'handler' => RotatingFileHandler::class,
+            'handler_with' => [
+                'filename' => storage_path('logs/app.json.log'),
+                'maxFiles' => env('LOG_DAILY_DAYS', 14),
+            ],
+            'formatter' => JsonFormatter::class,
+            'processors' => [PsrLogMessageProcessor::class],
+        ],
+
+        /*
+         * Access log, kept apart from the application log so a request trace can
+         * be read (or shipped) without wading through business events. Point this
+         * at the 'null' driver to turn per-request logging off entirely.
+         */
+        'access' => [
+            'driver' => 'monolog',
+            'level' => 'info',
+            'handler' => RotatingFileHandler::class,
+            'handler_with' => [
+                'filename' => storage_path('logs/access.json.log'),
+                'maxFiles' => env('LOG_ACCESS_DAYS', 7),
+            ],
+            'formatter' => JsonFormatter::class,
+        ],
+
+        /*
+         * What LOG_CHANNEL should point at in production: structured file for
+         * ingestion plus stderr, which the process manager captures.
+         */
+        'production' => [
+            'driver' => 'stack',
+            'channels' => ['json_daily', 'stderr'],
+            'ignore_exceptions' => false,
         ],
 
         'syslog' => [

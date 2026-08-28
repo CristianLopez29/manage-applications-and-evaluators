@@ -60,6 +60,11 @@ class RequestContextLoggingTest extends TestCase
                     && $context['path'] === 'api/v1/evaluators';
             });
 
+        // The middleware also writes the access line through Log::channel();
+        // that path has its own coverage in AccessLoggingTest.
+        Log::shouldReceive('channel')->with('access')->andReturnSelf();
+        Log::shouldReceive('info');
+
         $middleware = new AddRequestContext();
         $request = Request::create('/api/v1/evaluators', 'GET');
         $request->setUserResolver(fn (): User => $user);
