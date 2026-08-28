@@ -68,7 +68,7 @@ class Bindings extends ServiceProvider
         Event::listen(AssignmentStatusChanged::class, [RecordAssignmentHistory::class, 'handleStatusChanged']);
         Event::listen(AssignmentStatusChanged::class, InvalidateEvaluatorCache::class);
 
-        Route::prefix('api/v1')->middleware(['request.context', 'auth:sanctum', 'throttle:60,1'])->group(function () {
+        Route::prefix('api/v1')->middleware(['request.context', 'auth:sanctum', 'throttle:api'])->group(function () {
             Route::post('/evaluators', RegisterEvaluatorController::class)->middleware('role:admin');
             Route::get('/evaluators/consolidated', GetConsolidatedEvaluatorsController::class)->middleware('role:admin');
             Route::post('/evaluators/report', RequestEvaluatorsReportController::class)->middleware('role:admin');

@@ -86,6 +86,20 @@ class AccessLoggingTest extends TestCase
         $this->assertSame(422, $this->firstAccessContext()['status']);
     }
 
+    /**
+     * Guards a regression: this middleware runs before auth:sanctum, where the
+     * bare $request->user() resolves against the web guard and reports null.
+     */
+    #[Test]
+    public function should_attribute_the_request_to_the_authenticated_user(): void
+    {
+        $admin = $this->actingAsAdmin();
+
+        $this->getJson('/api/v1/candidates')->assertOk();
+
+        $this->assertSame($admin->id, $this->firstAccessContext()['user_id']);
+    }
+
     #[Test]
     public function should_record_unauthenticated_requests(): void
     {

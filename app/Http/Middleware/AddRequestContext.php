@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Middleware;
 
 use Closure;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -33,7 +34,7 @@ class AddRequestContext
 
         Log::withContext([
             'request_id' => $requestId,
-            'user_id' => $request->user()?->getAuthIdentifier(),
+            'user_id' => $this->authenticatedUserId($request),
             'method' => $request->getMethod(),
             'path' => $request->path(),
         ]);
@@ -62,7 +63,26 @@ class AddRequestContext
             'status' => $response->getStatusCode(),
             'duration_ms' => (int) round((microtime(true) - $startedAt) * 1000),
             'ip' => $request->ip(),
-            'user_id' => $request->user()?->getAuthIdentifier(),
+            'user_id' => $this->authenticatedUserId($request),
         ]);
+    }
+
+    /**
+     * The sanctum guard is named explicitly because this middleware runs before
+     * auth:sanctum, so that rejected requests are traced too. Until that
+     * middleware calls Auth::shouldUse(), the bare user() resolves against the
+     * default web guard and would always report null here.
+     */
+    private function authenticatedUserId(Request $request): int|string|null
+    {
+        $user = $request->user('sanctum');
+
+        if (!$user instanceof Authenticatable) {
+            return null;
+        }
+
+        $identifier = $user->getAuthIdentifier();
+
+        return is_int($identifier) || is_string($identifier) ? $identifier : null;
     }
 }

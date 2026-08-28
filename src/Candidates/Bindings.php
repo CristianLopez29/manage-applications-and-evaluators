@@ -50,7 +50,7 @@ class Bindings extends ServiceProvider
     {
         Event::listen(CandidateRegistered::class, LogCandidateAction::class);
 
-        Route::prefix('api/v1')->middleware(['request.context', 'auth:sanctum', 'throttle:60,1'])->group(function () {
+        Route::prefix('api/v1')->middleware(['request.context', 'auth:sanctum', 'throttle:api'])->group(function () {
             Route::post('/candidates', RegisterCandidacyController::class)->middleware('role:admin,candidate');
             Route::get('/candidates', ListCandidatesController::class)->middleware('role:admin');
             Route::get('/candidates/search', ListCandidatesController::class)->middleware('role:admin');

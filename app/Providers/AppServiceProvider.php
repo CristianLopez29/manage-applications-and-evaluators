@@ -51,6 +51,16 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        // Keyed by token owner when authenticated so one noisy client cannot
+        // spend a shared IP's quota (several users behind one NAT, or every
+        // request arriving from the reverse proxy).
+        RateLimiter::for('api', function (Request $request) {
+            $perMinute = config('api.rate_limit_per_minute', 60);
+
+            return Limit::perMinute(is_numeric($perMinute) ? (int) $perMinute : 60)
+                ->by($request->user()?->getAuthIdentifier() ?? $request->ip());
+        });
+
         RateLimiter::for('login', function (Request $request) {
             $input = $request->input('email');
             $email = is_string($input) ? $input : '';

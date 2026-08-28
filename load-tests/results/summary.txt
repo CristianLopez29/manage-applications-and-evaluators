@@ -1,0 +1,13 @@
+
+  Candidacy Management API - k6 load test (LOCAL run, not the VPS)
+
+  http requests...........................: 783
+  responses with a 5xx....................: 0
+  failed requests.........................: 0.00%
+  checks passed...........................: 771 / 771
+
+  latency                                      avg       median    p95       max
+  Register candidate                           492.4 ms  508.2 ms  589.1 ms  624.7 ms
+  Assign candidate                             2810.7 ms 2826.0 ms 4613.0 ms 5101.9 ms
+  Consolidated read (under write load)         2316.8 ms 2325.3 ms 4177.1 ms 4623.2 ms
+  Consolidated read (no writes in flight)      213.5 ms  197.2 ms  275.2 ms  712.8 ms
