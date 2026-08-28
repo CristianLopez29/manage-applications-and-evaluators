@@ -36,7 +36,7 @@ class Bindings extends ServiceProvider
         );
 
         $this->app->bind(AiScreeningService::class, function ($app) {
-            $provider = env('AI_PROVIDER', 'openai');
+            $provider = config('ai.provider', 'openai');
 
             if ($provider === 'gemini') {
                 return $app->make(GeminiScreeningAdapter::class);

@@ -14,8 +14,11 @@ class GeminiScreeningAdapter implements AiScreeningService
 
     public function __construct()
     {
-        $this->apiKey = (string) env('GEMINI_API_KEY', '');
-        $this->model = (string) env('GEMINI_MODEL', 'gemini-1.5-flash');
+        $apiKey = config('ai.gemini.key', '');
+        $model = config('ai.gemini.model', 'gemini-1.5-flash');
+
+        $this->apiKey = is_string($apiKey) ? $apiKey : '';
+        $this->model = is_string($model) ? $model : 'gemini-1.5-flash';
     }
 
     public function analyzeFromText(string $cvText): EvaluationResultDTO

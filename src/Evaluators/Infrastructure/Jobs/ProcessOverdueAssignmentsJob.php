@@ -55,7 +55,8 @@ class ProcessOverdueAssignmentsJob implements ShouldQueue
                 ));
 
             // Escalation: if overdue beyond threshold, notify admins
-            $thresholdDays = (int) (env('OVERDUE_ESCALATION_DAYS', 3));
+            $configuredThreshold = config('assignments.overdue_escalation_days', 3);
+            $thresholdDays = is_numeric($configuredThreshold) ? (int) $configuredThreshold : 3;
             /** @var \Illuminate\Support\Carbon $deadlineCarbon */
             $deadlineCarbon = $assignment->deadline;
             $overdueDays = (int) $deadlineCarbon->diffInDays($now);

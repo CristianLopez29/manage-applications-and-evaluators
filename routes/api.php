@@ -9,25 +9,13 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportsController;
 
 Route::get('/health', function () {
-    if (app()->environment('production')) {
-        $token = request()->header('X-Health-Check-Token');
-        if (!is_string($token) || $token !== env('HEALTHCHECK_TOKEN')) {
-            abort(403);
-        }
-    }
     return new JsonResponse([
         'status' => 'ok',
         'time' => now()->toISOString(),
     ], Response::HTTP_OK);
-});
+})->middleware('health.token');
 
 Route::get('/readiness', function () {
-    if (app()->environment('production')) {
-        $token = request()->header('X-Health-Check-Token');
-        if (!is_string($token) || $token !== env('HEALTHCHECK_TOKEN')) {
-            abort(403);
-        }
-    }
     $status = 'ok';
     $checks = [];
 
@@ -51,8 +39,8 @@ Route::get('/readiness', function () {
         'status' => $status,
         'checks' => $checks,
         'time' => now()->toISOString(),
-    ], Response::HTTP_OK);
-});
+    ], $status === 'ok' ? Response::HTTP_OK : Response::HTTP_SERVICE_UNAVAILABLE);
+})->middleware('health.token');
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 

@@ -14,8 +14,11 @@ class OpenAiScreeningAdapter implements AiScreeningService
 
     public function __construct()
     {
-        $this->apiKey = (string) env('OPENAI_API_KEY', '');
-        $this->model = (string) env('OPENAI_MODEL', 'gpt-4o-mini');
+        $apiKey = config('ai.openai.key', '');
+        $model = config('ai.openai.model', 'gpt-4o-mini');
+
+        $this->apiKey = is_string($apiKey) ? $apiKey : '';
+        $this->model = is_string($model) ? $model : 'gpt-4o-mini';
     }
 
     public function analyzeFromText(string $cvText): EvaluationResultDTO
