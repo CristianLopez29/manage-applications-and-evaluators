@@ -1258,8 +1258,20 @@ sudo chmod -R 777 storage bootstrap/cache
 
 ## 🚢 Deployment
 
-Full VPS instructions — Nginx with TLS and `limit_req`, PHP-FPM settings, queue
-worker and scheduler units, verification curls and the redeploy sequence — are in
+The app ships a production Docker stack: a multi-stage [`Dockerfile`](Dockerfile)
+(nginx + php-fpm, dependencies installed `--no-dev` against the same PHP that
+runs them) and [`compose.prod.yaml`](compose.prod.yaml) with its own MySQL,
+Redis, queue worker and scheduler.
+
+**No service publishes a host port.** A shared [Traefik](deploy/traefik/)
+instance terminates TLS for every app on the box and reaches this one over a
+`edge` Docker network; the database and cache stay on a private `internal`
+network. That is not just tidiness: Docker writes published ports straight into
+iptables ahead of `ufw`, so a published port is reachable from the internet even
+when the firewall says otherwise.
+
+Full instructions — host setup, the shared proxy, verification curls, redeploys,
+backups and the gotchas of running several apps on one box — are in
 **[DEPLOY.md](DEPLOY.md)**. Start from
 [`.env.production.example`](.env.production.example) rather than `.env.example`.
 
@@ -1279,6 +1291,8 @@ Beyond the standard Laravel set, this project reads:
 | `LOG_ACCESS_DAYS` | `7` | Retention for the access log |
 | `OVERDUE_ESCALATION_DAYS` | `3` | Days overdue before the scheduler escalates to admins |
 | `AI_PROVIDER` | `openai` | `openai` or `gemini`; selects the screening adapter |
+| `APP_DOMAIN` | — | Hostname Traefik routes to this app (production Docker stack only) |
+| `DB_ROOT_PASSWORD` | — | Used only to initialise the MySQL container; the app never uses it |
 
 > All of these are read through `config()`, never `env()` at runtime. Once
 > `php artisan config:cache` runs in production, `.env` is no longer read and an

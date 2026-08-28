@@ -1,0 +1,21 @@
+# Edge-level defaults applied to every routed app.
+http:
+  middlewares:
+    flood-guard:
+      rateLimit:
+        # Deliberately far above any app's own limit. This exists to stop a
+        # flood from reaching PHP at all; per-user quotas are the application's
+        # job, because only it knows who the caller is.
+        average: 50
+        burst: 100
+        period: 1s
+
+    security-headers:
+      headers:
+        # Apps set their own headers; these are the belt-and-braces defaults for
+        # anything on this box that does not.
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        contentTypeNosniff: true
+        frameDeny: true
+        referrerPolicy: strict-origin-when-cross-origin

@@ -1,0 +1,140 @@
+# Production stack for a single app on a shared VPS.
+#
+# No service publishes a host port. Traefik reaches the app over the shared
+# `edge` network; MySQL and Redis are only on `internal`, which is not routable
+# from outside the compose project. This matters more than a firewall rule:
+# Docker writes published ports straight into iptables, ahead of ufw, so a
+# published port is reachable from the internet even when ufw says otherwise.
+
+name: candidacy
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: candidacy-api:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CONTAINER_ROLE: web
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      # Only mutable state is persisted. The code lives in the image.
+      - storage:/var/www/html/storage/app
+      - logs:/var/www/html/storage/logs
+    networks:
+      - edge
+      - internal
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: edge
+      traefik.http.routers.candidacy.rule: Host(`${APP_DOMAIN}`)
+      traefik.http.routers.candidacy.entrypoints: websecure
+      traefik.http.routers.candidacy.tls.certresolver: letsencrypt
+      traefik.http.services.candidacy.loadbalancer.server.port: "8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  queue:
+    image: candidacy-api:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CONTAINER_ROLE: queue
+    # Starts only once the web container has migrated; otherwise the worker can
+    # pick up a job against a schema that does not exist yet.
+    depends_on:
+      app:
+        condition: service_healthy
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    volumes:
+      - storage:/var/www/html/storage/app
+      - logs:/var/www/html/storage/logs
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  scheduler:
+    image: candidacy-api:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      CONTAINER_ROLE: scheduler
+    depends_on:
+      app:
+        condition: service_healthy
+    command: php artisan schedule:work
+    volumes:
+      - storage:/var/www/html/storage/app
+      - logs:/var/www/html/storage/logs
+    networks:
+      - internal
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mysql:/var/lib/mysql
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis:/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+volumes:
+  mysql:
+  redis:
+  storage:
+  logs:
+
+networks:
+  # Created once on the VPS, shared with Traefik and the other apps:
+  #   docker network create edge
+  edge:
+    external: true
+  internal:
+    driver: bridge

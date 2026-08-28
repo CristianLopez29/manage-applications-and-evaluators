@@ -1,0 +1,63 @@
+# Shared edge proxy for every app on this VPS. Deployed once, in its own
+# directory (e.g. /srv/traefik), independently of any application.
+#
+# It is the only thing on the box that binds :80 and :443. Applications publish
+# no host ports at all and are reached over the `edge` network.
+
+name: traefik
+
+services:
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      # Nothing is routed unless it opts in with traefik.enable=true, so a new
+      # container is never accidentally exposed to the internet.
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=edge
+
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+
+      # Every plain-HTTP request is redirected; applications never see :80.
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+
+      # Applied to every router unless one overrides it: a flood guard in front
+      # of the apps' own per-user limits, not a replacement for them.
+      - --entrypoints.websecure.http.middlewares=flood-guard@file
+
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.tlschallenge=true
+
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --accesslog=true
+      - --log.level=INFO
+
+      # The dashboard is not exposed: no router points at it and the API is
+      # bound to the internal entrypoint only.
+      - --api.dashboard=false
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Read-only: Traefik needs to watch container events, nothing more.
+      # The Docker socket is root on the host, so treat this as a trust boundary.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - letsencrypt:/letsencrypt
+    networks:
+      - edge
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  letsencrypt:
+
+networks:
+  edge:
+    external: true
