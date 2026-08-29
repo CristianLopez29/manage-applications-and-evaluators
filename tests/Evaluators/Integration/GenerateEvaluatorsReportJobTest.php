@@ -2,6 +2,13 @@
 
 namespace Tests\Evaluators\Integration;
 
+// Excel::fake() below only proves the job asked for a file with the right name and
+// extension and sent the notification — it never runs EvaluatorsSheet::map(), which is
+// exactly what shipped broken (see EvaluatorsExportTest::should_map_a_row_it_produced_itself
+// and the fix in GetConsolidatedEvaluators::execute()). EvaluatorsReportRenderTest is the
+// sibling that runs the real writer once, in CSV, and reads the file back; keep both:
+// orchestration here, output there.
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
