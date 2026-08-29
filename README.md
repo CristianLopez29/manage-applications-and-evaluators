@@ -1,6 +1,7 @@
 # Candidacy Management API
 
 [![CI](https://github.com/CristianLopez29/manage-applications-and-evaluators/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CristianLopez29/manage-applications-and-evaluators/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/CristianLopez29/manage-applications-and-evaluators/branch/main/graph/badge.svg)](https://codecov.io/gh/CristianLopez29/manage-applications-and-evaluators)
 [![PHPStan](https://img.shields.io/badge/PHPStan-level%209-brightgreen.svg)](phpstan.neon)
 [![Laravel](https://img.shields.io/badge/Laravel-12-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.4-blue.svg)](https://php.net)
@@ -11,6 +12,11 @@ The **CI** badge comes from GitHub Actions: it reflects the last run of
 three jobs — PHPStan at level 9, `composer audit`, and the PHPUnit suite against
 MySQL and Redis. A hardcoded "N tests passing" badge would only ever be accurate
 on the day someone edited it, so the count is not written out here.
+
+The **codecov** badge is line coverage measured by the same suite, and it is *not* a
+fourth gate: every status in [`codecov.yml`](codecov.yml) is `informational`, so a drop
+reports on the pull request but never blocks a merge. Coverage is read as a diff — which
+lines this change left untested — rather than as a number to defend.
 
 > Modular and scalable system for managing candidacies and evaluators, implemented with **Hexagonal Architecture**, **advanced design patterns**, and **software best practices**.
 
@@ -1107,7 +1113,7 @@ The report is generated in the background and sent by email when ready.
 
 ### Coverage
 
-- **Total:** 136 passing, 668 assertions (plus 1 opt-in test skipped by default, see below)
+- **Total:** 164 passing, 748 assertions (plus 1 opt-in test skipped by default, see below)
 - **Layers:** Unit (domain objects, no DB) · Integration (listeners, jobs, notifications, query counts
   against the real DB) · Acceptance (full HTTP round trip through the kernel)
 - **Covered:** candidate and evaluator endpoints, status transitions, reassign/unassign, audit logging,
@@ -1127,6 +1133,14 @@ tests/
 Each top-level directory is a `<testsuite>` in `phpunit.xml`;
 `tests/Shared/Unit/TestSuiteCoverageTest.php` fails if a directory is missing from that list, so a new
 test folder cannot silently go unexecuted.
+
+**Line coverage is published, not enforced.** The CI `tests` job runs this same suite under `pcov` and
+uploads a clover report to
+[Codecov](https://codecov.io/gh/CristianLopez29/manage-applications-and-evaluators). Every status in
+[`codecov.yml`](codecov.yml) is `informational`: the number and the per-pull-request diff are visible,
+but nothing blocks a merge on them, and there is no threshold to satisfy. That job calls `phpunit`
+directly rather than `php artisan test` — the artisan wrapper accepts `--coverage-clover` and then never
+writes the file, which would leave the report silently empty.
 
 **Authentication in tests is explicit.** `TestCase` logs nobody in; a test that needs an admin calls
 `$this->actingAsAdmin()`. That is what makes `tests/Security/Acceptance/UnauthenticatedAccessTest.php`
