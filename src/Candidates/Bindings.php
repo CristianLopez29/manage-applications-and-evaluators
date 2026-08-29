@@ -6,11 +6,13 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Src\Candidates\Domain\Events\CandidateRegistered;
+use Src\Candidates\Application\Ports\AiUsageBudget;
 use Src\Candidates\Domain\Repositories\CandidateEvaluationRepository;
 use Src\Candidates\Domain\Repositories\CandidateRepository;
 use Src\Candidates\Domain\Services\AiScreeningService;
 use Src\Candidates\Infrastructure\Ai\GeminiScreeningAdapter;
 use Src\Candidates\Infrastructure\Ai\OpenAiScreeningAdapter;
+use Src\Candidates\Infrastructure\Cache\LaravelAiUsageBudget;
 use Src\Candidates\Infrastructure\Controllers\AnalyzeCandidateController;
 use Src\Candidates\Infrastructure\Controllers\DownloadCandidateCvController;
 use Src\Candidates\Infrastructure\Controllers\GetCandidateEvaluationController;
@@ -28,6 +30,11 @@ class Bindings extends ServiceProvider
         $this->app->bind(
             CandidateRepository::class,
             EloquentCandidateRepository::class
+        );
+
+        $this->app->bind(
+            AiUsageBudget::class,
+            LaravelAiUsageBudget::class
         );
 
         $this->app->bind(

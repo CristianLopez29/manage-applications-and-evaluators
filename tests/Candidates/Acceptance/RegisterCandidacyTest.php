@@ -110,6 +110,42 @@ class RegisterCandidacyTest extends TestCase
             ->assertJsonValidationErrors(['cv']);
     }
 
+    /**
+     * The cv field has no length cap otherwise: an oversized "CV" both costs more to
+     * analyse and gives a prompt-injection attempt more room to work with.
+     */
+    #[Test]
+    public function should_reject_a_cv_longer_than_eight_thousand_characters(): void
+    {
+        $this->actingAsAdmin();
+
+        $payload = [
+            'name' => 'Oversized CV',
+            'email' => 'oversized.cv@example.com',
+            'years_of_experience' => 3,
+            'cv' => str_repeat('a', 8001),
+        ];
+
+        $this->postJson('/api/v1/candidates', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['cv']);
+    }
+
+    #[Test]
+    public function should_accept_a_cv_at_exactly_eight_thousand_characters(): void
+    {
+        $this->actingAsAdmin();
+
+        $payload = [
+            'name' => 'Boundary CV',
+            'email' => 'boundary.cv@example.com',
+            'years_of_experience' => 3,
+            'cv' => str_repeat('a', 8000),
+        ];
+
+        $this->postJson('/api/v1/candidates', $payload)->assertStatus(201);
+    }
+
     #[Test]
     public function should_allow_registering_candidacy_with_exactly_two_years(): void
     {
