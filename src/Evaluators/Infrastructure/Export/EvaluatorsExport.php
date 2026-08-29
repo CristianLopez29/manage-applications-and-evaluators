@@ -35,7 +35,7 @@ class EvaluatorsExport implements WithMultipleSheets
 
             $result = $this->useCase->execute($criteria);
 
-            /** @var array<int, \Src\Evaluators\Application\DTOs\EvaluatorWithCandidatesDTO> $items */
+            /** @var array<int, \Src\Evaluators\Application\DTOs\EvaluatorListItemResponse> $items */
             $items = $result->items();
 
             if (count($items) > 0) {

@@ -7,15 +7,18 @@ use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
-use Src\Evaluators\Application\DTOs\EvaluatorWithCandidatesDTO;
+use Src\Evaluators\Application\DTOs\EvaluatorListItemResponse;
 
 /**
- * @implements WithMapping<EvaluatorWithCandidatesDTO>
+ * Rows arrive already transformed: GetConsolidatedEvaluators runs the paginator through
+ * EvaluatorListItemTransformer, so the sheet never sees the raw EvaluatorWithCandidatesDTO.
+ *
+ * @implements WithMapping<EvaluatorListItemResponse>
  */
 class EvaluatorsSheet implements FromCollection, WithHeadings, WithMapping, WithTitle
 {
     /**
-     * @param Collection<int, EvaluatorWithCandidatesDTO> $evaluators
+     * @param Collection<int, EvaluatorListItemResponse> $evaluators
      */
     public function __construct(
         private readonly Collection $evaluators,
@@ -24,7 +27,7 @@ class EvaluatorsSheet implements FromCollection, WithHeadings, WithMapping, With
     }
 
     /**
-     * @return Collection<int, EvaluatorWithCandidatesDTO>
+     * @return Collection<int, EvaluatorListItemResponse>
      */
     public function collection()
     {
@@ -47,19 +50,32 @@ class EvaluatorsSheet implements FromCollection, WithHeadings, WithMapping, With
     }
 
     /**
-     * @param EvaluatorWithCandidatesDTO $row
+     * @param EvaluatorListItemResponse $row
      * @return array<int, string|int>
      */
     public function map($row): array
     {
         return [
-            $row->evaluator->name()->value(),
-            $row->evaluator->email()->value(),
-            $row->evaluator->specialty()->value,
-            number_format($row->averageExperience, 2),
-            count($row->candidates),
-            $row->concatenatedEmails ?? implode(', ', array_map(fn($c) => $c->email()->value(), $row->candidates))
+            $row->name,
+            $row->email,
+            $row->specialty,
+            number_format($row->averageCandidateExperience, 2),
+            $row->totalAssignedCandidates,
+            $row->concatenatedCandidateEmails ?? $this->joinCandidateEmails($row),
         ];
+    }
+
+    /**
+     * Fallback for the rows the consolidated query could not pre-join with GROUP_CONCAT.
+     */
+    private function joinCandidateEmails(EvaluatorListItemResponse $row): string
+    {
+        $emails = array_filter(
+            array_map(static fn (array $candidate): mixed => $candidate['email'] ?? null, $row->candidates),
+            'is_string'
+        );
+
+        return implode(', ', $emails);
     }
 
     public function title(): string
