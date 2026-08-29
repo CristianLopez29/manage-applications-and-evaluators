@@ -3,6 +3,7 @@
 namespace Src\Candidates\Infrastructure\Jobs;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -13,7 +14,7 @@ use Src\Candidates\Domain\Services\AiScreeningService;
 use Src\Candidates\Domain\Exceptions\AiParsingException;
 use Src\Candidates\Domain\Events\CandidateAnalysisCompleted;
 
-class AnalyzeCandidateCvJob implements ShouldQueue
+class AnalyzeCandidateCvJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -22,10 +23,27 @@ class AnalyzeCandidateCvJob implements ShouldQueue
     /** @var array<int, int> */
     public array $backoff = [60, 180, 600];
 
+    // 30 minutes comfortably covers the worst case of tries/backoff above (3 attempts,
+    // 840s of scheduled gaps) plus real network time against the AI provider, without
+    // blocking a legitimate re-analysis request for long once the CV changes. Every
+    // AnalyzeCandidateCvJob::dispatch() call for the same candidate costs a real, billed
+    // API call, so this caps that at one in flight per candidate regardless of how many
+    // times /analyze is hit inside the window — see EnsureCandidateAccess for the
+    // authorization half of the same fix.
+    public int $uniqueFor = 1800;
+
     public function __construct(
         public int $candidateId
     ) {
         $this->onQueue('default');
+    }
+
+    /**
+     * Only one analysis per candidate can be queued/processing at a time.
+     */
+    public function uniqueId(): string
+    {
+        return "analyze-candidate-cv:{$this->candidateId}";
     }
 
     public function handle(

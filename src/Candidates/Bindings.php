@@ -56,7 +56,7 @@ class Bindings extends ServiceProvider
             Route::get('/candidates/search', ListCandidatesController::class)->middleware('role:admin');
             Route::get('/candidates/{id}/summary', GetCandidateSummaryController::class)->middleware('can.view.candidate');
             Route::get('/candidates/{id}/cv', DownloadCandidateCvController::class)->middleware('can.view.candidate');
-            Route::post('/candidates/{id}/analyze', AnalyzeCandidateController::class)->middleware('role:admin,candidate');
+            Route::post('/candidates/{id}/analyze', AnalyzeCandidateController::class)->middleware(['role:admin,candidate', 'can.view.candidate']);
             Route::get('/candidates/{id}/evaluation', GetCandidateEvaluationController::class)->middleware('can.view.candidate');
         });
     }
