@@ -124,4 +124,49 @@ class AnalyzeCandidateCvJobTest extends TestCase
         $this->assertDatabaseCount('candidate_evaluations', 0);
         Event::assertNotDispatched(CandidateAnalysisCompleted::class);
     }
+
+    /**
+     * ShouldBeUnique guard: every dispatch is a real, billed AI call, so a second /analyze
+     * call for the same candidate while one is already queued must not enqueue another job.
+     * This has to go through the real dispatch() path — Queue::fake() records pushes without
+     * enforcing uniqueness, and calling handle() directly (as every test above does) bypasses
+     * dispatch() entirely, so neither would have caught a regression here.
+     */
+    #[Test]
+    public function should_not_queue_a_second_analysis_while_one_is_already_pending(): void
+    {
+        $candidate = CandidateModel::create([
+            'name' => 'Unique Candidate',
+            'email' => 'unique.candidate@example.com',
+            'years_of_experience' => 5,
+            'cv_content' => 'CV',
+        ]);
+
+        AnalyzeCandidateCvJob::dispatch((int) $candidate->id);
+        AnalyzeCandidateCvJob::dispatch((int) $candidate->id);
+
+        $this->assertDatabaseCount('jobs', 1);
+    }
+
+    #[Test]
+    public function should_allow_queuing_analysis_for_a_different_candidate(): void
+    {
+        $first = CandidateModel::create([
+            'name' => 'Unique Candidate One',
+            'email' => 'unique.one@example.com',
+            'years_of_experience' => 5,
+            'cv_content' => 'CV',
+        ]);
+        $second = CandidateModel::create([
+            'name' => 'Unique Candidate Two',
+            'email' => 'unique.two@example.com',
+            'years_of_experience' => 5,
+            'cv_content' => 'CV',
+        ]);
+
+        AnalyzeCandidateCvJob::dispatch((int) $first->id);
+        AnalyzeCandidateCvJob::dispatch((int) $second->id);
+
+        $this->assertDatabaseCount('jobs', 2);
+    }
 }

@@ -71,4 +71,44 @@ class PermissionsCascadeTest extends TestCase
         $this->getJson("/api/v1/candidates/{$candA->id}/summary")->assertStatus(200);
         $this->getJson("/api/v1/candidates/{$candB->id}/summary")->assertStatus(403);
     }
+
+    /**
+     * Regression guard: /analyze was the one candidate-scoped endpoint that checked only the
+     * role (admin,candidate) and not ownership, unlike its summary/cv/evaluation siblings. Any
+     * candidate account could trigger a billed AI analysis call for any other candidate's ID.
+     */
+    #[Test]
+    public function candidate_can_request_analysis_for_their_own_cv_but_not_others(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->postJson('/api/v1/candidates', [
+            'name' => 'Cand C',
+            'email' => 'candc@example.com',
+            'years_of_experience' => 3,
+            'cv' => 'CV C',
+            'primary_specialty' => 'Backend',
+        ])->assertStatus(201);
+
+        $this->postJson('/api/v1/candidates', [
+            'name' => 'Cand D',
+            'email' => 'candd@example.com',
+            'years_of_experience' => 4,
+            'cv' => 'CV D',
+            'primary_specialty' => 'Backend',
+        ])->assertStatus(201);
+
+        $candC = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'candc@example.com')->firstOrFail();
+        $candD = \Src\Candidates\Infrastructure\Persistence\CandidateModel::where('email', 'candd@example.com')->firstOrFail();
+
+        $user = User::factory()->create([
+            'email' => 'candidate.analyze@example.com',
+            'role' => 'candidate',
+            'candidate_id' => $candC->id,
+        ]);
+        Sanctum::actingAs($user, ['*']);
+
+        $this->postJson("/api/v1/candidates/{$candD->id}/analyze")->assertStatus(403);
+        $this->postJson("/api/v1/candidates/{$candC->id}/analyze")->assertStatus(202);
+    }
 }
