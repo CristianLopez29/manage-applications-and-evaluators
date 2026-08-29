@@ -6,6 +6,7 @@ namespace Tests\Candidates\Integration;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use PHPUnit\Framework\Attributes\Test;
 use Src\Candidates\Domain\Events\CandidateAnalysisCompleted;
 use Src\Candidates\Domain\Services\AiScreeningService;
@@ -131,6 +132,12 @@ class AnalyzeCandidateCvJobTest extends TestCase
      * This has to go through the real dispatch() path — Queue::fake() records pushes without
      * enforcing uniqueness, and calling handle() directly (as every test above does) bypasses
      * dispatch() entirely, so neither would have caught a regression here.
+     *
+     * Queue::size() rather than assertDatabaseCount('jobs', ...): phpunit.xml pins
+     * QUEUE_CONNECTION=database, but PHPUnit's <env> only applies when the variable isn't
+     * already set in the OS environment — CI's own job-level `env: QUEUE_CONNECTION: redis`
+     * wins there, so the real queue backend differs between a local run and CI. Queue::size()
+     * reads whichever connection is actually configured instead of assuming one.
      */
     #[Test]
     public function should_not_queue_a_second_analysis_while_one_is_already_pending(): void
@@ -142,10 +149,12 @@ class AnalyzeCandidateCvJobTest extends TestCase
             'cv_content' => 'CV',
         ]);
 
+        $before = Queue::size('default');
+
         AnalyzeCandidateCvJob::dispatch((int) $candidate->id);
         AnalyzeCandidateCvJob::dispatch((int) $candidate->id);
 
-        $this->assertDatabaseCount('jobs', 1);
+        $this->assertSame($before + 1, Queue::size('default'));
     }
 
     #[Test]
@@ -164,9 +173,11 @@ class AnalyzeCandidateCvJobTest extends TestCase
             'cv_content' => 'CV',
         ]);
 
+        $before = Queue::size('default');
+
         AnalyzeCandidateCvJob::dispatch((int) $first->id);
         AnalyzeCandidateCvJob::dispatch((int) $second->id);
 
-        $this->assertDatabaseCount('jobs', 2);
+        $this->assertSame($before + 2, Queue::size('default'));
     }
 }
