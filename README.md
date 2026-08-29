@@ -1113,12 +1113,14 @@ The report is generated in the background and sent by email when ready.
 
 ### Coverage
 
-- **Total:** 164 passing, 748 assertions (plus 1 opt-in test skipped by default, see below)
+- **Total:** 217 passing, 903 assertions (plus 1 opt-in test skipped by default, see below)
 - **Layers:** Unit (domain objects, no DB) · Integration (listeners, jobs, notifications, query counts
   against the real DB) · Acceptance (full HTTP round trip through the kernel)
-- **Covered:** candidate and evaluator endpoints, status transitions, reassign/unassign, audit logging,
-  email notifications (assignment, status change, overdue/escalation), permissions cascade
-  (admin/evaluator/candidate), authentication, rate limiting and SQL-injection resilience
+- **Covered:** candidate and evaluator endpoints, status transitions, assign/reassign/unassign/reject,
+  audit logging, email notifications (assignment, status change, overdue/escalation) and their rendered
+  bodies, the AI screening adapters against a faked HTTP client, the consolidated Excel export and its
+  sheet paging, permissions cascade (admin/evaluator/candidate), the login/logout token lifecycle, rate
+  limiting and SQL-injection resilience
 
 ```
 tests/
