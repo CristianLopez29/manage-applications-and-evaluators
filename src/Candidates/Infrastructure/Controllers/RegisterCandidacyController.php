@@ -79,6 +79,10 @@ class RegisterCandidacyController
             'cv' => [
                 'required_without:cv_file',
                 'string',
+                // A real CV as plain text comfortably fits in a few thousand characters.
+                // This bounds AI input cost per analysis and the size of anything a
+                // submitted "CV" could try to smuggle into the AI prompt.
+                'max:8000',
                 function (string $attribute, mixed $value, callable $fail) use ($request): void {
                     $hasPdf = $request->hasFile('cv_file');
                     $text = is_string($value) ? trim($value) : '';

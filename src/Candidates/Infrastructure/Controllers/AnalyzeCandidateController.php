@@ -4,6 +4,7 @@ namespace Src\Candidates\Infrastructure\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Src\Candidates\Application\UseCases\RequestCandidateAnalysis;
+use Src\Candidates\Domain\Exceptions\AiUsageBudgetExceededException;
 use Symfony\Component\HttpFoundation\Response;
 
 class AnalyzeCandidateController
@@ -31,12 +32,20 @@ class AnalyzeCandidateController
      *     @OA\Response(
      *         response=404,
      *         description="Candidate not found"
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Daily AI analysis budget reached"
      *     )
      * )
      */
     public function __invoke(int $id): JsonResponse
     {
-        $this->useCase->execute($id);
+        try {
+            $this->useCase->execute($id);
+        } catch (AiUsageBudgetExceededException $e) {
+            return new JsonResponse(['message' => $e->getMessage()], Response::HTTP_TOO_MANY_REQUESTS);
+        }
 
         return new JsonResponse([
             'status' => 'processing',

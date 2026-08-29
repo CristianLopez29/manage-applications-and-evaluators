@@ -1330,6 +1330,8 @@ Beyond the standard Laravel set:
 | `LOG_ACCESS_DAYS` | `7` | Retention for the access log |
 | `OVERDUE_ESCALATION_DAYS` | `3` | Days overdue before the scheduler escalates to admins |
 | `AI_PROVIDER` | `openai` | `openai` or `gemini`; selects the screening adapter |
+| `AI_DAILY_CALL_BUDGET` | `20` | Hard ceiling on billed `/analyze` calls per calendar day, across all callers |
+| `AI_MAX_OUTPUT_TOKENS` | `500` | Caps the AI response size — bounds worst-case output cost per call |
 | `APP_DOMAIN` | — | Hostname Traefik routes to this app (production stack only) |
 | `DB_ROOT_PASSWORD` | — | Initialises the MySQL container; the app never uses it |
 
