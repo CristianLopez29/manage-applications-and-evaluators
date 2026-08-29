@@ -27,16 +27,29 @@ class GetConsolidatedEvaluators
      */
     public function execute(ConsolidatedListCriteria $criteria): LengthAwarePaginator
     {
-        /** @var \Illuminate\Pagination\LengthAwarePaginator<int, EvaluatorWithCandidatesDTO> $paginator */
-        $paginator = $this->cache->remember(
+        /** @var \Illuminate\Pagination\LengthAwarePaginator<int, EvaluatorWithCandidatesDTO> $cached */
+        $cached = $this->cache->remember(
             $criteria->cacheKey(),
             self::CACHE_TTL,
             fn() => $this->repository->findAllWithCandidates($criteria)
         );
 
-        $paginator->through(fn(EvaluatorWithCandidatesDTO $dto) => $this->transformer->transform($dto));
+        // through() rewrites the paginator in place and returns that same instance, so it
+        // mutates whatever the cache is holding. Stores that hand back a fresh unserialised
+        // copy (redis, file, database) hide this; the array store returns the object it holds,
+        // so the next identical call would receive items that are already
+        // EvaluatorListItemResponse and blow up on the transformer's type hint. Transform a
+        // clone and leave the cached paginator with its raw DTOs.
+        /** @var \Illuminate\Pagination\LengthAwarePaginator<int, EvaluatorListItemResponse> $transformed */
+        $transformed = clone $cached;
 
-        return $paginator;
+        $transformed->setCollection(
+            $cached->getCollection()->map(
+                fn (EvaluatorWithCandidatesDTO $dto): EvaluatorListItemResponse => $this->transformer->transform($dto)
+            )
+        );
+
+        return $transformed;
     }
 
     /**
