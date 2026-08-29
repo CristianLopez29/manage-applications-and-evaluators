@@ -51,4 +51,44 @@ class TokenManagementTest extends TestCase
 
         $this->assertEquals(0, PersonalAccessToken::where('tokenable_id', $target->id)->count());
     }
+
+    #[Test]
+    public function should_return_404_when_the_target_user_does_not_exist(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users/999999/tokens/revoke-all')
+            ->assertStatus(404)
+            ->assertJson(['message' => 'User not found']);
+    }
+
+    /**
+     * The id arrives as a string from the route, so a non-numeric or non-positive value must
+     * be turned away before it reaches the database as a silent 0.
+     */
+    #[Test]
+    public function should_return_404_for_a_non_positive_user_id(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin, 'sanctum')
+            ->postJson('/api/users/0/tokens/revoke-all')
+            ->assertStatus(404)
+            ->assertJson(['message' => 'User not found']);
+    }
+
+    #[Test]
+    public function should_forbid_a_non_admin_from_revoking_another_users_tokens(): void
+    {
+        $evaluator = User::factory()->create(['role' => 'evaluator']);
+        $target = User::factory()->create();
+        $target->createToken('api');
+
+        $this->actingAs($evaluator, 'sanctum')
+            ->postJson("/api/users/{$target->id}/tokens/revoke-all")
+            ->assertStatus(403);
+
+        $this->assertEquals(1, PersonalAccessToken::where('tokenable_id', $target->id)->count());
+    }
 }
