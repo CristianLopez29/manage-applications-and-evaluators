@@ -145,7 +145,8 @@ load-test:
 	-MSYS_NO_PATHCONV=1 docker run --rm 		--network $$(basename $$(pwd) | tr -d '.')_sail 		-v "$$(pwd)/load-tests:/scripts" -w /scripts 		-e BASE_URL=http://laravel 		grafana/k6 run /scripts/candidacy-flow.js
 	@sed -i '/^API_RATE_LIMIT_PER_MINUTE=1000000$$/d' .env
 	@$(APP) php artisan config:clear >/dev/null
-	@echo "Rate limit restored. Artifacts in load-tests/results/"
+	@$(APP) php artisan load-test:cleanup
+	@echo "Rate limit restored, seeded data removed. Artifacts in load-tests/results/"
 
 # --- Info -------------------------------------------------------------------
 
