@@ -35,7 +35,7 @@ lines this change left untested — rather than as a number to defend.
 - **Benefit:** I can replace Laravel with Symfony without touching business logic
 
 #### ✅ **Superior Testability**
-- 136 tests passing across unit, integration and acceptance layers
+- 236 tests passing across unit, integration and acceptance layers
 - Unit tests do not require the framework
 - Fakes and mocks are trivial to implement
 - **Benefit:** Fast and reliable tests
@@ -1113,7 +1113,7 @@ The report is generated in the background and sent by email when ready.
 
 ### Coverage
 
-- **Total:** 217 passing, 903 assertions (plus 1 opt-in test skipped by default, see below)
+- **Total:** 236 passing, 981 assertions (plus 1 opt-in test skipped by default, see below)
 - **Layers:** Unit (domain objects, no DB) · Integration (listeners, jobs, notifications, query counts
   against the real DB) · Acceptance (full HTTP round trip through the kernel)
 - **Covered:** candidate and evaluator endpoints, status transitions, assign/reassign/unassign/reject,
@@ -1289,7 +1289,7 @@ fails from PowerShell.
 ✅ **Senior Architecture:** Hexagonal + DDD correctly implemented
 ✅ **Complex SQL:** GROUP_CONCAT, JOINs, multiple aggregations
 ✅ **Patterns:** Extensible Chain of Responsibility
-✅ **Testing:** 136 tests with 668 assertions covering critical cases
+✅ **Testing:** 236 tests with 981 assertions covering critical cases
 ✅ **Implemented Scalability:** Queues + Idempotency with `ShouldBeUnique`
 ✅ **Documentation:** Swagger + Complete README with diagrams
 
@@ -1372,7 +1372,7 @@ a browser front-end on a *different* origin needs to read responses.
 For questions about implementation, architectural decisions, or technical details:
 
 1. **Review source code**: The structure is self-documented
-2. **Consult tests**: 136 tests document expected behavior
+2. **Consult tests**: 236 tests document expected behavior
 3. **Swagger**: Interactive API documentation
 
 > The project architecture is designed to be **self-explanatory** through clean code, comprehensive tests, and integrated documentation.
