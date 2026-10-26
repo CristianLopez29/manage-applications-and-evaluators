@@ -11,7 +11,12 @@
 # exactly the PHP that will run them. Installing from the stock composer image
 # instead would fail the platform check, and --ignore-platform-req would only
 # hide a real mismatch until runtime.
-FROM php:8.4-fpm-alpine AS base
+#
+# Pinned to the patch release, not the floating 8.4 tag: the deploy runs
+# `compose build` without --pull, so a floating tag keeps whatever patch the
+# VPS cached first and a security release never reaches production. 8.4.27
+# fixes CVE-2026-109618 and CVE-2026-109619 (RCE in php-fpm workers).
+FROM php:8.4.27-fpm-alpine AS base
 
 RUN apk add --no-cache \
       nginx \
